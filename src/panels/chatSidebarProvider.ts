@@ -29,13 +29,19 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
 
         // Handle messages from React
         webviewView.webview.onDidReceiveMessage(async (message) => {
+            console.log('Received message from webview:', message);
+            
             switch (message.command) {
                 case 'sendMessage':
+                    console.log('Handling sendMessage with data:', message.data);
                     await this._handleSendMessage(message as SendMessageCommand);
                     break;
                 case 'clearHistory':
+                    console.log('Handling clearHistory');
                     await this._handleClearHistory();
                     break;
+                default:
+                    console.log('Unknown command:', message.command);
             }
         });
     }
@@ -60,20 +66,27 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
      * Handle send message command from React
      */
     private async _handleSendMessage(command: SendMessageCommand) {
+        console.log('_handleSendMessage called with command:', command);
+        
         if (!this._view) {
+            console.log('No view available, returning early');
             return;
         }
 
         const userMessage = command.data.message;
+        console.log('User message:', userMessage);
         
         try {
             // Ensure Claude service is initialized
+            console.log('Ensuring Claude service is initialized...');
             const claudeService = await this._ensureClaudeService();
+            console.log('Claude service initialized, sending message...');
             
             // Send Claude request with streaming callback
             const response = await claudeService.sendMessage(
                 userMessage,
                 (streamingMessage: ChatMessage) => {
+                    console.log('Received streaming message:', streamingMessage);
                     // Send streaming update to React
                     this._postMessageToWebview({
                         command: 'messageUpdate',
@@ -82,6 +95,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 }
             );
 
+            console.log('Final response from Claude:', response);
             // Send final response to React
             this._postMessageToWebview({
                 command: 'messageComplete',
@@ -89,6 +103,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             });
 
         } catch (error) {
+            console.error('Error in _handleSendMessage:', error);
             // Send error to React
             this._postMessageToWebview({
                 command: 'error',
