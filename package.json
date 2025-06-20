@@ -30,7 +30,25 @@
         "title": "Open Design Panel",
         "category": "Superdesign"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "superdesign",
+          "title": "Superdesign",
+          "icon": "$(comment-discussion)"
+        }
+      ]
+    },
+    "views": {
+      "superdesign": [
+        {
+          "id": "superdesign.chatView",
+          "name": "Chat",
+          "type": "webview"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

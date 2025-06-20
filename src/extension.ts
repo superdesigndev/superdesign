@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { ChatSidebarProvider } from './panels/chatSidebarProvider';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -21,7 +22,17 @@ export function activate(context: vscode.ExtensionContext) {
         SuperdesignPanel.createOrShow(context.extensionUri);
     });
 
-	context.subscriptions.push(helloWorldDisposable, openPanelDisposable);
+    const chatProvider = new ChatSidebarProvider(context.extensionUri);
+    const chatDisposable = vscode.window.registerWebviewViewProvider(
+        'superdesign.chatView',
+        chatProvider
+    );
+
+	context.subscriptions.push(
+        helloWorldDisposable, 
+        openPanelDisposable,
+        chatDisposable
+    );
 }
 
 class SuperdesignPanel {
