@@ -662,4 +662,29 @@ if (require.main === module) {
   runAllTests().catch(console.error);
 }
 
-export { runAllTests }; 
+/**
+ * Run the complete test suite including streaming tests
+ */
+async function runCompleteTestSuite(): Promise<void> {
+  console.log('🚀 Running Complete SuperDesign Agent Test Suite\n');
+  
+  // Run the main agent tests
+  console.log('📋 Phase 1: Core Agent Tests');
+  console.log('=' .repeat(50));
+  await runAllTests();
+  
+  // Import and run streaming tests
+  console.log('\n\n📋 Phase 2: Streaming Integration Tests');
+  console.log('=' .repeat(50));
+  
+  try {
+    const { runStreamingTests } = await import('./streaming-agent.test');
+    await runStreamingTests();
+  } catch (error) {
+    console.error('❌ Failed to run streaming tests:', error);
+  }
+  
+  console.log('\n\n🎉 Complete test suite finished!');
+}
+
+export { runAllTests, runCompleteTestSuite }; 
