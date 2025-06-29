@@ -25,6 +25,9 @@ export interface LLMResponse {
     completionTokens: number;
   };
   finishReason?: string;
+  toolCalls?: any[];
+  toolResults?: any[];
+  steps?: any[];
 }
 
 export interface StreamingLLMResponse {
@@ -44,7 +47,7 @@ export interface LLMServiceConfig {
   provider: LLMProvider;
   maxTokens?: number;
   temperature?: number;
-  tools?: any[];
+  tools?: any[] | { [name: string]: any };
   systemPrompt?: string;
 }
 
@@ -149,7 +152,8 @@ export class LLMService {
     options?: {
       maxTokens?: number;
       temperature?: number;
-      tools?: any[];
+      tools?: any[] | { [name: string]: any };
+      maxSteps?: number;
     }
   ): Promise<LLMResponse> {
     try {
@@ -166,15 +170,43 @@ export class LLMService {
         });
       }
 
-      const result = await generateText({
+      const generateParams: any = {
         model,
         messages: formattedMessages,
         maxTokens: options?.maxTokens || this.config.maxTokens || 4000,
         temperature: options?.temperature || this.config.temperature || 0.7,
-        tools: options?.tools || this.config.tools || {},
-      });
+        maxSteps: options?.maxSteps || 25, // Enable multi-step tool calling with default of 25 steps
+      };
+
+      // Only add tools if they exist and are valid
+      const tools = options?.tools || this.config.tools;
+      this.outputChannel.appendLine(`[DEBUG] Tools type: ${typeof tools}, isArray: ${Array.isArray(tools)}, keys: ${tools ? Object.keys(tools).join(', ') : 'none'}`);
+      this.outputChannel.appendLine(`[DEBUG] MaxSteps: ${generateParams.maxSteps}`);
+      
+      if (tools && (Array.isArray(tools) ? tools.length > 0 : Object.keys(tools).length > 0)) {
+        generateParams.tools = tools;
+      }
+
+      const result = await generateText(generateParams);
 
       this.outputChannel.appendLine(`Response generated: ${result.text.length} characters`);
+      
+      // Extract tool calls and results from steps if tools were used
+      const toolCalls: any[] = [];
+      const toolResults: any[] = [];
+      
+      if (result.steps) {
+        for (const step of result.steps) {
+          if (step.toolCalls) {
+            toolCalls.push(...step.toolCalls);
+          }
+          if (step.toolResults) {
+            toolResults.push(...step.toolResults);
+          }
+        }
+      }
+      
+      this.outputChannel.appendLine(`Tools executed: ${toolCalls.length} calls, ${toolResults.length} results`);
       
       return {
         content: result.text,
@@ -183,6 +215,9 @@ export class LLMService {
           completionTokens: result.usage.completionTokens,
         } : undefined,
         finishReason: result.finishReason,
+        toolCalls,
+        toolResults,
+        steps: result.steps || []
       };
       
     } catch (error) {
@@ -199,7 +234,8 @@ export class LLMService {
     options?: {
       maxTokens?: number;
       temperature?: number;
-      tools?: any[];
+      tools?: any[] | { [name: string]: any };
+      maxSteps?: number;
     }
   ): Promise<StreamingLLMResponse> {
     try {
@@ -216,13 +252,21 @@ export class LLMService {
         });
       }
 
-      const result = streamText({
+      const streamParams: any = {
         model,
         messages: formattedMessages,
         maxTokens: options?.maxTokens || this.config.maxTokens || 4000,
         temperature: options?.temperature || this.config.temperature || 0.7,
-        tools: options?.tools || this.config.tools || {},
-      });
+        maxSteps: options?.maxSteps || 25, // Enable multi-step tool calling with default of 25 steps
+      };
+
+      // Only add tools if they exist and are valid
+      const tools = options?.tools || this.config.tools;
+      if (tools && (Array.isArray(tools) ? tools.length > 0 : Object.keys(tools).length > 0)) {
+        streamParams.tools = tools;
+      }
+
+      const result = streamText(streamParams);
 
       return {
         stream: result.textStream,

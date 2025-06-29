@@ -341,6 +341,44 @@ export class MessageAdapter {
   }
 
   /**
+   * Create tool call message in SDKMessage format
+   */
+  static createToolCallMessage(
+    toolCall: { toolCallId: string; toolName: string; args: any },
+    sessionId: string
+  ): SDKMessage {
+    return {
+      type: 'assistant',
+      subtype: 'tool_use',
+      message: {
+        content: [{
+          type: 'tool_use',
+          id: toolCall.toolCallId,
+          name: toolCall.toolName,
+          input: toolCall.args
+        }]
+      },
+      session_id: sessionId
+    };
+  }
+
+  /**
+   * Create tool result message in SDKMessage format
+   */
+  static createToolResultMessage(
+    toolResult: { toolCallId: string; result: any; isError?: boolean },
+    sessionId: string
+  ): SDKMessage {
+    return {
+      type: 'result',
+      subtype: toolResult.isError ? 'error' : 'success',
+      content: typeof toolResult.result === 'string' ? toolResult.result : JSON.stringify(toolResult.result),
+      session_id: sessionId,
+      parent_tool_use_id: toolResult.toolCallId
+    };
+  }
+
+  /**
    * Batch convert multiple AI messages to SDKMessages
    */
   static convertBatchToSDKMessages(

@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
-import { ToolRegistry, ToolResult } from '../tools/base-tool';
+import { ToolRegistry, ToolResult, ExecutionContext } from '../tools/base-tool';
+import { LLMService, LLMServiceConfig, ConversationMessage } from './llm-service';
+import { MessageAdapter } from '../utils/message-adapter';
+
 
 /**
  * Message types for SuperDesign compatibility
@@ -22,6 +25,7 @@ export interface AgentOptions {
   maxTurns?: number;
   temperature?: number;
   maxTokens?: number;
+  maxSteps?: number;
   systemPrompt?: string;
   abortController?: AbortController;
   onMessage?: (message: SDKMessage) => void;
@@ -429,4 +433,445 @@ export abstract class BaseAgent implements SuperDesignAgent {
   protected setInitialized(value: boolean): void {
     this.isInitializedFlag = value;
   }
-} 
+}
+
+/**
+ * SuperDesign Coding Agent - Full implementation with tool integration
+ */
+export class SuperDesignCodingAgent extends BaseAgent {
+  private llmService: LLMService;
+  private conversationHistory = new Map<string, ConversationMessage[]>();
+
+  constructor(config: AgentConfig) {
+    super(config);
+    
+    // Initialize LLM service with config (tools will be set per request)
+    const llmConfig: LLMServiceConfig = {
+      provider: {
+        name: config.llmConfig.provider as any,
+        model: config.llmConfig.model,
+        apiKey: config.llmConfig.apiKey
+      },
+      maxTokens: config.llmConfig.maxTokens || 4000,
+      temperature: config.llmConfig.temperature || 0.7,
+      systemPrompt: this.getSystemPrompt(),
+      tools: [] // Will be set per request with proper session context
+    };
+
+    this.llmService = new LLMService(llmConfig, config.outputChannel);
+    
+    this.config.outputChannel.appendLine('[SuperDesignAgent] Initialized with tool integration');
+    this.setInitialized(true);
+  }
+
+  /**
+   * Main query method matching ClaudeCodeService interface
+   */
+  async query(
+    prompt: string,
+    options?: Partial<AgentOptions>,
+    abortController?: AbortController,
+    onMessage?: (message: SDKMessage) => void
+  ): Promise<SDKMessage[]> {
+    const sessionId = options?.sessionId || `session-${Date.now()}`;
+    
+    try {
+      this.config.outputChannel.appendLine(`[SuperDesignAgent] Processing query: ${prompt.substring(0, 100)}...`);
+      
+      const result = await this.executeTaskWithStreaming(prompt, {
+        ...options,
+        sessionId,
+        abortController,
+        onMessage
+      });
+
+      return result.messages;
+      
+    } catch (error) {
+      this.config.outputChannel.appendLine(`[SuperDesignAgent] Error in query: ${error}`);
+      
+      const errorMessage = MessageAdapter.createErrorMessage(
+        error instanceof Error ? error : new Error(String(error)),
+        sessionId
+      );
+      
+      return [errorMessage];
+    }
+  }
+
+  /**
+   * Execute a task with streaming and tool integration
+   */
+  async executeTaskWithStreaming(
+    request: string,
+    options?: AgentOptions
+  ): Promise<TaskResult> {
+    const startTime = Date.now();
+    const sessionId = options?.sessionId || `session-${Date.now()}`;
+    const maxTurns = options?.maxTurns || 10;
+    
+    const messages: SDKMessage[] = [];
+    const toolsUsed: string[] = [];
+    let currentTurn = 0;
+    
+    try {
+      // Get or create conversation history for this session
+      if (!this.conversationHistory.has(sessionId)) {
+        this.conversationHistory.set(sessionId, []);
+      }
+      
+      const history = this.conversationHistory.get(sessionId)!;
+      
+      // Add user message to history
+      const userMessage: ConversationMessage = {
+        role: 'user',
+        content: request,
+        timestamp: new Date()
+      };
+      history.push(userMessage);
+
+      // Add user message to response
+      messages.push(MessageAdapter.createUserMessage(request, sessionId));
+      
+      // Generate response with tools (Vercel AI SDK handles tool execution automatically)
+      const llmResponse = await this.generateWithTools(history, {
+        maxTokens: options?.maxTokens,
+        temperature: options?.temperature,
+        maxSteps: options?.maxSteps || 25, // Default to 25 steps for multi-step tool calling
+        abortController: options?.abortController,
+        onMessage: options?.onMessage,
+        sessionId
+      });
+
+      // Add assistant response to history if there's content
+      if (llmResponse.content) {
+        const assistantMessage: ConversationMessage = {
+          role: 'assistant',
+          content: llmResponse.content,
+          timestamp: new Date()
+        };
+        history.push(assistantMessage);
+        
+        // Add to messages
+        messages.push(MessageAdapter.createAssistantMessage(
+          llmResponse.content,
+          sessionId,
+          { duration: Date.now() - startTime }
+        ));
+      }
+
+      // Process tool calls and results from Vercel AI SDK steps
+      if (llmResponse.steps && llmResponse.steps.length > 0) {
+        for (const step of llmResponse.steps) {
+          // Process tool calls in this step
+          if (step.toolCalls) {
+            for (const toolCall of step.toolCalls) {
+              this.config.outputChannel.appendLine(`[DEBUG] Tool call structure: ${JSON.stringify(toolCall, null, 2)}`);
+              
+              const toolName = toolCall.toolName || toolCall.function?.name || toolCall.name || 'unknown';
+              toolsUsed.push(toolName);
+              
+              // Add tool call message
+              const toolCallMessage = MessageAdapter.createToolCallMessage({
+                toolCallId: toolCall.toolCallId || toolCall.id,
+                toolName: toolName,
+                args: toolCall.args || toolCall.function?.arguments
+              }, sessionId);
+              messages.push(toolCallMessage);
+              
+              if (options?.onMessage) {
+                options.onMessage(toolCallMessage);
+              }
+            }
+          }
+          
+          // Process tool results in this step
+          if (step.toolResults) {
+            for (const toolResult of step.toolResults) {
+              // Add tool result message
+              const toolResultMessage = MessageAdapter.createToolResultMessage(toolResult, sessionId);
+              messages.push(toolResultMessage);
+              
+              if (options?.onMessage) {
+                options.onMessage(toolResultMessage);
+              }
+            }
+          }
+        }
+      }
+
+      const duration = Date.now() - startTime;
+      const totalCost = MessageAdapter.calculateTotalCost(messages);
+
+      this.config.outputChannel.appendLine(
+        `[SuperDesignAgent] Task completed in ${duration}ms using ${toolsUsed.length} tools`
+      );
+
+      // Find the final LLM response message (not tool results)
+      let finalMessage = llmResponse.content || '';
+      if (!finalMessage) {
+        // If LLM didn't provide final text, use the last assistant message
+        const lastAssistantMessage = messages.slice().reverse().find(m => m.type === 'assistant' && !m.subtype);
+        finalMessage = lastAssistantMessage?.content || 'Task completed';
+      }
+
+      return {
+        success: true,
+        messages,
+        finalMessage,
+        toolsUsed: [...new Set(toolsUsed)],
+        duration,
+        totalCost
+      };
+
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      this.config.outputChannel.appendLine(`[SuperDesignAgent] Task failed: ${errorMessage}`);
+      
+      messages.push(MessageAdapter.createErrorMessage(errorMessage, sessionId));
+      
+      return {
+        success: false,
+        messages,
+        finalMessage: errorMessage,
+        toolsUsed: [...new Set(toolsUsed)],
+        duration,
+        error: errorMessage
+      };
+    }
+  }
+
+  /**
+   * Execute a simple task without streaming
+   */
+  async executeTask(
+    request: string,
+    projectPath: string,
+    options?: AgentOptions
+  ): Promise<TaskResult> {
+    // Update working directory if provided
+    if (projectPath !== this.config.workingDirectory) {
+      this.setWorkingDirectory(projectPath);
+    }
+
+    return await this.executeTaskWithStreaming(request, options);
+  }
+
+  /**
+   * Generate LLM response with tool support
+   */
+  private async generateWithTools(
+    history: ConversationMessage[],
+    options: {
+      maxTokens?: number;
+      temperature?: number;
+      maxSteps?: number;
+      abortController?: AbortController;
+      onMessage?: (message: SDKMessage) => void;
+      sessionId: string;
+    }
+  ): Promise<{ content: string; toolCalls?: any[]; toolResults?: any[]; steps?: any[] }> {
+    try {
+      // Use the LLM service with our conversation history and session-specific tools
+      const response = await this.llmService.generateResponse(history, {
+        maxTokens: options.maxTokens,
+        temperature: options.temperature,
+        maxSteps: options.maxSteps || 25, // Default to 25 steps for multi-step tool calling
+        tools: this.createToolSchemas(options.sessionId)
+      });
+
+      return {
+        content: response.content,
+        toolCalls: response.toolCalls || [],
+        toolResults: response.toolResults || [],
+        steps: response.steps || []
+      };
+      
+    } catch (error) {
+      this.config.outputChannel.appendLine(`[SuperDesignAgent] Error generating response: ${error}`);
+      throw error;
+    }
+  }
+
+
+
+  /**
+   * Create tool schemas for LLM function calling using the registry
+   */
+  private createToolSchemas(sessionId: string = 'default'): { [name: string]: any } {
+    // Create execution context for tools
+    const context: ExecutionContext = {
+      workingDirectory: this.config.workingDirectory,
+      outputChannel: this.config.outputChannel,
+      sessionId: sessionId
+    };
+    
+    // Use the registry's built-in conversion to Vercel AI SDK format
+    return this.config.toolRegistry.getVercelAITools(context);
+  }
+
+  /**
+   * Get SuperDesign-specific system prompt
+   */
+  private getSystemPrompt(): string {
+    return this.config.systemPrompts.design || `
+# SuperDesign Coding Agent
+
+You are a senior front-end designer and developer working with SuperDesign.
+You pay close attention to every pixel, spacing, font, color.
+
+## Available Tools:
+${this.getAvailableTools().map(tool => `- ${tool}`).join('\n')}
+
+## Core Principles:
+1. Always understand before acting - analyze existing code patterns
+2. Follow project conventions and coding standards  
+3. Use tools systematically: analyze → plan → implement → verify
+4. Provide clear explanations of your actions
+5. Focus on elegant, modern UI design with perfect balance between minimalism and functionality
+
+## SuperDesign Workflow:
+1. Create design files in .superdesign/design_iterations/ directory
+2. Use naming convention: {design_name}_{variation}.html
+3. Generate 3 variations when creating designs
+4. Use soft, refreshing gradient colors
+5. Implement responsive, accessible designs
+
+## Tool Usage:
+- Use 'read' to examine existing files and patterns
+- Use 'write' to create new design files
+- Use 'edit' to modify existing designs
+- Use 'multiedit' for creating multiple design variations
+- Use 'ls', 'grep', 'glob' to explore project structure
+- Use 'bash' for running commands and tests
+
+Always start by understanding the project context, then plan your approach, implement changes, and verify results.
+    `.trim();
+  }
+}
+
+/**
+ * Claude Code Agent wrapper to maintain compatibility
+ */
+export class ClaudeCodeAgentWrapper implements SuperDesignAgent {
+  private claudeCodeService: any;
+  private outputChannel: vscode.OutputChannel;
+  private workingDirectory: string;
+  private isInitializedFlag = false;
+
+  constructor(claudeCodeService: any, outputChannel: vscode.OutputChannel, workingDirectory: string = '') {
+    this.claudeCodeService = claudeCodeService;
+    this.outputChannel = outputChannel;
+    this.workingDirectory = workingDirectory;
+    this.isInitializedFlag = true;
+    
+    this.outputChannel.appendLine('[ClaudeCodeWrapper] Initialized wrapper for Claude Code service');
+  }
+
+  async query(
+    prompt: string,
+    options?: Partial<AgentOptions>,
+    abortController?: AbortController,
+    onMessage?: (message: SDKMessage) => void
+  ): Promise<SDKMessage[]> {
+    try {
+      this.outputChannel.appendLine(`[ClaudeCodeWrapper] Delegating query to Claude Code: ${prompt.substring(0, 100)}...`);
+      
+      // Delegate to the existing Claude Code service
+      return await this.claudeCodeService.query(prompt, options, abortController, onMessage);
+      
+    } catch (error) {
+      this.outputChannel.appendLine(`[ClaudeCodeWrapper] Error in Claude Code query: ${error}`);
+      throw error;
+    }
+  }
+
+  async executeTaskWithStreaming(request: string, options?: AgentOptions): Promise<TaskResult> {
+    // Convert to Claude Code format
+    const messages = await this.query(request, options, options?.abortController, options?.onMessage);
+    
+    return {
+      success: true,
+      messages,
+      finalMessage: messages[messages.length - 1]?.content,
+      toolsUsed: [],
+      duration: 0
+    };
+  }
+
+  async executeTask(request: string, projectPath: string, options?: AgentOptions): Promise<TaskResult> {
+    if (projectPath !== this.workingDirectory) {
+      this.setWorkingDirectory(projectPath);
+    }
+    
+    return await this.executeTaskWithStreaming(request, options);
+  }
+
+  async analyzeCodbase(projectPath: string): Promise<ProjectAnalysis> {
+    // Basic analysis - Claude Code doesn't expose this directly
+    return {
+      projectType: 'unknown',
+      techStack: [],
+      structure: { directories: [], files: [], entryPoints: [] },
+      dependencies: {},
+      scripts: {},
+      supportsTypeScript: false,
+      hasTests: false,
+      buildSystem: 'unknown'
+    };
+  }
+
+  async continueConversation(message: string, conversationId: string, options?: AgentOptions): Promise<AgentResponse> {
+    const result = await this.executeTaskWithStreaming(message, { ...options, sessionId: conversationId });
+    
+    return {
+      messages: result.messages,
+      isComplete: result.success,
+      suggestedActions: result.success ? [] : ['retry', 'clarify'],
+      context: {}
+    };
+  }
+
+  getSession(sessionId: string, projectPath: string): AgentSession {
+    return {
+      id: sessionId,
+      startTime: new Date(),
+      lastActivity: new Date(),
+      projectPath,
+      turns: [],
+      context: new Map()
+    };
+  }
+
+  cleanupSessions(maxAge?: number): void {
+    // No-op for Claude Code wrapper
+  }
+
+  getAvailableTools(): string[] {
+    return ['Claude Code Built-in Tools'];
+  }
+
+  isReady(): boolean {
+    return this.isInitializedFlag;
+  }
+
+  async waitForInitialization(): Promise<boolean> {
+    return this.isInitializedFlag;
+  }
+
+  getWorkingDirectory(): string {
+    return this.workingDirectory;
+  }
+
+  setWorkingDirectory(path: string): void {
+    this.workingDirectory = path;
+  }
+
+  get isInitialized(): boolean {
+    return this.isInitializedFlag;
+  }
+}
+
+ 
