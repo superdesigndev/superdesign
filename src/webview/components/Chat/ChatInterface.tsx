@@ -621,6 +621,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             const command = toolInput.command || '';
             const prompt = toolInput.prompt || '';
             
+            // Check if this is a streaming tool call
+            const isStreamingTool = msg.metadata?.streaming_args !== undefined;
+            const streamingArgs = msg.metadata?.streaming_args || '';
+            const streamingSubtype = msg.metadata?.streaming_subtype || '';
+            
             // Tool result data
             const hasResult = msg.metadata?.result_received || false;
             const isLoading = msg.metadata?.is_loading || false;
@@ -812,9 +817,33 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                                     <span className="tool-detail__label">Input:</span>
                                     <div className="tool-detail__value tool-detail__value--result">
                                         <pre className="tool-result-content">
+                                            {isStreamingTool && streamingArgs ? (
+                                                <>
+                                                    <div className="streaming-args-container">
+                                                        <div className="streaming-args-label">
+                                                            {streamingSubtype === 'streaming_start' && '🔄 Building arguments...'}
+                                                            {streamingSubtype === 'streaming_delta' && '⚡ Streaming...'}
+                                                            {streamingSubtype === 'streaming_complete' && '✅ Arguments complete'}
+                                                        </div>
+                                                        <div className="streaming-args-content">
+                                                            {streamingArgs}
+                                                            {streamingSubtype !== 'streaming_complete' && (
+                                                                <span className="streaming-cursor">▊</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {Object.keys(toolInput).length > 0 && (
+                                                        <div className="parsed-args-preview">
+                                                            <div className="parsed-args-label">Parsed:</div>
                                             {displayInput}
+                                                        </div>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                displayInput
+                                            )}
                                         </pre>
-                                        {inputNeedsTruncation && (
+                                        {inputNeedsTruncation && !isStreamingTool && (
                                             <button 
                                                 className="tool-result__show-more"
                                                 onClick={(e) => {

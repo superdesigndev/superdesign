@@ -13,6 +13,7 @@ interface MessageMetadata {
     is_error?: boolean;
     duration_ms?: number;
     total_cost_usd?: number;
+    streaming_args?: string; // Raw accumulated tool call arguments during streaming
 }
 
 interface StreamMessage {
@@ -168,7 +169,7 @@ Please consider:
     }
 
     /**
-     * Optimized stream message handler with better performance
+     * Enhanced stream message handler with better performance
      */
     private handleStreamMessageOptimized(message: any, webview: vscode.Webview): void {
         this.lastActivityTime = Date.now();
@@ -199,6 +200,10 @@ Please consider:
                 break;
             case 'result':
                 this.handleResultMessage(message, webview, baseMetadata);
+                break;
+            // Handle streaming tool call updates
+            case 'tool-call-update':
+                this.handleToolCallUpdate(message, webview, baseMetadata);
                 break;
             default:
                 this.outputChannel.appendLine(`Unknown message type: ${message.type}`);
@@ -259,6 +264,16 @@ Please consider:
      * Enhanced assistant message handler
      */
     private handleAssistantMessage(message: any, webview: vscode.Webview, metadata: MessageMetadata): void {
+        // Handle streaming text deltas for real-time typing effect
+        if (message.subtype === 'text_delta' && message.content) {
+            this.sendMessageToWebview(webview, {
+                command: 'chatTextDelta',
+                content: message.content,
+                metadata
+            });
+            return;
+        }
+
         // Handle direct content from SuperDesign agent
         if (message.content && typeof message.content === 'string') {
             this.messageBuffer.push(message.content);
@@ -296,6 +311,15 @@ Please consider:
                     this.handleToolUse(item, webview, metadata);
                 }
             });
+        } else if (message.message.type === 'text') {
+            const content = message.message.text || '';
+            this.messageBuffer.push(content);
+            this.sendMessageToWebview(webview, {
+                command: 'chatResponseChunk',
+                messageType: 'assistant',
+                content,
+                metadata
+            });
         } else if (message.message.content || message.message.text) {
             const content = message.message.content || message.message.text;
             this.messageBuffer.push(content);
@@ -312,12 +336,16 @@ Please consider:
      * Handle tool usage messages
      */
     private handleToolUse(item: any, webview: vscode.Webview, metadata: MessageMetadata): void {
+        this.outputChannel.appendLine(`[TOOL DEBUG] handleToolUse called with: ${JSON.stringify(item, null, 2)}`);
+        
         const toolMetadata = {
             ...metadata,
             tool_name: item.name || 'Unknown Tool',
             tool_id: item.id,
             tool_input: item.input || {}
         };
+
+        this.outputChannel.appendLine(`[TOOL DEBUG] Sending tool call with ID: ${item.id}`);
 
         this.sendMessageToWebview(webview, {
             command: 'chatResponseChunk',
@@ -337,7 +365,11 @@ Please consider:
      * Handle tool result messages
      */
     private handleToolResult(item: any, webview: vscode.Webview, metadata: MessageMetadata): void {
+        this.outputChannel.appendLine(`[TOOL DEBUG] handleToolResult called with: ${JSON.stringify(item, null, 2)}`);
+        
         const resultContent = typeof item.content === 'string' ? item.content : JSON.stringify(item.content);
+        
+        this.outputChannel.appendLine(`[TOOL DEBUG] Sending tool result for ID: ${item.tool_use_id}`);
         
         this.sendMessageToWebview(webview, {
             command: 'chatToolResult',
@@ -346,6 +378,42 @@ Please consider:
             metadata: {
                 ...metadata,
                 is_error: item.is_error || false
+            }
+        });
+    }
+
+    /**
+     * Handle streaming tool call argument updates
+     */
+    private handleToolCallUpdate(message: any, webview: vscode.Webview, metadata: MessageMetadata): void {
+        this.outputChannel.appendLine(`[TOOL STREAM DEBUG] handleToolCallUpdate called with: ${JSON.stringify(message, null, 2)}`);
+        
+        // Try to parse the accumulated arguments JSON
+        let parsedArgs = {};
+        try {
+            if (message.accumulatedArgs && message.accumulatedArgs.trim()) {
+                // Only try to parse if the string looks like complete JSON (ends with })
+                const trimmedArgs = message.accumulatedArgs.trim();
+                if (trimmedArgs.endsWith('}') || trimmedArgs.endsWith('}"}')) {
+                    parsedArgs = JSON.parse(trimmedArgs);
+                }
+            }
+        } catch (error) {
+            // If parsing fails, keep empty object (partial JSON still streaming)
+            this.outputChannel.appendLine(`[TOOL STREAM DEBUG] Could not parse args JSON (normal during streaming): ${error}`);
+        }
+        
+        this.sendMessageToWebview(webview, {
+            command: 'chatToolCallUpdate',
+            tool_use_id: message.toolCallId,
+            content: message.accumulatedArgs || '',
+            subtype: message.subtype, // 'streaming_start', 'streaming_delta', 'streaming_complete'
+            metadata: {
+                ...metadata,
+                tool_name: message.toolName,
+                tool_id: message.toolCallId,
+                tool_input: parsedArgs, // Send parsed JSON object instead of raw string
+                streaming_args: message.accumulatedArgs // Keep raw string for display
             }
         });
     }

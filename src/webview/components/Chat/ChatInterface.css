@@ -87,8 +87,6 @@
     position: relative;
 }
 
-
-
 .chat-history {
     flex: 1;
     overflow-y: auto;
@@ -1711,7 +1709,7 @@
 .clear-chat-icon-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-} 
+}
 
 .chat-interface {
 }
@@ -1915,10 +1913,143 @@
 
 .chat-interface--sidebar .markdown-content th,
 .chat-interface--sidebar .markdown-content td {
-    padding: 3px 5px;
+    padding: 4px 6px;
 }
 
 /* Drag & Drop Overlay */
 
+/* Streaming Tool Call Arguments Styles */
+.streaming-args-container {
+    border: 1px dashed var(--vscode-input-border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    background: var(--vscode-textCodeBlock-background);
+    transition: all 0.3s ease;
+}
 
- 
+.streaming-args-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--vscode-textLink-foreground);
+    font-weight: 500;
+    margin-bottom: 6px;
+    animation: streamingPulse 2s ease-in-out infinite;
+}
+
+.streaming-args-content {
+    font-family: var(--vscode-editor-font-family);
+    font-size: 12px;
+    color: var(--vscode-editor-foreground);
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.4;
+    min-height: 1.4em;
+    position: relative;
+}
+
+.streaming-cursor {
+    display: inline-block;
+    background: var(--vscode-textLink-foreground);
+    color: var(--vscode-textLink-foreground);
+    animation: blink 1s infinite;
+    margin-left: 1px;
+    font-size: 14px;
+    line-height: 1;
+    vertical-align: baseline;
+}
+
+.parsed-args-preview {
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-input-border);
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.parsed-args-label {
+    color: var(--vscode-descriptionForeground);
+    font-weight: 500;
+    margin-bottom: 4px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Animation for streaming indicator */
+@keyframes streamingPulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* Enhanced loading states for streaming tools */
+.tool-message--loading .streaming-args-container {
+    border-color: var(--vscode-textLink-foreground);
+    background: var(--vscode-textLink-activeForeground);
+    opacity: 0.1;
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
+}
+
+.tool-message--loading .streaming-args-label {
+    color: var(--vscode-textLink-foreground);
+    font-weight: 600;
+}
+
+/* Completed streaming state */
+.tool-message--complete .streaming-args-container {
+    border-style: solid;
+    border-color: var(--vscode-charts-green);
+    background: var(--vscode-inputValidation-infoBackground);
+}
+
+.tool-message--complete .streaming-args-label {
+    color: var(--vscode-charts-green);
+    animation: none;
+}
+
+.tool-message--complete .streaming-cursor {
+    display: none;
+}
+
+.chat-interface--sidebar .markdown-content th,
+.chat-interface--sidebar .markdown-content td {
+    padding: 4px 6px;
+    font-size: 10px;
+}
+
+/* Remove spacing between consecutive list items and other elements */
+.markdown-content ul + p,
+.markdown-content ol + p,
+.markdown-content ul + ul,
+.markdown-content ol + ol,
+.markdown-content ul + ol,
+.markdown-content ol + ul {
+    margin-top: 0;
+}
+
+/* More aggressive spacing fixes - force tight spacing */
+.markdown-content * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Override any default browser spacing for specific combinations */
+.markdown-content p:has(+ ul),
+.markdown-content p:has(+ ol) {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.markdown-content ul:is(p + *),
+.markdown-content ol:is(p + *) {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Force line-height consistency */
+.markdown-content * {
+    line-height: 1.3 !important;
+} 

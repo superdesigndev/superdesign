@@ -154,6 +154,7 @@ export class LLMService {
         maxTokens: options?.maxTokens || this.config.maxTokens || 4000,
         temperature: options?.temperature || this.config.temperature || 0.7,
         maxSteps: options?.maxSteps || 25, // Enable multi-step tool calling with default of 25 steps
+        toolCallStreaming: true, // Enable character-by-character tool call streaming
       };
 
       // Only add tools if they exist and are valid
@@ -235,7 +236,8 @@ export class LLMService {
         messages: formattedMessages,
         maxTokens: options?.maxTokens || this.config.maxTokens || 4000,
         temperature: options?.temperature || this.config.temperature || 0.7,
-        maxSteps: options?.maxSteps || 25, // Enable multi-step tool calling with default of 25 steps
+        maxSteps: options?.maxSteps || 25,
+        toolCallStreaming: true, // Enable character-by-character tool call streaming
       };
 
       // Only add tools if they exist and are valid
@@ -298,12 +300,14 @@ export class LLMService {
         maxTokens: options?.maxTokens || this.config.maxTokens || 4000,
         temperature: options?.temperature || this.config.temperature || 0.7,
         maxSteps: options?.maxSteps || 25,
+        toolCallStreaming: true, // Enable tool call character-by-character streaming
       };
 
       // Only add tools if they exist and are valid
       const tools = options?.tools || this.config.tools;
       this.outputChannel.appendLine(`[DEBUG] Tools type: ${typeof tools}, isArray: ${Array.isArray(tools)}, keys: ${tools ? Object.keys(tools).join(', ') : 'none'}`);
       this.outputChannel.appendLine(`[DEBUG] MaxSteps: ${streamParams.maxSteps}`);
+      this.outputChannel.appendLine(`[DEBUG] ToolCallStreaming enabled: ${streamParams.toolCallStreaming}`);
       
       if (tools && (Array.isArray(tools) ? tools.length > 0 : Object.keys(tools).length > 0)) {
         streamParams.tools = tools;
@@ -319,11 +323,15 @@ export class LLMService {
 
       // Process the full stream which includes tool calls and results
       for await (const delta of result.fullStream) {
-        // Debug: Log all stream events to understand the structure
+        // Comprehensive logging for all stream events
+        this.outputChannel.appendLine(`[STREAM DEBUG] ===== Event Details =====`);
         this.outputChannel.appendLine(`[STREAM DEBUG] Event type: ${delta.type}`);
+        this.outputChannel.appendLine(`[STREAM DEBUG] Event data: ${JSON.stringify(delta, null, 2)}`);
+        this.outputChannel.appendLine(`[STREAM DEBUG] ========================`);
         
         switch (delta.type) {
           case 'text-delta':
+            this.outputChannel.appendLine(`[STREAM] Text delta: "${delta.textDelta}"`);
             if (delta.textDelta) {
               fullContent += delta.textDelta;
               if (options?.onTextDelta) {
@@ -333,30 +341,78 @@ export class LLMService {
             break;
             
           case 'tool-call':
-            this.outputChannel.appendLine(`[STREAM] Tool call: ${(delta as any).toolName || 'unknown'}`);
+            this.outputChannel.appendLine(`[STREAM] Complete tool call detected`);
+            this.outputChannel.appendLine(`[STREAM] Tool name: ${(delta as any).toolName || 'unknown'}`);
+            this.outputChannel.appendLine(`[STREAM] Tool ID: ${(delta as any).toolCallId || 'no-id'}`);
+            this.outputChannel.appendLine(`[STREAM] Tool args: ${JSON.stringify((delta as any).args || {})}`);
             toolCalls.push(delta);
             if (options?.onToolCall) {
               options.onToolCall(delta);
             }
             break;
             
+          case 'tool-call-streaming-start':
+            this.outputChannel.appendLine(`[STREAM] Tool call streaming START detected`);
+            this.outputChannel.appendLine(`[STREAM] Tool name: ${(delta as any).toolName || 'unknown'}`);
+            this.outputChannel.appendLine(`[STREAM] Tool ID: ${(delta as any).toolCallId || 'no-id'}`);
+            // Could be treated as a special kind of tool call event
+            if (options?.onToolCall) {
+              options.onToolCall(delta);
+            }
+            break;
+            
+          case 'tool-call-delta':
+            this.outputChannel.appendLine(`[STREAM] Tool call DELTA (character-by-character args) detected`);
+            this.outputChannel.appendLine(`[STREAM] Tool name: ${(delta as any).toolName || 'unknown'}`);
+            this.outputChannel.appendLine(`[STREAM] Tool ID: ${(delta as any).toolCallId || 'no-id'}`);
+            this.outputChannel.appendLine(`[STREAM] Args delta: "${(delta as any).argsTextDelta || ''}"`);
+            // Could be used to show character-by-character tool argument building
+            if (options?.onToolCall) {
+              options.onToolCall(delta);
+            }
+            break;
+            
           case 'step-finish':
-            // Keep step tracking for completeness
             this.outputChannel.appendLine(`[STREAM] Step finished`);
+            this.outputChannel.appendLine(`[STREAM] Step usage: ${JSON.stringify((delta as any).usage || {})}`);
             steps.push(delta);
             break;
             
           default:
-            // Handle tool-result events (not in official types but exists in practice)
+            this.outputChannel.appendLine(`[STREAM DEBUG] ⚠️  UNHANDLED EVENT TYPE: ${delta.type}`);
+            this.outputChannel.appendLine(`[STREAM DEBUG] Full event data: ${JSON.stringify(delta, null, 2)}`);
+            
+            // Handle tool-result events (exists in practice but not in official types)
             if ((delta as any).type === 'tool-result') {
-              this.outputChannel.appendLine(`[STREAM] Tool result for: ${(delta as any).toolCallId || 'unknown'}`);
+              this.outputChannel.appendLine(`[STREAM] Tool result detected (non-standard type)`);
+              this.outputChannel.appendLine(`[STREAM] Tool result ID: ${(delta as any).toolCallId || 'unknown'}`);
+              this.outputChannel.appendLine(`[STREAM] Tool result: ${JSON.stringify((delta as any).result || {})}`);
+              this.outputChannel.appendLine(`[STREAM] Tool error: ${(delta as any).isError || false}`);
               toolResults.push(delta);
               if (options?.onToolResult) {
                 options.onToolResult(delta);
               }
-            } else {
-              // Log any other unhandled event types
-              this.outputChannel.appendLine(`[STREAM DEBUG] Unhandled event type: ${delta.type}`);
+            }
+            // Check if it might be a tool-related event with a different name
+            else if (delta.type && delta.type.includes('tool')) {
+              this.outputChannel.appendLine(`[STREAM DEBUG] 🔧 Possible tool event - forwarding to tool handlers`);
+              
+              // If it has tool result characteristics, treat as tool result
+              if ((delta as any).toolCallId && (delta as any).result !== undefined) {
+                this.outputChannel.appendLine(`[STREAM] Treating as tool result (custom type)`);
+                toolResults.push(delta);
+                if (options?.onToolResult) {
+                  options.onToolResult(delta);
+                }
+              }
+              // If it has tool call characteristics, treat as tool call
+              else if ((delta as any).toolCallId && ((delta as any).toolName || (delta as any).args)) {
+                this.outputChannel.appendLine(`[STREAM] Treating as tool call (custom type)`);
+                toolCalls.push(delta);
+                if (options?.onToolCall) {
+                  options.onToolCall(delta);
+                }
+              }
             }
             break;
         }
@@ -369,6 +425,7 @@ export class LLMService {
       
       this.outputChannel.appendLine(`Response generated: ${finalText.length} characters`);
       this.outputChannel.appendLine(`Tools executed: ${toolCalls.length} calls, ${toolResults.length} results`);
+      this.outputChannel.appendLine(`Tool call streaming events captured: Check logs above for detailed breakdown`);
 
       return {
         content: fullContent || finalText,

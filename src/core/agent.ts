@@ -8,7 +8,7 @@ import { MessageAdapter } from '../utils/message-adapter';
  * Message types for SuperDesign compatibility
  */
 export interface SDKMessage {
-  type: 'user' | 'assistant' | 'system' | 'result';
+  type: 'user' | 'assistant' | 'system' | 'result' | 'tool-call-update';
   subtype?: string;
   message?: any;
   content?: string;
@@ -16,6 +16,10 @@ export interface SDKMessage {
   parent_tool_use_id?: string;
   duration_ms?: number;
   total_cost_usd?: number;
+  // Additional fields for tool call streaming
+  toolCallId?: string;
+  toolName?: string;
+  accumulatedArgs?: any;
 }
 
 /**
@@ -561,10 +565,11 @@ export class SuperDesignCodingAgent extends BaseAgent {
         // Add to messages
         messages.push(assistantResponseMessage);
         
-        // CRITICAL: Call onMessage for assistant response so UI receives it
-        if (options?.onMessage) {
-          options.onMessage(assistantResponseMessage);
-        }
+        // DON'T send complete message when using streaming - it causes duplication
+        // The streaming text deltas already handle the UI updates
+        // if (options?.onMessage) {
+        //   options.onMessage(assistantResponseMessage);
+        // }
       }
 
       // Tools are now streamed in real-time via callbacks, no need to process steps here
@@ -654,6 +659,15 @@ export class SuperDesignCodingAgent extends BaseAgent {
       // Track tool call IDs to ensure proper matching with results
       const toolCallIdMap = new Map<string, string>();
       
+      // Track streaming tool call arguments for accumulation
+      const streamingToolCalls = new Map<string, {
+        id: string;
+        name: string;
+        accumulatedArgs: string;
+        parsedArgs: any;
+        uiMessageSent: boolean;
+      }>();
+      
       // Use the streaming LLM service with real-time tool callbacks
       const response = await this.llmService.generateStreamingResponseWithTools(history, {
         maxTokens: options.maxTokens,
@@ -669,20 +683,140 @@ export class SuperDesignCodingAgent extends BaseAgent {
           const originalId = toolCall.toolCallId || toolCall.id;
           const toolCallId = originalId || `tool-${Date.now()}-${Math.random().toString(36).slice(2)}`;
           
-          // Track the mapping for later result matching
-          if (originalId) {
-            toolCallIdMap.set(originalId, toolCallId);
+          // Handle different types of tool call events
+          if (toolCall.type === 'tool-call-delta') {
+            this.config.outputChannel.appendLine(`[STREAM] Tool call DELTA (character-by-character args) detected`);
+            this.config.outputChannel.appendLine(`[STREAM] Tool name: ${toolCall.toolName || 'unknown'}`);
+            this.config.outputChannel.appendLine(`[STREAM] Tool ID: ${toolCall.toolCallId || 'no-id'}`);
+            this.config.outputChannel.appendLine(`[STREAM] Args delta: "${toolCall.argsTextDelta || ''}"`);
+
+            const toolCallId = toolCall.toolCallId;
+            const toolName = toolCall.toolName;
+
+            if (streamingToolCalls.has(toolCallId)) {
+              // Tool call already exists - accumulate the delta and send update
+              const streamingCall = streamingToolCalls.get(toolCallId)!;
+              streamingCall.accumulatedArgs += toolCall.argsTextDelta || '';
+              
+              // Send progressive update message
+              if (options.onMessage) {
+                options.onMessage({
+                  type: 'tool-call-update',
+                  toolCallId,
+                  toolName,
+                  accumulatedArgs: streamingCall.accumulatedArgs,
+                  subtype: 'streaming_delta',
+                  session_id: options.sessionId
+                });
+              }
+            } else {
+              // This shouldn't happen if tool-call-streaming-start was sent first
+              this.config.outputChannel.appendLine(`[STREAM DEBUG] Warning: Received tool-call-delta without prior streaming-start for ID: ${toolCallId}`);
+              
+              // Create the tracking object as fallback
+              const streamingCall = {
+                id: toolCallId,
+                name: toolName,
+                accumulatedArgs: toolCall.argsTextDelta || '',
+                parsedArgs: {},
+                uiMessageSent: false
+              };
+              streamingToolCalls.set(toolCallId, streamingCall);
+              
+              // Send initial message as fallback
+              if (options.onMessage) {
+                options.onMessage({
+                  type: 'tool-call-update',
+                  toolCallId,
+                  toolName,
+                  accumulatedArgs: streamingCall.accumulatedArgs,
+                  subtype: 'streaming_start',
+                  session_id: options.sessionId
+                });
+                streamingCall.uiMessageSent = true;
+              }
+            }
+          } 
+          else if (toolCall.type === 'tool-call-streaming-start') {
+            // Tool call streaming started
+            this.config.outputChannel.appendLine(`[STREAM DEBUG] Tool call streaming started for ID: ${toolCallId}`);
+            
+            const streamingCall = {
+              id: toolCallId,
+              name: toolName,
+              accumulatedArgs: '',
+              parsedArgs: {},
+              uiMessageSent: false
+            };
+            streamingToolCalls.set(toolCallId, streamingCall);
+            
+            // Send initial streaming start message to create the tool card in UI
+            if (options.onMessage) {
+              options.onMessage({
+                type: 'tool-call-update',
+                toolCallId,
+                toolName,
+                accumulatedArgs: '',
+                subtype: 'streaming_start',
+                session_id: options.sessionId
+              });
+              streamingCall.uiMessageSent = true;
+              this.config.outputChannel.appendLine(`[STREAM DEBUG] Sent initial tool call message for streaming start: ${toolCallId}`);
+            }
           }
-          
-          // Send tool call message immediately when it starts
-          const toolCallMessage = MessageAdapter.createToolCallMessage({
-            toolCallId: toolCallId,
-            toolName: toolName,
-            args: toolCall.args || toolCall.function?.arguments
-          }, options.sessionId);
-          
-          if (options.onMessage) {
-            options.onMessage(toolCallMessage);
+          else if (toolCall.type === 'tool-call') {
+            // Complete tool call received
+            this.config.outputChannel.appendLine(`[STREAM] Complete tool call received`);
+            this.config.outputChannel.appendLine(`[STREAM] Tool name: ${toolCall.toolName || 'unknown'}`);
+            this.config.outputChannel.appendLine(`[STREAM] Tool ID: ${toolCall.toolCallId || 'no-id'}`);
+            this.config.outputChannel.appendLine(`[STREAM] Real-time tool call: ${JSON.stringify(toolCall, null, 2)}`);
+
+            const completeToolCallId = toolCall.toolCallId;
+            const completeToolName = toolCall.toolName;
+
+            // Check if this was a streaming tool call that is now complete
+            if (streamingToolCalls.has(completeToolCallId)) {
+              // This was a streaming tool call - send completion update
+              const streamingCall = streamingToolCalls.get(completeToolCallId)!;
+              
+              // Send completion message with final accumulated JSON string
+              if (options.onMessage) {
+                options.onMessage({
+                  type: 'tool-call-update',
+                  toolCallId: completeToolCallId,
+                  toolName: completeToolName,
+                  accumulatedArgs: JSON.stringify(toolCall.args, null, 2), // Send formatted JSON string for display
+                  subtype: 'streaming_complete',
+                  session_id: options.sessionId
+                });
+              }
+              
+              this.config.outputChannel.appendLine(`[STREAM DEBUG] Sent streaming completion for tool call ID: ${completeToolCallId}`);
+              
+              // Remove from streaming tracking
+              streamingToolCalls.delete(completeToolCallId);
+            } else {
+              // This is a non-streaming (complete) tool call - handle normally for Claude Code compatibility
+              const toolCallMessage = MessageAdapter.createToolCallMessage({
+                toolCallId: completeToolCallId,
+                toolName: completeToolName,
+                args: toolCall.args
+              }, options.sessionId);
+
+              this.config.outputChannel.appendLine(`[STREAM DEBUG] Sending complete tool call message with ID: ${completeToolCallId}`);
+              
+              if (options.onMessage) {
+                options.onMessage(toolCallMessage);
+              }
+            }
+
+            // Map tool call ID for result tracking
+            toolCallIdMap.set(completeToolCallId, completeToolCallId);
+            this.config.outputChannel.appendLine(`[STREAM DEBUG] Mapped ${completeToolCallId} -> ${completeToolCallId}`);
+          }
+          else {
+            // Default case for other tool call types
+            this.config.outputChannel.appendLine(`[STREAM DEBUG] Unhandled tool call type: ${toolCall.type || 'undefined'}`);
           }
         },
         
@@ -695,12 +829,17 @@ export class SuperDesignCodingAgent extends BaseAgent {
           const matchedToolCallId = originalResultId ? toolCallIdMap.get(originalResultId) : undefined;
           const finalToolCallId = matchedToolCallId || originalResultId || 'unknown';
           
+          this.config.outputChannel.appendLine(`[STREAM DEBUG] Tool result - OriginalId: ${originalResultId}, MatchedId: ${matchedToolCallId}, FinalId: ${finalToolCallId}`);
+          this.config.outputChannel.appendLine(`[STREAM DEBUG] Current ID mappings: ${JSON.stringify([...toolCallIdMap.entries()])}`);
+          
           // Send tool result message immediately when it completes
           const toolResultMessage = MessageAdapter.createToolResultMessage({
             toolCallId: finalToolCallId,
             result: toolResult.result || toolResult,
             isError: toolResult.isError || false
           }, options.sessionId);
+          
+          this.config.outputChannel.appendLine(`[STREAM DEBUG] Sending tool result message with ID: ${finalToolCallId}`);
           
           if (options.onMessage) {
             options.onMessage(toolResultMessage);
@@ -709,8 +848,16 @@ export class SuperDesignCodingAgent extends BaseAgent {
         
         // Optional: Stream text deltas for assistant response
         onTextDelta: (textDelta: string) => {
-          // We can add text streaming here if needed for even better UX
-          // For now, we'll send the complete text at the end
+          // Send streaming text delta to UI for real-time typing effect
+          if (options.onMessage) {
+            const textDeltaMessage = {
+              type: 'assistant' as const,
+              subtype: 'text_delta',
+              content: textDelta,
+              session_id: options.sessionId
+            };
+            options.onMessage(textDeltaMessage);
+          }
         }
       });
 

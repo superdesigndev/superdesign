@@ -27,6 +27,8 @@ export interface ChatMessage {
         start_time?: number;
         elapsed_time?: number;
         progress_percentage?: number;
+        streaming_args?: string;
+        streaming_subtype?: string;
     };
 }
 
@@ -164,6 +166,36 @@ export function useChat(vscode: any): ChatHookResult {
                             message: '',
                             timestamp: Date.now()
                         }]);
+                        break;
+                        
+                    case 'chatTextDelta':
+                        // Handle real-time character-by-character streaming
+                        console.log('Received text delta:', message.content?.substring(0, 50) + '...');
+                        setChatHistory(prev => {
+                            const newHistory = [...prev];
+                            const lastIndex = newHistory.length - 1;
+                            const lastMessage = newHistory[lastIndex];
+                            
+                            if (lastMessage && lastMessage.type === 'assistant') {
+                                // Simple delta accumulation without modification
+                                // The AI is already sending correct markdown formatting
+                                newHistory[lastIndex] = {
+                                    ...lastMessage,
+                                    message: (lastMessage.message || '') + (message.content || ''),
+                                    metadata: { ...lastMessage.metadata, ...message.metadata }
+                                };
+                            } else {
+                                // Create new assistant message if none exists
+                                newHistory.push({
+                                    type: 'assistant',
+                                    message: message.content || '',
+                                    timestamp: Date.now(),
+                                    metadata: message.metadata || {}
+                                });
+                            }
+                            
+                            return newHistory;
+                        });
                         break;
                         
                     case 'chatResponseChunk':
@@ -316,6 +348,94 @@ export function useChat(vscode: any): ChatHookResult {
                                 console.log('Updated tool with result and completed loading');
                             } else {
                                 console.warn('Could not find tool with ID:', message.tool_use_id);
+                            }
+                            
+                            return newHistory;
+                        });
+                        break;
+                        
+                    case 'chatToolCallUpdate':
+                        // Handle streaming tool call argument updates
+                        console.log('🔧 Received tool call update for:', message.tool_use_id, 'subtype:', message.subtype);
+                        console.log('🔧 Message content length:', message.content?.length || 0);
+                        console.log('🔧 Parsed tool input:', message.metadata?.tool_input);
+                        console.log('🔧 Raw streaming args:', message.metadata?.streaming_args?.substring(0, 100) + '...');
+                        
+                        setChatHistory(prev => {
+                            const newHistory = [...prev];
+                            
+                            // Helper function to find and update streaming tool in nested structure
+                            const findAndUpdateStreamingTool = (messages: ChatMessage[], toolId: string): boolean => {
+                                for (let i = 0; i < messages.length; i++) {
+                                    const msg = messages[i];
+                                    
+                                    if (msg.type === 'tool' && msg.metadata?.tool_id === toolId) {
+                                        // Found the tool - update it with streaming arguments
+                                        const currentArgs = message.metadata?.tool_input || {};
+                                        const streamingArgs = message.metadata?.streaming_args || message.content || '';
+                                        
+                                        console.log(`🔧 Updating tool ${toolId} with args:`, currentArgs);
+                                        
+                                        messages[i] = {
+                                            ...msg,
+                                            metadata: {
+                                                ...msg.metadata,
+                                                tool_input: currentArgs,
+                                                is_loading: message.subtype !== 'streaming_complete',
+                                                streaming_args: streamingArgs, // Raw accumulated args string
+                                                streaming_subtype: message.subtype
+                                            }
+                                        };
+                                        return true;
+                                    } else if (msg.type === 'tool-group' && msg.metadata?.child_tools) {
+                                        // Search in child tools
+                                        if (findAndUpdateStreamingTool(msg.metadata.child_tools, toolId)) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            };
+                            
+                            const found = findAndUpdateStreamingTool(newHistory, message.tool_use_id);
+                            
+                            if (!found && message.subtype === 'streaming_start') {
+                                // First streaming update - create new tool message
+                                const toolName = message.metadata?.tool_name || 'Unknown Tool';
+                                const estimatedDuration = getToolTimeEstimate(toolName);
+                                const startTime = Date.now();
+                                
+                                console.log(`🔧 Creating new streaming tool message: ${toolName} (ID: ${message.tool_use_id})`);
+                                
+                                const newTool: ChatMessage = {
+                                    type: 'tool',
+                                    message: message.content || '',
+                                    timestamp: Date.now(),
+                                    subtype: 'tool_use',
+                                    metadata: {
+                                        tool_name: toolName,
+                                        tool_id: message.tool_use_id,
+                                        tool_input: message.metadata?.tool_input || {},
+                                        is_loading: true,
+                                        estimated_duration: estimatedDuration,
+                                        start_time: startTime,
+                                        elapsed_time: 0,
+                                        progress_percentage: 0,
+                                        streaming_args: message.metadata?.streaming_args || message.content || '',
+                                        streaming_subtype: message.subtype
+                                    }
+                                };
+                                
+                                newHistory.push(newTool);
+                                console.log('🔧 Created new streaming tool message:', toolName);
+                            } else if (found) {
+                                console.log('🔧 Updated streaming tool with new arguments');
+                            } else {
+                                console.warn('🔧 Could not find tool with ID for streaming update:', message.tool_use_id);
+                                console.log('🔧 Current chat history tool IDs:', newHistory
+                                    .filter(msg => msg.type === 'tool')
+                                    .map(msg => ({ id: msg.metadata?.tool_id, name: msg.metadata?.tool_name }))
+                                );
                             }
                             
                             return newHistory;

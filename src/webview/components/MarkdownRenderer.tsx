@@ -16,6 +16,95 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeHighlight]}
                 components={{
+                    // Custom paragraph with forced spacing
+                    p: ({ node, children, ...props }) => {
+                        return (
+                            <p 
+                                style={{ 
+                                    margin: '0 !important', 
+                                    padding: '0 !important', 
+                                    lineHeight: '1.3 !important',
+                                    marginBottom: '0 !important',
+                                    marginTop: '0 !important',
+                                    display: 'block'
+                                }} 
+                                {...props}
+                            >
+                                {children}
+                            </p>
+                        );
+                    },
+                    // Custom list with forced spacing
+                    ul: ({ node, children, ...props }) => {
+                        return (
+                            <ul 
+                                style={{ 
+                                    margin: '0 !important', 
+                                    padding: '0 !important',
+                                    paddingLeft: '20px !important',
+                                    lineHeight: '1.3 !important',
+                                    marginTop: '0 !important',
+                                    marginBottom: '0 !important',
+                                    display: 'block'
+                                }} 
+                                {...props}
+                            >
+                                {children}
+                            </ul>
+                        );
+                    },
+                    // Custom list item with forced spacing
+                    li: ({ node, children, ...props }) => {
+                        return (
+                            <li 
+                                style={{ 
+                                    margin: '0 !important', 
+                                    padding: '0 !important',
+                                    lineHeight: '1.3 !important',
+                                    marginTop: '0 !important',
+                                    marginBottom: '0 !important',
+                                    display: 'list-item'
+                                }} 
+                                {...props}
+                            >
+                                {children}
+                            </li>
+                        );
+                    },
+                    // Custom ordered list with forced spacing
+                    ol: ({ node, children, ...props }) => {
+                        return (
+                            <ol 
+                                style={{ 
+                                    margin: '0 !important', 
+                                    padding: '0 !important',
+                                    paddingLeft: '20px !important',
+                                    lineHeight: '1.3 !important',
+                                    marginTop: '0 !important',
+                                    marginBottom: '0 !important',
+                                    display: 'block'
+                                }} 
+                                {...props}
+                            >
+                                {children}
+                            </ol>
+                        );
+                    },
+                    // Override div to prevent any spacing
+                    div: ({ node, children, ...props }) => {
+                        return (
+                            <div 
+                                style={{ 
+                                    margin: '0 !important', 
+                                    padding: '0 !important',
+                                    lineHeight: '1.3 !important'
+                                }} 
+                                {...props}
+                            >
+                                {children}
+                            </div>
+                        );
+                    },
                     // Custom rendering for code blocks
                     code: ({ node, className, children, ...props }: any) => {
                         const match = /language-(\w+)/.exec(className || '');
