@@ -1,9 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { ClaudeCodeService } from './services/claudeCodeService';
+import { AgentFactory, CodingAgentService } from './core/agent-factory';
 import { ChatSidebarProvider } from './providers/chatSidebarProvider';
 import { ChatMessageService } from './services/chatMessageService';
+import { ConfigManager, SuperDesignConfig } from './core/config-manager';
 import { generateWebviewHtml } from './templates/webviewTemplate';
 import { WebviewContext } from './types/context';
 
@@ -839,14 +840,23 @@ html.dark {
 	}
 }
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 	outputChannel.appendLine('Superdesign extension is now active!');
 	// Note: Users can manually open output via View → Output → Select "Superdesign" if needed
 
-	// Initialize Claude Code service
-	outputChannel.appendLine('Creating ClaudeCodeService...');
-	const claudeService = new ClaudeCodeService(outputChannel);
-	outputChannel.appendLine('ClaudeCodeService created');
+	// Initialize agent service using factory
+	outputChannel.appendLine('🚀 Extension: Creating coding agent via AgentFactory...');
+	const agentFactory = AgentFactory.getInstance(outputChannel);
+	const agentService = await agentFactory.getOrCreateAgent();
+	outputChannel.appendLine('✅ Extension: Coding agent created successfully');
+	
+	// Log current agent info for debugging
+	const currentAgentInfo = agentFactory.getCurrentAgentInfo();
+	if (currentAgentInfo) {
+		outputChannel.appendLine(`📊 Extension: Current agent info: provider=${currentAgentInfo.provider}, ready=${currentAgentInfo.isReady}`);
+	} else {
+		outputChannel.appendLine(`📊 Extension: No current agent info available`);
+	}
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
@@ -862,8 +872,49 @@ export function activate(context: vscode.ExtensionContext) {
 		await configureAnthropicApiKey();
 	});
 
+	// Register multi-provider API key configuration command
+	const configureMultipleApiKeysDisposable = vscode.commands.registerCommand('superdesign.configureMultipleApiKeys', async () => {
+		await configureMultipleApiKeys();
+	});
+
+	// Register model selection command
+	const selectModelDisposable = vscode.commands.registerCommand('superdesign.selectModel', async () => {
+		await selectAIModel();
+	});
+
+	// Register agent status command for debugging
+	const showAgentStatusDisposable = vscode.commands.registerCommand('superdesign.showAgentStatus', async () => {
+		const config = vscode.workspace.getConfiguration('superdesign');
+		const currentProvider = config.get<string>('agentProvider', 'claude-code');
+		const currentModel = config.get<string>('preferredModel', 'claude-3-5-sonnet-20241022');
+		
+		const agentInfo = agentFactory.getCurrentAgentInfo();
+		
+		let statusMessage = `**SuperDesign Agent Status (Debug)**\n\n`;
+		statusMessage += `**Configuration:**\n`;
+		statusMessage += `- Agent Provider: ${currentProvider}\n`;
+		statusMessage += `- Preferred Model: ${currentModel}\n\n`;
+		
+		if (agentInfo) {
+			statusMessage += `**Runtime Status:**\n`;
+			statusMessage += `- Active Provider: ${agentInfo.provider}\n`;
+			statusMessage += `- Agent Ready: ${agentInfo.isReady}\n`;
+			statusMessage += `- Agent Service Type: ${agentService.constructor.name}\n`;
+		} else {
+			statusMessage += `**Runtime Status:** No agent info available\n`;
+		}
+		
+		statusMessage += `\n**Sidebar Provider:**\n`;
+		statusMessage += `- Sidebar Provider Type: ${sidebarProvider.constructor.name}\n`;
+		
+		// Output to both VS Code message and output channel
+		vscode.window.showInformationMessage(statusMessage, { modal: true });
+		outputChannel.appendLine(`🔍 Agent Status Debug Info:`);
+		outputChannel.appendLine(statusMessage.replace(/\*\*/g, ''));
+	});
+
 	// Create the chat sidebar provider
-	const sidebarProvider = new ChatSidebarProvider(context.extensionUri, claudeService, outputChannel);
+	const sidebarProvider = new ChatSidebarProvider(context.extensionUri, agentFactory, outputChannel);
 	
 	// Register the webview view provider for sidebar
 	const sidebarDisposable = vscode.window.registerWebviewViewProvider(
@@ -904,6 +955,57 @@ export function activate(context: vscode.ExtensionContext) {
 	// Register initialize project command
 	const initializeProjectDisposable = vscode.commands.registerCommand('superdesign.initializeProject', async () => {
 		await initializeSuperdesignProject();
+	});
+
+	// Register switch agent command
+	const switchAgentDisposable = vscode.commands.registerCommand('superdesign.switchAgent', async () => {
+		const config = vscode.workspace.getConfiguration('superdesign');
+		const currentProvider = config.get<string>('agentProvider', 'claude-code');
+		
+		outputChannel.appendLine(`🔄 Extension: Starting agent switch process. Current provider: ${currentProvider}`);
+		
+		const options = [
+			{ label: 'Claude Code Agent', value: 'claude-code', description: 'Original Claude Code integration' },
+			{ label: 'Custom SuperDesign Agent', value: 'custom', description: 'Multi-model SuperDesign agent with advanced tools' }
+		];
+		
+		const selected = await vscode.window.showQuickPick(options, {
+			placeHolder: `Current: ${currentProvider === 'claude-code' ? 'Claude Code Agent' : 'Custom SuperDesign Agent'}`,
+			title: 'Choose Coding Agent'
+		});
+		
+		if (selected && selected.value !== currentProvider) {
+			outputChannel.appendLine(`🔄 Extension: User selected: ${selected.value} (was: ${currentProvider})`);
+			
+			try {
+				outputChannel.appendLine(`🔄 Extension: Updating VS Code configuration...`);
+				await config.update('agentProvider', selected.value, vscode.ConfigurationTarget.Global);
+				
+				// Verify the configuration was updated
+				const updatedProvider = config.get<string>('agentProvider', 'claude-code');
+				outputChannel.appendLine(`🔄 Extension: Configuration updated. New value: ${updatedProvider}`);
+				
+				// Switch the agent
+				outputChannel.appendLine(`🔄 Extension: Calling agentFactory.switchAgent()...`);
+				const newAgent = await agentFactory.switchAgent();
+				outputChannel.appendLine(`🔄 Extension: agentFactory.switchAgent() completed successfully`);
+				
+				// The existing sidebar provider will automatically use the new agent from the factory
+				outputChannel.appendLine(`✅ Extension: Existing sidebar provider will use the new agent automatically`);
+				
+				vscode.window.showInformationMessage(`✅ Switched to ${selected.label}`);
+				outputChannel.appendLine(`✅ Extension: Agent switch process completed`);
+				
+			} catch (error) {
+				vscode.window.showErrorMessage(`Failed to switch agent: ${error}`);
+				outputChannel.appendLine(`❌ Extension: Agent switch failed: ${error}`);
+				outputChannel.appendLine(`❌ Extension: Stack trace: ${error instanceof Error ? error.stack : 'No stack trace'}`);
+			}
+		} else if (selected && selected.value === currentProvider) {
+			outputChannel.appendLine(`🔄 Extension: User selected same provider (${currentProvider}), no switch needed`);
+		} else {
+			outputChannel.appendLine(`🔄 Extension: User cancelled agent switch`);
+		}
 	});
 
 	// Set up message handler for auto-canvas functionality
@@ -951,12 +1053,16 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		helloWorldDisposable, 
 		configureApiKeyDisposable,
+		configureMultipleApiKeysDisposable,
+		selectModelDisposable,
+		showAgentStatusDisposable,
 		sidebarDisposable,
 		showSidebarDisposable,
 		openCanvasDisposable,
 		clearChatDisposable,
 		resetWelcomeDisposable,
-		initializeProjectDisposable
+		initializeProjectDisposable,
+		switchAgentDisposable
 	);
 }
 
@@ -1001,6 +1107,211 @@ async function configureAnthropicApiKey() {
 			vscode.window.showInformationMessage('API key unchanged (already configured)');
 		} else {
 			vscode.window.showWarningMessage('No API key was set');
+		}
+	}
+}
+
+// Function to configure multiple API keys
+async function configureMultipleApiKeys() {
+	const configManager = new ConfigManager(outputChannel);
+	
+	const providers = [
+		{ label: '🤖 Anthropic (Claude)', value: 'anthropic', placeholder: 'sk-ant-...', description: 'Required for Claude models and Claude Code agent' },
+		{ label: '🚀 OpenAI (GPT)', value: 'openai', placeholder: 'sk-...', description: 'Required for GPT models' },
+		{ label: '🧠 Google (Gemini)', value: 'google', placeholder: 'AIza...', description: 'Required for Gemini models' },
+		{ label: '🌐 OpenRouter (100+ models)', value: 'openrouter', placeholder: 'sk-or-...', description: 'Optional: Access to 100+ models via unified API' }
+	];
+	
+	const selectedProvider = await vscode.window.showQuickPick(providers, {
+		placeHolder: 'Select AI provider to configure',
+		title: 'Configure AI Provider API Keys'
+	});
+	
+	if (!selectedProvider) {
+		return;
+	}
+	
+	const providerKey = selectedProvider.value as 'anthropic' | 'openai' | 'google' | 'openrouter';
+	const config = configManager.getConfig();
+	
+	// Get current key based on provider
+	let currentKey: string | undefined;
+	switch (providerKey) {
+		case 'anthropic':
+			currentKey = config.anthropicApiKey;
+			break;
+		case 'openai':
+			currentKey = config.openaiApiKey;
+			break;
+		case 'google':
+			currentKey = config.googleApiKey;
+			break;
+		case 'openrouter':
+			currentKey = config.openrouterApiKey;
+			break;
+	}
+	
+	const placeholder = currentKey ? '••••••••••••••••' : selectedProvider.placeholder;
+	
+	const apiKey = await vscode.window.showInputBox({
+		title: `Configure ${selectedProvider.label} API Key`,
+		placeHolder: placeholder,
+		prompt: `Enter your ${selectedProvider.label} API key`,
+		password: true,
+		ignoreFocusOut: true,
+		validateInput: (value) => {
+			if (!value || value.trim().length === 0) {
+				return 'API key cannot be empty';
+			}
+			if (value === '••••••••••••••••') {
+				return null; // User didn't change the masked value
+			}
+			
+			// Basic validation based on provider
+			if (providerKey === 'anthropic' && !value.startsWith('sk-ant-')) {
+				return 'Anthropic API keys should start with "sk-ant-"';
+			}
+			if (providerKey === 'openai' && !value.startsWith('sk-')) {
+				return 'OpenAI API keys should start with "sk-"';
+			}
+			if (providerKey === 'openrouter' && !value.startsWith('sk-or-')) {
+				return 'OpenRouter API keys should start with "sk-or-"';
+			}
+			if (providerKey === 'google' && value.length < 20) {
+				return 'Google API keys should be longer';
+			}
+			
+			return null;
+		}
+	});
+	
+	if (apiKey && apiKey !== '••••••••••••••••') {
+		try {
+			// Use explicit key names based on provider
+			let configKey: keyof SuperDesignConfig;
+			switch (providerKey) {
+				case 'anthropic':
+					configKey = 'anthropicApiKey';
+					break;
+				case 'openai':
+					configKey = 'openaiApiKey';
+					break;
+				case 'google':
+					configKey = 'googleApiKey';
+					break;
+				case 'openrouter':
+					configKey = 'openrouterApiKey';
+					break;
+				default:
+					throw new Error(`Unknown provider: ${providerKey}`);
+			}
+			
+			await configManager.updateConfig(configKey, apiKey.trim());
+			vscode.window.showInformationMessage(`✅ ${selectedProvider.label} API key configured successfully!`);
+			
+			// Show validation status
+			const validation = configManager.validateCurrentModelApiKey();
+			if (!validation.isValid && providerKey !== 'openrouter') {
+				vscode.window.showInformationMessage(
+					`💡 Tip: Set this as your preferred model to use ${selectedProvider.label}`,
+					'Select Model'
+				).then(selection => {
+					if (selection === 'Select Model') {
+						vscode.commands.executeCommand('superdesign.selectModel');
+					}
+				});
+			}
+		} catch (error) {
+			vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
+		}
+	}
+}
+
+// Function to select AI model
+async function selectAIModel() {
+	const configManager = new ConfigManager(outputChannel);
+	const config = configManager.getConfig();
+	
+	// Get available models based on configured API keys
+	const availableModels: { label: string; description: string; model: string; provider: string }[] = [];
+	
+	// Add Anthropic models if API key is configured
+	if (config.anthropicApiKey) {
+		availableModels.push(
+			{ label: 'Claude 3.5 Sonnet (Latest)', description: 'Best for complex design tasks', model: 'claude-3-5-sonnet-20241022', provider: 'Anthropic' },
+			{ label: 'Claude 3.5 Haiku', description: 'Fast and efficient', model: 'claude-3-5-haiku-20241022', provider: 'Anthropic' }
+		);
+	}
+	
+	// Add OpenAI models if API key is configured
+	if (config.openaiApiKey) {
+		availableModels.push(
+			{ label: 'GPT-4 Turbo', description: 'Latest GPT-4 with improved capabilities', model: 'gpt-4-turbo', provider: 'OpenAI' },
+			{ label: 'GPT-4o', description: 'Optimized for speed and efficiency', model: 'gpt-4o', provider: 'OpenAI' },
+			{ label: 'GPT-4o Mini', description: 'Fast and cost-effective', model: 'gpt-4o-mini', provider: 'OpenAI' }
+		);
+	}
+	
+	// Add Google models if API key is configured
+	if (config.googleApiKey) {
+		availableModels.push(
+			{ label: 'Gemini 1.5 Pro', description: 'Google\'s most capable model', model: 'gemini-1.5-pro', provider: 'Google' },
+			{ label: 'Gemini 1.5 Flash', description: 'Fast and efficient Gemini model', model: 'gemini-1.5-flash', provider: 'Google' }
+		);
+	}
+	
+	// Add OpenRouter models if API key is configured
+	if (config.openrouterApiKey) {
+		availableModels.push(
+			{ label: 'Claude 3.5 Sonnet (via OpenRouter)', description: 'Access Claude via OpenRouter', model: 'openrouter/anthropic/claude-3.5-sonnet', provider: 'OpenRouter' },
+			{ label: 'GPT-4 Turbo (via OpenRouter)', description: 'Access GPT-4 via OpenRouter', model: 'openrouter/openai/gpt-4-turbo', provider: 'OpenRouter' },
+			{ label: 'Gemini Pro (via OpenRouter)', description: 'Access Gemini via OpenRouter', model: 'openrouter/google/gemini-pro', provider: 'OpenRouter' }
+		);
+	}
+	
+	if (availableModels.length === 0) {
+		vscode.window.showWarningMessage(
+			'No API keys configured. Please configure API keys first.',
+			'Configure API Keys'
+		).then(selection => {
+			if (selection === 'Configure API Keys') {
+				vscode.commands.executeCommand('superdesign.configureMultipleApiKeys');
+			}
+		});
+		return;
+	}
+	
+	// Mark current model
+	const currentModel = config.preferredModel;
+	const modelOptions = availableModels.map(model => ({
+		...model,
+		label: model.model === currentModel ? `${model.label} ✓ (Current)` : model.label
+	}));
+	
+	const selectedModel = await vscode.window.showQuickPick(modelOptions, {
+		placeHolder: `Current: ${currentModel}`,
+		title: 'Select AI Model for Design Tasks'
+	});
+	
+	if (selectedModel && selectedModel.model !== currentModel) {
+		try {
+			await configManager.updateConfig('preferredModel', selectedModel.model);
+			vscode.window.showInformationMessage(`✅ Selected model: ${selectedModel.label.replace(' ✓ (Current)', '')}`);
+			
+			// Validate API key for new model
+			const validation = configManager.validateCurrentModelApiKey();
+			if (!validation.isValid) {
+				vscode.window.showWarningMessage(
+					validation.errorMessage || 'API key validation failed',
+					'Configure API Keys'
+				).then(selection => {
+					if (selection === 'Configure API Keys') {
+						vscode.commands.executeCommand('superdesign.configureMultipleApiKeys');
+					}
+				});
+			}
+		} catch (error) {
+			vscode.window.showErrorMessage(`Failed to update model: ${error}`);
 		}
 	}
 }

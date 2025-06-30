@@ -1049,10 +1049,6 @@ class ConversationTurn {
   - **Time**: 2 hours
   - **Dependencies**: Task 3.1.2
 
-- **Task 3.1.4**: Remove ClaudeCodeService and clean up dependencies
-  - **Deliverables**: Delete `claudeCodeService.ts`, update imports throughout codebase
-  - **Time**: 2 hours
-  - **Dependencies**: Task 3.1.3
 
 #### 3.2 SuperDesign Workflow Testing
 - **Task 3.2.1**: Test design creation workflows

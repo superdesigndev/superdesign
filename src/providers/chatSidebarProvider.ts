@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ClaudeCodeService } from '../services/claudeCodeService';
+import { AgentFactory } from '../core/agent-factory';
 import { ChatMessageService } from '../services/chatMessageService';
 import { generateWebviewHtml } from '../templates/webviewTemplate';
 import { WebviewContext } from '../types/context';
@@ -7,15 +7,30 @@ import { WebviewContext } from '../types/context';
 export class ChatSidebarProvider implements vscode.WebviewViewProvider {
     public static readonly VIEW_TYPE = 'superdesign.chatView';
     private _view?: vscode.WebviewView;
-    private messageHandler: ChatMessageService;
+    private messageHandler: ChatMessageService | null = null;
     private customMessageHandler?: (message: any) => void;
 
     constructor(
         private readonly _extensionUri: vscode.Uri,
-        private readonly claudeService: ClaudeCodeService,
+        private readonly agentFactory: AgentFactory,
         private readonly outputChannel: vscode.OutputChannel
     ) {
-        this.messageHandler = new ChatMessageService(claudeService, outputChannel);
+        // MessageHandler will be initialized when first needed
+    }
+
+    /**
+     * Get the current agent from factory and ensure message handler is initialized
+     */
+    private async ensureMessageHandler(): Promise<ChatMessageService> {
+        const currentAgent = await this.agentFactory.getOrCreateAgent();
+        
+        // Create or update message handler if needed
+        if (!this.messageHandler || this.messageHandler['agentService'] !== currentAgent) {
+            this.outputChannel.appendLine(`🔄 ChatSidebarProvider: Creating/updating message handler with current agent`);
+            this.messageHandler = new ChatMessageService(currentAgent, this.outputChannel);
+        }
+        
+        return this.messageHandler;
     }
 
     public setMessageHandler(handler: (message: any) => void) {
@@ -65,10 +80,12 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 // Then handle regular chat messages
                 switch (message.command) {
                     case 'chatWithClaude':
-                        await this.messageHandler.handleChatMessage(message, webviewView.webview);
+                        // Always get the current agent before processing messages
+                        await this.ensureMessageHandler();
+                        await this.messageHandler!.handleChatMessage(message, webviewView.webview);
                         break;
                     case 'stopChat':
-                        await this.messageHandler.stopCurrentChat(webviewView.webview);
+                        await this.messageHandler!.stopCurrentChat(webviewView.webview);
                         break;
                 }
             }

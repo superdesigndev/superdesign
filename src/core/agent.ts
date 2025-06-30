@@ -454,7 +454,7 @@ export class SuperDesignCodingAgent extends BaseAgent {
       },
       maxTokens: config.llmConfig.maxTokens || 4000,
       temperature: config.llmConfig.temperature || 0.7,
-      systemPrompt: this.getSystemPrompt(),
+      systemPrompt: this.config.systemPrompts.design,
       tools: [] // Will be set per request with proper session context
     };
 
@@ -511,7 +511,6 @@ export class SuperDesignCodingAgent extends BaseAgent {
     const maxTurns = options?.maxTurns || 10;
     
     const messages: SDKMessage[] = [];
-    const toolsUsed: string[] = [];
     let currentTurn = 0;
     
     try {
@@ -530,7 +529,7 @@ export class SuperDesignCodingAgent extends BaseAgent {
       };
       history.push(userMessage);
 
-      // Add user message to response
+      // Add user message to response (but don't stream it - UI already displays it)
       messages.push(MessageAdapter.createUserMessage(request, sessionId));
       
       // Generate response with tools (Vercel AI SDK handles tool execution automatically)
@@ -552,59 +551,37 @@ export class SuperDesignCodingAgent extends BaseAgent {
         };
         history.push(assistantMessage);
         
-        // Add to messages
-        messages.push(MessageAdapter.createAssistantMessage(
+        // Create assistant message for response
+        const assistantResponseMessage = MessageAdapter.createAssistantMessage(
           llmResponse.content,
           sessionId,
           { duration: Date.now() - startTime }
-        ));
+        );
+        
+        // Add to messages
+        messages.push(assistantResponseMessage);
+        
+        // CRITICAL: Call onMessage for assistant response so UI receives it
+        if (options?.onMessage) {
+          options.onMessage(assistantResponseMessage);
+        }
       }
 
-      // Process tool calls and results from Vercel AI SDK steps
-      if (llmResponse.steps && llmResponse.steps.length > 0) {
-        for (const step of llmResponse.steps) {
-          // Process tool calls in this step
-          if (step.toolCalls) {
-            for (const toolCall of step.toolCalls) {
-              this.config.outputChannel.appendLine(`[DEBUG] Tool call structure: ${JSON.stringify(toolCall, null, 2)}`);
-              
-              const toolName = toolCall.toolName || toolCall.function?.name || toolCall.name || 'unknown';
-              toolsUsed.push(toolName);
-              
-              // Add tool call message
-              const toolCallMessage = MessageAdapter.createToolCallMessage({
-                toolCallId: toolCall.toolCallId || toolCall.id,
-                toolName: toolName,
-                args: toolCall.args || toolCall.function?.arguments
-              }, sessionId);
-              messages.push(toolCallMessage);
-              
-              if (options?.onMessage) {
-                options.onMessage(toolCallMessage);
-              }
-            }
-          }
-          
-          // Process tool results in this step
-          if (step.toolResults) {
-            for (const toolResult of step.toolResults) {
-              // Add tool result message
-              const toolResultMessage = MessageAdapter.createToolResultMessage(toolResult, sessionId);
-              messages.push(toolResultMessage);
-              
-              if (options?.onMessage) {
-                options.onMessage(toolResultMessage);
-              }
-            }
-          }
-        }
+      // Tools are now streamed in real-time via callbacks, no need to process steps here
+      // Count tools from the response for statistics
+      const toolsUsedSet = new Set<string>();
+      if (llmResponse.toolCalls) {
+        llmResponse.toolCalls.forEach((toolCall: any) => {
+          const toolName = toolCall.toolName || toolCall.function?.name || toolCall.name || 'unknown';
+          toolsUsedSet.add(toolName);
+        });
       }
 
       const duration = Date.now() - startTime;
       const totalCost = MessageAdapter.calculateTotalCost(messages);
 
       this.config.outputChannel.appendLine(
-        `[SuperDesignAgent] Task completed in ${duration}ms using ${toolsUsed.length} tools`
+        `[SuperDesignAgent] Task completed in ${duration}ms using ${toolsUsedSet.size} tools`
       );
 
       // Find the final LLM response message (not tool results)
@@ -619,7 +596,7 @@ export class SuperDesignCodingAgent extends BaseAgent {
         success: true,
         messages,
         finalMessage,
-        toolsUsed: [...new Set(toolsUsed)],
+        toolsUsed: Array.from(toolsUsedSet),
         duration,
         totalCost
       };
@@ -636,7 +613,7 @@ export class SuperDesignCodingAgent extends BaseAgent {
         success: false,
         messages,
         finalMessage: errorMessage,
-        toolsUsed: [...new Set(toolsUsed)],
+        toolsUsed: [],
         duration,
         error: errorMessage
       };
@@ -660,7 +637,7 @@ export class SuperDesignCodingAgent extends BaseAgent {
   }
 
   /**
-   * Generate LLM response with tool support
+   * Generate LLM response with tool support using real-time streaming
    */
   private async generateWithTools(
     history: ConversationMessage[],
@@ -674,12 +651,67 @@ export class SuperDesignCodingAgent extends BaseAgent {
     }
   ): Promise<{ content: string; toolCalls?: any[]; toolResults?: any[]; steps?: any[] }> {
     try {
-      // Use the LLM service with our conversation history and session-specific tools
-      const response = await this.llmService.generateResponse(history, {
+      // Track tool call IDs to ensure proper matching with results
+      const toolCallIdMap = new Map<string, string>();
+      
+      // Use the streaming LLM service with real-time tool callbacks
+      const response = await this.llmService.generateStreamingResponseWithTools(history, {
         maxTokens: options.maxTokens,
         temperature: options.temperature,
-        maxSteps: options.maxSteps || 25, // Default to 25 steps for multi-step tool calling
-        tools: this.createToolSchemas(options.sessionId)
+        maxSteps: options.maxSteps || 25,
+        tools: this.createToolSchemas(options.sessionId),
+        
+        // Real-time tool call streaming
+        onToolCall: (toolCall: any) => {
+          this.config.outputChannel.appendLine(`[STREAM] Real-time tool call: ${JSON.stringify(toolCall, null, 2)}`);
+          
+          const toolName = toolCall.toolName || toolCall.function?.name || toolCall.name || 'unknown';
+          const originalId = toolCall.toolCallId || toolCall.id;
+          const toolCallId = originalId || `tool-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          
+          // Track the mapping for later result matching
+          if (originalId) {
+            toolCallIdMap.set(originalId, toolCallId);
+          }
+          
+          // Send tool call message immediately when it starts
+          const toolCallMessage = MessageAdapter.createToolCallMessage({
+            toolCallId: toolCallId,
+            toolName: toolName,
+            args: toolCall.args || toolCall.function?.arguments
+          }, options.sessionId);
+          
+          if (options.onMessage) {
+            options.onMessage(toolCallMessage);
+          }
+        },
+        
+        // Real-time tool result streaming  
+        onToolResult: (toolResult: any) => {
+          this.config.outputChannel.appendLine(`[STREAM] Real-time tool result: ${JSON.stringify(toolResult, null, 2)}`);
+          
+          // Get the original tool call ID and find the matching mapped ID
+          const originalResultId = toolResult.toolCallId || toolResult.id;
+          const matchedToolCallId = originalResultId ? toolCallIdMap.get(originalResultId) : undefined;
+          const finalToolCallId = matchedToolCallId || originalResultId || 'unknown';
+          
+          // Send tool result message immediately when it completes
+          const toolResultMessage = MessageAdapter.createToolResultMessage({
+            toolCallId: finalToolCallId,
+            result: toolResult.result || toolResult,
+            isError: toolResult.isError || false
+          }, options.sessionId);
+          
+          if (options.onMessage) {
+            options.onMessage(toolResultMessage);
+          }
+        },
+        
+        // Optional: Stream text deltas for assistant response
+        onTextDelta: (textDelta: string) => {
+          // We can add text streaming here if needed for even better UX
+          // For now, we'll send the complete text at the end
+        }
       });
 
       return {
@@ -695,8 +727,6 @@ export class SuperDesignCodingAgent extends BaseAgent {
     }
   }
 
-
-
   /**
    * Create tool schemas for LLM function calling using the registry
    */
@@ -710,45 +740,6 @@ export class SuperDesignCodingAgent extends BaseAgent {
     
     // Use the registry's built-in conversion to Vercel AI SDK format
     return this.config.toolRegistry.getVercelAITools(context);
-  }
-
-  /**
-   * Get SuperDesign-specific system prompt
-   */
-  private getSystemPrompt(): string {
-    return this.config.systemPrompts.design || `
-# SuperDesign Coding Agent
-
-You are a senior front-end designer and developer working with SuperDesign.
-You pay close attention to every pixel, spacing, font, color.
-
-## Available Tools:
-${this.getAvailableTools().map(tool => `- ${tool}`).join('\n')}
-
-## Core Principles:
-1. Always understand before acting - analyze existing code patterns
-2. Follow project conventions and coding standards  
-3. Use tools systematically: analyze → plan → implement → verify
-4. Provide clear explanations of your actions
-5. Focus on elegant, modern UI design with perfect balance between minimalism and functionality
-
-## SuperDesign Workflow:
-1. Create design files in .superdesign/design_iterations/ directory
-2. Use naming convention: {design_name}_{variation}.html
-3. Generate 3 variations when creating designs
-4. Use soft, refreshing gradient colors
-5. Implement responsive, accessible designs
-
-## Tool Usage:
-- Use 'read' to examine existing files and patterns
-- Use 'write' to create new design files
-- Use 'edit' to modify existing designs
-- Use 'multiedit' for creating multiple design variations
-- Use 'ls', 'grep', 'glob' to explore project structure
-- Use 'bash' for running commands and tests
-
-Always start by understanding the project context, then plan your approach, implement changes, and verify results.
-    `.trim();
   }
 }
 

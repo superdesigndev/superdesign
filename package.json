@@ -54,6 +54,16 @@
         "category": "Superdesign"
       },
       {
+        "command": "superdesign.configureMultipleApiKeys",
+        "title": "Configure AI Provider API Keys",
+        "category": "Superdesign"
+      },
+      {
+        "command": "superdesign.selectModel",
+        "title": "Select AI Model",
+        "category": "Superdesign"
+      },
+      {
         "command": "superdesign.showChatSidebar",
         "title": "Show Chat Sidebar",
         "category": "Superdesign"
@@ -78,6 +88,11 @@
       {
         "command": "superdesign.initializeProject",
         "title": "Initialize Superdesign",
+        "category": "Superdesign"
+      },
+      {
+        "command": "superdesign.switchAgent",
+        "title": "Switch Coding Agent",
         "category": "Superdesign"
       }
     ],
@@ -117,21 +132,6 @@
     "configuration": {
       "title": "Superdesign",
       "properties": {
-        "superdesign.anthropicApiKey": {
-          "type": "string",
-          "description": "Anthropic API key for Claude Code integration",
-          "scope": "application"
-        },
-        "superdesign.openaiApiKey": {
-          "type": "string",
-          "description": "OpenAI API key for custom coding agent",
-          "scope": "application"
-        },
-        "superdesign.openrouterApiKey": {
-          "type": "string",
-          "description": "OpenRouter API key for multi-model access",
-          "scope": "application"
-        },
         "superdesign.agentProvider": {
           "type": "string",
           "enum": [
@@ -140,7 +140,113 @@
           ],
           "default": "claude-code",
           "description": "Choose between Claude Code agent or custom coding agent",
-          "scope": "application"
+          "scope": "application",
+          "order": 1
+        },
+        "superdesign.preferredModel": {
+          "type": "string",
+          "enum": [
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-haiku-20241022", 
+            "gpt-4-turbo",
+            "gpt-4o",
+            "gpt-4o-mini",
+            "gemini-1.5-pro",
+            "gemini-1.5-flash",
+            "openrouter/anthropic/claude-3.5-sonnet",
+            "openrouter/openai/gpt-4-turbo",
+            "openrouter/google/gemini-pro"
+          ],
+          "default": "claude-3-5-sonnet-20241022",
+          "description": "Preferred AI model for design tasks (only used with custom agent)",
+          "scope": "application",
+          "order": 2
+        },
+        "superdesign.fallbackModel": {
+          "type": "string",
+          "enum": [
+            "claude-3-5-haiku-20241022",
+            "gpt-4o-mini",
+            "gemini-1.5-flash",
+            "openrouter/anthropic/claude-3.5-haiku",
+            "openrouter/openai/gpt-4o-mini"
+          ],
+          "default": "gpt-4o-mini",
+          "description": "Fallback model to use if the preferred model fails (only used with custom agent)",
+          "scope": "application",
+          "order": 3
+        },
+        "superdesign.anthropicApiKey": {
+          "type": "string",
+          "description": "Anthropic API key for Claude models (required for Claude Code agent and Anthropic models in custom agent)",
+          "scope": "application",
+          "order": 10
+        },
+        "superdesign.openaiApiKey": {
+          "type": "string",
+          "description": "OpenAI API key for GPT models (required for OpenAI models in custom agent)",
+          "scope": "application",
+          "order": 11
+        },
+        "superdesign.googleApiKey": {
+          "type": "string",
+          "description": "Google API key for Gemini models (required for Google models in custom agent)",
+          "scope": "application",
+          "order": 12
+        },
+        "superdesign.openrouterApiKey": {
+          "type": "string",
+          "description": "OpenRouter API key for accessing 100+ models through a unified API (optional, enables additional model options)",
+          "scope": "application",
+          "order": 13
+        },
+        "superdesign.maxTokens": {
+          "type": "number",
+          "default": 4000,
+          "minimum": 100,
+          "maximum": 32000,
+          "description": "Maximum tokens for AI responses (only used with custom agent)",
+          "scope": "application",
+          "order": 20
+        },
+        "superdesign.temperature": {
+          "type": "number",
+          "default": 0.7,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Creativity level for AI responses (0=focused, 1=balanced, 2=creative) (only used with custom agent)",
+          "scope": "application",
+          "order": 21
+        },
+        "superdesign.enableStreamingResponses": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time streaming of AI responses for better user experience",
+          "scope": "application",
+          "order": 22
+        },
+        "superdesign.enableDebugLogging": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable detailed debug logging in the output channel (useful for troubleshooting)",
+          "scope": "application",
+          "order": 30
+        },
+        "superdesign.maxDesignVariations": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Number of design variations to generate simultaneously",
+          "scope": "application",
+          "order": 31
+        },
+        "superdesign.autoSaveDesigns": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically save generated designs to .superdesign/design_iterations/ folder",
+          "scope": "application",
+          "order": 32
         }
       }
     }

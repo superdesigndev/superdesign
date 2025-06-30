@@ -6,18 +6,25 @@ export type AgentProvider = 'claude-code' | 'custom';
 
 export interface SuperDesignConfig {
   agentProvider: AgentProvider;
-  customAgent: {
-    defaultProvider: 'openai' | 'anthropic' | 'google' | 'openrouter';
-    defaultModel: string;
-    maxTokens: number;
-    temperature: number;
-  };
-  apiKeys: {
-    anthropic?: string;
-    openai?: string;
-    openrouter?: string;
-    google?: string;
-  };
+  preferredModel: string;
+  fallbackModel: string;
+  anthropicApiKey?: string;
+  openaiApiKey?: string;
+  googleApiKey?: string;
+  openrouterApiKey?: string;
+  maxTokens: number;
+  temperature: number;
+  enableStreamingResponses: boolean;
+  enableDebugLogging: boolean;
+  maxDesignVariations: number;
+  autoSaveDesigns: boolean;
+}
+
+export interface ApiKeyValidation {
+  provider: string;
+  isValid: boolean;
+  hasKey: boolean;
+  errorMessage?: string;
 }
 
 /**
@@ -40,18 +47,18 @@ export class ConfigManager {
     
     return {
       agentProvider: config.get<AgentProvider>('agentProvider', 'claude-code'),
-      customAgent: {
-        defaultProvider: config.get<'openai' | 'anthropic' | 'google' | 'openrouter'>('defaultProvider', 'openai'),
-        defaultModel: config.get<string>('defaultModel', getDefaultModel('openai')),
-        maxTokens: config.get<number>('maxTokens', 4000),
-        temperature: config.get<number>('temperature', 0.7),
-      },
-      apiKeys: {
-        anthropic: config.get<string>('anthropicApiKey'),
-        openai: config.get<string>('openaiApiKey'),
-        openrouter: config.get<string>('openrouterApiKey'),
-        google: config.get<string>('googleApiKey'),
-      },
+      preferredModel: config.get<string>('preferredModel', 'claude-3-5-sonnet-20241022'),
+      fallbackModel: config.get<string>('fallbackModel', 'gpt-4o-mini'),
+      anthropicApiKey: config.get<string>('anthropicApiKey'),
+      openaiApiKey: config.get<string>('openaiApiKey'),
+      googleApiKey: config.get<string>('googleApiKey'),
+      openrouterApiKey: config.get<string>('openrouterApiKey'),
+      maxTokens: config.get<number>('maxTokens', 4000),
+      temperature: config.get<number>('temperature', 0.7),
+      enableStreamingResponses: config.get<boolean>('enableStreamingResponses', true),
+      enableDebugLogging: config.get<boolean>('enableDebugLogging', false),
+      maxDesignVariations: config.get<number>('maxDesignVariations', 3),
+      autoSaveDesigns: config.get<boolean>('autoSaveDesigns', true)
     };
   }
 
@@ -81,6 +88,20 @@ export class ConfigManager {
   async switchAgentProvider(provider: AgentProvider): Promise<void> {
     await this.updateConfig('agentProvider', provider);
     this.outputChannel.appendLine(`Switched to ${provider} agent`);
+
+    if (provider === 'custom') {
+      const validation = this.validateCurrentModelApiKey();
+      if (!validation.isValid) {
+        vscode.window.showWarningMessage(
+          `Custom agent selected but ${validation.errorMessage}`,
+          'Configure API Keys'
+        ).then(selection => {
+          if (selection === 'Configure API Keys') {
+            vscode.commands.executeCommand('superdesign.configureMultipleApiKeys');
+          }
+        });
+      }
+    }
   }
 
   /**
@@ -93,8 +114,12 @@ export class ConfigManager {
       return null;
     }
 
-    const providerName = config.customAgent.defaultProvider;
-    const apiKey = config.apiKeys[providerName];
+    // Determine provider based on preferred model
+    const { provider: providerName, apiKey } = this.getProviderForModel(config.preferredModel, config);
+    
+    if (providerName === 'unknown') {
+      throw new Error(`Unknown model provider for model: ${config.preferredModel}`);
+    }
     
     if (!apiKey) {
       throw new Error(`API key not configured for ${providerName} provider`);
@@ -102,15 +127,56 @@ export class ConfigManager {
 
     const provider: LLMProvider = {
       name: providerName,
-      model: config.customAgent.defaultModel,
+      model: config.preferredModel,
       apiKey: apiKey,
     };
 
     return {
       provider,
-      maxTokens: config.customAgent.maxTokens,
-      temperature: config.customAgent.temperature,
+      maxTokens: config.maxTokens,
+      temperature: config.temperature,
       systemPrompt: this.getSystemPrompt(),
+    };
+  }
+
+  /**
+   * Get provider and API key for a specific model
+   */
+  getProviderForModel(model: string, config: SuperDesignConfig): { provider: 'anthropic' | 'openai' | 'google' | 'openrouter' | 'unknown'; apiKey: string | undefined } {
+    if (model.includes('claude') || model.includes('anthropic')) {
+      return { provider: 'anthropic', apiKey: config.anthropicApiKey };
+    } else if (model.includes('gpt') || model.includes('openai')) {
+      return { provider: 'openai', apiKey: config.openaiApiKey };
+    } else if (model.includes('gemini') || model.includes('google')) {
+      return { provider: 'google', apiKey: config.googleApiKey };
+    } else if (model.includes('openrouter')) {
+      return { provider: 'openrouter', apiKey: config.openrouterApiKey };
+    } else {
+      return { provider: 'unknown', apiKey: undefined };
+    }
+  }
+
+  /**
+   * Validate API key for current model
+   */
+  validateCurrentModelApiKey(): { isValid: boolean; provider: string; errorMessage?: string } {
+    const config = this.getConfig();
+    const { provider, apiKey } = this.getProviderForModel(config.preferredModel, config);
+    
+    if (provider === 'unknown') {
+      return {
+        isValid: false,
+        provider: 'Unknown',
+        errorMessage: `Unknown model provider for: ${config.preferredModel}`
+      };
+    }
+    
+    const hasValidKey = !!apiKey && apiKey.length > 10;
+    
+    return {
+      isValid: hasValidKey,
+      provider,
+      errorMessage: hasValidKey ? undefined : `${provider} API key required for model: ${config.preferredModel}`
     };
   }
 
@@ -122,15 +188,14 @@ export class ConfigManager {
     const missingKeys: string[] = [];
 
     if (config.agentProvider === 'claude-code') {
-      if (!config.apiKeys.anthropic) {
+      if (!config.anthropicApiKey) {
         missingKeys.push('anthropicApiKey');
       }
     } else if (config.agentProvider === 'custom') {
-      const providerName = config.customAgent.defaultProvider;
-      const apiKey = config.apiKeys[providerName];
+      const { provider, apiKey } = this.getProviderForModel(config.preferredModel, config);
       
       if (!apiKey) {
-        missingKeys.push(`${providerName}ApiKey`);
+        missingKeys.push(`${provider}ApiKey`);
       }
     }
 
@@ -140,43 +205,41 @@ export class ConfigManager {
     };
   }
 
-
-
   /**
    * Get the system prompt for the custom coding agent
    */
   private getSystemPrompt(): string {
-    return `You are a coding agent integrated into VS Code through the SuperDesign extension. You help users build and design applications.
+    const config = this.getConfig();
+    
+    const basePrompt = `# SuperDesign AI Agent
 
-**Your capabilities:**
-- Analyze and understand codebases
-- Write, modify, and refactor code
-- Create files and directory structures
-- Execute shell commands
-- Read documentation and research latest best practices
-- Help with UI/UX design and component creation
+You are a senior front-end designer and developer specializing in creating beautiful, functional UI designs.
 
-**Your personality:**
-- Be direct and practical in your responses
-- Focus on clean, maintainable code
-- Consider performance and best practices
-- Ask clarifying questions when requirements are unclear
-- Provide specific, actionable solutions
+## Configuration
+- Agent Provider: ${config.agentProvider}
+- Preferred Model: ${config.preferredModel}
+- Max Design Variations: ${config.maxDesignVariations}
+- Auto-save Designs: ${config.autoSaveDesigns}
 
-**Code style:**
-- Use TypeScript when possible
-- Follow modern ES6+ patterns
-- Include proper error handling
-- Add helpful comments for complex logic
-- Consider accessibility and user experience
+## Core Principles
+1. Always think deeply about design style before implementation
+2. Pay attention to every pixel, spacing, font, and color
+3. Create 3 parallel design variations by default for user choice
+4. Save designs to .superdesign/design_iterations/ folder
+5. Follow modern design principles and accessibility standards
 
-**When working with files:**
-- Always specify exact file paths
-- Create necessary directory structures
-- Consider the existing project structure
-- Maintain consistent code style with the project
+## Design Guidelines
+- Balance elegant minimalism with functional design
+- Use soft, refreshing gradient colors
+- Maintain well-proportioned white space
+- Ensure responsive design patterns
+- Focus on component reusability
+- Maintain design system consistency
 
-You have access to various tools to read files, write code, execute commands, and search for information. Use them effectively to help the user accomplish their goals.`;
+## Available Tools
+You have access to comprehensive file operations, code analysis, and shell command execution tools to implement designs effectively.`;
+
+    return basePrompt;
   }
 
   /**
@@ -187,17 +250,21 @@ You have access to various tools to read files, write code, execute commands, an
     
     const hasExistingConfig = 
       config.get('agentProvider') !== undefined ||
-      config.get('defaultProvider') !== undefined;
+      config.get('preferredModel') !== undefined;
 
     if (!hasExistingConfig) {
       this.outputChannel.appendLine('Initializing default SuperDesign configuration...');
       
       // Set default values
       await config.update('agentProvider', 'claude-code', vscode.ConfigurationTarget.Global);
-      await config.update('defaultProvider', 'openai', vscode.ConfigurationTarget.Global);
-      await config.update('defaultModel', getDefaultModel('openai'), vscode.ConfigurationTarget.Global);
+      await config.update('preferredModel', 'claude-3-5-sonnet-20241022', vscode.ConfigurationTarget.Global);
+      await config.update('fallbackModel', 'gpt-4o-mini', vscode.ConfigurationTarget.Global);
       await config.update('maxTokens', 4000, vscode.ConfigurationTarget.Global);
       await config.update('temperature', 0.7, vscode.ConfigurationTarget.Global);
+      await config.update('enableStreamingResponses', true, vscode.ConfigurationTarget.Global);
+      await config.update('enableDebugLogging', false, vscode.ConfigurationTarget.Global);
+      await config.update('maxDesignVariations', 3, vscode.ConfigurationTarget.Global);
+      await config.update('autoSaveDesigns', true, vscode.ConfigurationTarget.Global);
       
       this.outputChannel.appendLine('Default configuration initialized');
     }
@@ -214,10 +281,8 @@ You have access to various tools to read files, write code, execute commands, an
     status += `**Active Agent:** ${config.agentProvider}\n`;
     
     if (config.agentProvider === 'custom') {
-      status += `**LLM Provider:** ${config.customAgent.defaultProvider}\n`;
-      status += `**Model:** ${config.customAgent.defaultModel}\n`;
-      status += `**Max Tokens:** ${config.customAgent.maxTokens}\n`;
-      status += `**Temperature:** ${config.customAgent.temperature}\n`;
+      status += `**Preferred Model:** ${config.preferredModel}\n`;
+      status += `**Fallback Model:** ${config.fallbackModel}\n`;
     }
     
     status += `\n**Configuration Status:** ${validation.isValid ? '✅ Valid' : '❌ Invalid'}\n`;

@@ -369,10 +369,26 @@ export class MessageAdapter {
     toolResult: { toolCallId: string; result: any; isError?: boolean },
     sessionId: string
   ): SDKMessage {
+    // Better formatting for tool results
+    let formattedContent: string;
+    
+    if (typeof toolResult.result === 'string') {
+      formattedContent = toolResult.result;
+    } else if (typeof toolResult.result === 'object') {
+      // Pretty format JSON objects for better readability
+      try {
+        formattedContent = JSON.stringify(toolResult.result, null, 2);
+      } catch {
+        formattedContent = String(toolResult.result);
+      }
+    } else {
+      formattedContent = String(toolResult.result);
+    }
+    
     return {
       type: 'result',
       subtype: toolResult.isError ? 'error' : 'success',
-      content: typeof toolResult.result === 'string' ? toolResult.result : JSON.stringify(toolResult.result),
+      content: formattedContent,
       session_id: sessionId,
       parent_tool_use_id: toolResult.toolCallId
     };
