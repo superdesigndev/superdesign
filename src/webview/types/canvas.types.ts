@@ -3,6 +3,7 @@
 export interface DesignFile {
     name: string;
     path: string;
+    relativePath?: string;     // Relative path from design_iterations for nested files
     content: string;
     size: number;
     modified: Date;

@@ -23,7 +23,6 @@ interface DesignFrameProps {
     useGlobalViewport?: boolean;
     onDragStart?: (fileName: string, startPos: GridPosition, mouseEvent: React.MouseEvent) => void;
     isDragging?: boolean;
-    nonce?: string | null;
     onSendToChat?: (fileName: string, prompt: string) => void;
 }
 
@@ -41,7 +40,6 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
     useGlobalViewport = false,
     onDragStart,
     isDragging = false,
-    nonce = null,
     onSendToChat
 }) => {
     const [isLoading, setIsLoading] = React.useState(renderMode === 'iframe');
@@ -261,7 +259,6 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                         <html>
                         <head>
                             <meta charset="UTF-8">
-                            <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: http:; img-src 'self' data: blob: https: http: *; font-src 'self' data: https: http: *; style-src 'self' 'unsafe-inline' https: http: *; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http: *; connect-src 'self' https: http: *;">
                             ${viewportDimensions ? `<meta name="viewport" content="width=${viewportDimensions.width}, height=${viewportDimensions.height}, initial-scale=1.0">` : ''}
                             <style>
                                 body { 
@@ -288,20 +285,6 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                         </head>
                         <body>
                             ${file.content}
-                            <script>
-                                // Auto-render images in SVG context
-                                document.addEventListener('DOMContentLoaded', function() {
-                                    const images = document.querySelectorAll('img');
-                                    images.forEach(function(img) {
-                                        img.loading = 'eager';
-                                        if (!img.complete || img.naturalWidth === 0) {
-                                            const originalSrc = img.src;
-                                            img.src = '';
-                                            img.src = originalSrc;
-                                        }
-                                    });
-                                });
-                            </script>
                         </body>
                         </html>
                     `;
@@ -334,151 +317,20 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                     );
                 }
 
-                // HTML file handling (existing logic)
-                // Function to inject nonce into script tags
-                const injectNonce = (html: string, nonce: string | null) => {
-                    if (!nonce) return html;
-                    return html.replace(/<script/g, `<script nonce="${nonce}"`);
-                };
-
-                // Inject viewport meta tag and CSP if we have viewport dimensions
+                // HTML file handling - simplified
                 let modifiedContent = file.content;
                 
-                // Use a more permissive CSP that relies on VS Code's built-in security
-                const iframeCSP = `<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: http:; img-src 'self' data: blob: https: http: *; style-src 'self' 'unsafe-inline' data: https: http: *; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: http: *; connect-src 'self' https: http: *; frame-src 'self' data: blob: https: http: *;">`;
-                
-                // Service worker approach for external resource loading
-                const serviceWorkerScript = `
-                <script${nonce ? ` nonce="${nonce}"` : ''}>
-                    // Register service worker to handle external resources
-                    if ('serviceWorker' in navigator) {
-                        const swCode = \`
-                            self.addEventListener('fetch', event => {
-                                const url = event.request.url;
-                                
-                                // Only handle external image requests
-                                if (url.startsWith('http') && (url.includes('placehold.co') || url.includes('media.giphy.com') || url.match(/\\.(jpg|jpeg|png|gif|svg|webp)$/i))) {
-                                    event.respondWith(
-                                        fetch(event.request, {
-                                            mode: 'cors',
-                                            credentials: 'omit'
-                                        }).catch(() => {
-                                            // Fallback: return a placeholder image
-                                            const canvas = new OffscreenCanvas(200, 120);
-                                            const ctx = canvas.getContext('2d');
-                                            ctx.fillStyle = '#cccccc';
-                                            ctx.fillRect(0, 0, 200, 120);
-                                            ctx.fillStyle = '#000000';
-                                            ctx.font = '16px Arial';
-                                            ctx.textAlign = 'center';
-                                            ctx.fillText('IMAGE', 100, 60);
-                                            
-                                            return canvas.convertToBlob().then(blob => 
-                                                new Response(blob, {
-                                                    headers: { 'Content-Type': 'image/png' }
-                                                })
-                                            );
-                                        })
-                                    );
-                                }
-                            });
-                        \`;
-                        
-                        const blob = new Blob([swCode], { type: 'application/javascript' });
-                        const swUrl = URL.createObjectURL(blob);
-                        
-                        navigator.serviceWorker.register(swUrl).then(registration => {
-                            console.log('Service Worker registered successfully');
-                            
-                            // Wait for service worker to be active
-                            if (registration.active) {
-                                processImages();
-                            } else {
-                                registration.addEventListener('updatefound', () => {
-                                    const newWorker = registration.installing;
-                                    newWorker.addEventListener('statechange', () => {
-                                        if (newWorker.state === 'activated') {
-                                            processImages();
-                                        }
-                                    });
-                                });
-                            }
-                        }).catch(error => {
-                            console.log('Service Worker registration failed, falling back to direct loading');
-                            processImages();
-                        });
-                    } else {
-                        // Fallback for browsers without service worker support
-                        processImages();
-                    }
-                    
-                    function processImages() {
-                        // Force reload all external images to trigger service worker
-                        const images = document.querySelectorAll('img[src]');
-                        images.forEach(img => {
-                            if (img.src.startsWith('http')) {
-                                const originalSrc = img.src;
-                                img.src = '';
-                                setTimeout(() => {
-                                    img.src = originalSrc;
-                                }, 10);
-                            }
-                        });
-                    }
-                    
-                    // Process images when DOM is ready
-                    if (document.readyState === 'loading') {
-                        document.addEventListener('DOMContentLoaded', () => {
-                            setTimeout(processImages, 100);
-                        });
-                    } else {
-                        setTimeout(processImages, 100);
-                    }
-                </script>`;
-                
+                // Just add viewport meta if needed
                 if (viewportDimensions) {
                     const viewportMeta = `<meta name="viewport" content="width=${viewportDimensions.width}, height=${viewportDimensions.height}, initial-scale=1.0">`;
                     if (modifiedContent.includes('<head>')) {
-                        modifiedContent = modifiedContent.replace('<head>', `<head>\n${iframeCSP}\n${viewportMeta}`);
-                        // Inject script before closing body tag
-                        if (modifiedContent.includes('</body>')) {
-                            modifiedContent = modifiedContent.replace('</body>', `${serviceWorkerScript}\n</body>`);
-                        } else {
-                            modifiedContent += serviceWorkerScript;
-                        }
+                        modifiedContent = modifiedContent.replace('<head>', `<head>\n${viewportMeta}`);
                     } else if (modifiedContent.includes('<html>')) {
-                        modifiedContent = modifiedContent.replace('<html>', `<html><head>\n${iframeCSP}\n${viewportMeta}\n</head>`);
-                        if (modifiedContent.includes('</body>')) {
-                            modifiedContent = modifiedContent.replace('</body>', `${serviceWorkerScript}\n</body>`);
-                        } else {
-                            modifiedContent += serviceWorkerScript;
-                        }
+                        modifiedContent = modifiedContent.replace('<html>', `<html><head>\n${viewportMeta}\n</head>`);
                     } else {
-                        modifiedContent = `<head>\n${iframeCSP}\n${viewportMeta}\n</head>\n${modifiedContent}${serviceWorkerScript}`;
-                    }
-                } else {
-                    // Even without viewport dimensions, we need to inject CSP and script
-                    if (modifiedContent.includes('<head>')) {
-                        modifiedContent = modifiedContent.replace('<head>', `<head>\n${iframeCSP}`);
-                        if (modifiedContent.includes('</body>')) {
-                            modifiedContent = modifiedContent.replace('</body>', `${serviceWorkerScript}\n</body>`);
-                        } else {
-                            modifiedContent += serviceWorkerScript;
-                        }
-                    } else if (modifiedContent.includes('<html>')) {
-                        modifiedContent = modifiedContent.replace('<html>', `<html><head>\n${iframeCSP}\n</head>`);
-                        if (modifiedContent.includes('</body>')) {
-                            modifiedContent = modifiedContent.replace('</body>', `${serviceWorkerScript}\n</body>`);
-                        } else {
-                            modifiedContent += serviceWorkerScript;
-                        }
-                    } else {
-                        modifiedContent = `<head>\n${iframeCSP}\n</head>\n${modifiedContent}${serviceWorkerScript}`;
+                        modifiedContent = `<head>\n${viewportMeta}\n</head>\n${modifiedContent}`;
                     }
                 }
-
-                // Inject nonce into all script tags
-                modifiedContent = injectNonce(modifiedContent, nonce);
 
                 return (
                     <iframe
@@ -583,11 +435,11 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                 opacity: isDragging ? 0.8 : 1
             }}
             onClick={handleClick}
-            title={`${file.name} (${(file.size / 1024).toFixed(1)} KB)`}
+            title={`${file.relativePath || file.name} (${(file.size / 1024).toFixed(1)} KB)`}
             onMouseDown={handleMouseDown}
         >
             <div className="frame-header">
-                <span className="frame-title">{file.name}</span>
+                <span className="frame-title">{file.relativePath || file.name}</span>
                 
                 {/* Viewport Controls */}
                 {onViewportChange && !useGlobalViewport && (

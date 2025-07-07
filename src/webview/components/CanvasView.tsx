@@ -34,7 +34,6 @@ import {
 
 interface CanvasViewProps {
     vscode: any;
-    nonce: string | null;
 }
 
 const CANVAS_CONFIG: CanvasConfig = {
@@ -63,9 +62,9 @@ const CANVAS_CONFIG: CanvasConfig = {
     }
 };
 
-const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
+const CanvasView: React.FC<CanvasViewProps> = ({ vscode }) => {
     console.log('🎨 CanvasView component starting...');
-    console.log('📞 CanvasView props - vscode:', !!vscode, 'nonce:', nonce);
+    console.log('📞 CanvasView props - vscode:', !!vscode);
     
     const [designFiles, setDesignFiles] = useState<DesignFile[]>([]);
     const [selectedFrames, setSelectedFrames] = useState<string[]>([]);
@@ -88,6 +87,10 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
     const [hierarchyTree, setHierarchyTree] = useState<HierarchyTree | null>(null);
     const [showConnections, setShowConnections] = useState(true);
     const transformRef = useRef<ReactZoomPanPinchRef>(null);
+    const [reactComponents, setReactComponents] = useState<string[]>([]);
+    const [isComponentPickerOpen, setComponentPickerOpen] = useState(false);
+    const [isBundling, setIsBundling] = useState(false);
+    const [bundleError, setBundleError] = useState<string | null>(null);
 
     console.log('✅ CanvasView state initialized successfully');
     
@@ -569,6 +572,32 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
+    // Request React components on mount
+    useEffect(() => {
+        vscode.postMessage({ command: 'loadReactComponents' });
+    }, [vscode]);
+
+    // Listen for reactComponentsLoaded and bundle result
+    useEffect(() => {
+        const handler = (event: MessageEvent) => {
+            const message = event.data;
+            if (message.command === 'reactComponentsLoaded') {
+                setReactComponents(message.components || []);
+            }
+            if (message.command === 'bundleComponentResult') {
+                setIsBundling(false);
+                if (message.success) {
+                    setComponentPickerOpen(false);
+                    setBundleError(null);
+                } else {
+                    setBundleError(message.error || 'Bundling failed');
+                }
+            }
+        };
+        window.addEventListener('message', handler);
+        return () => window.removeEventListener('message', handler);
+    }, []);
+
     if (isLoading) {
         return (
             <div className="canvas-loading">
@@ -607,6 +636,47 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
 
     return (
         <div className="canvas-container">
+            <button
+                style={{ position: 'absolute', top: 16, right: 16, zIndex: 2000 }}
+                onClick={() => setComponentPickerOpen(true)}
+            >
+                + Add React Component Preview
+            </button>
+            {isComponentPickerOpen && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+                    background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000
+                }}>
+                    <div style={{ background: '#fff', padding: 24, borderRadius: 8, minWidth: 320 }}>
+                        <h3>Select a React Component to Preview</h3>
+                        {reactComponents.length === 0 && <div>No components found.</div>}
+                        <ul style={{ maxHeight: 300, overflowY: 'auto', margin: '16px 0' }}>
+                            {reactComponents.map((comp) => (
+                                <li key={comp} style={{ marginBottom: 8 }}>
+                                    <button
+                                        style={{ width: '100%', textAlign: 'left', padding: 8, border: '1px solid #eee', borderRadius: 4, background: '#f9f9f9', cursor: 'pointer' }}
+                                        disabled={isBundling}
+                                        onClick={() => {
+                                            setIsBundling(true);
+                                            setBundleError(null);
+                                            vscode.postMessage({
+                                                command: 'bundleComponent',
+                                                componentPath: comp,
+                                                outputName: comp.replace(/\.[tj]sx$/, '').replace(/\//g, '_')
+                                            });
+                                        }}
+                                    >
+                                        {comp}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                        {isBundling && <div>Bundling component, please wait...</div>}
+                        {bundleError && <div style={{ color: 'red' }}>{bundleError}</div>}
+                        <button onClick={() => setComponentPickerOpen(false)} style={{ marginTop: 12 }}>Cancel</button>
+                    </div>
+                </div>
+            )}
             {/* Canvas Controls - Clean Minimal Design */}
             <div className="canvas-toolbar">
                 {/* Navigation Section */}
@@ -845,7 +915,6 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                                     useGlobalViewport={useGlobalViewport}
                                     onDragStart={handleDragStart}
                                     isDragging={dragState.isDragging && dragState.draggedFrame === file.name}
-                                    nonce={nonce}
                                     onSendToChat={handleSendToChat}
                                 />
                             );

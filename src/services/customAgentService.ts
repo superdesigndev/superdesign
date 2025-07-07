@@ -16,11 +16,13 @@ import { createGrepTool } from '../tools/grep-tool';
 import { createThemeTool } from '../tools/theme-tool';
 import { createLsTool } from '../tools/ls-tool';
 import { createMultieditTool } from '../tools/multiedit-tool';
+import { createBundleComponentTool } from '../tools/bundle-component-tool';
 
 export class CustomAgentService implements AgentService {
     private workingDirectory: string = '';
     private outputChannel: vscode.OutputChannel;
     private isInitialized = false;
+    public tools: any = {};
 
     constructor(outputChannel: vscode.OutputChannel) {
         this.outputChannel = outputChannel;
@@ -47,7 +49,8 @@ export class CustomAgentService implements AgentService {
                     this.outputChannel.appendLine(`.superdesign directory already exists: ${superdesignDir}`);
                 }
                 
-                this.workingDirectory = superdesignDir;
+                // Set working directory to workspace root, not .superdesign subdirectory
+                this.workingDirectory = workspaceRoot;
                 this.outputChannel.appendLine(`Working directory set to: ${this.workingDirectory}`);
             } else {
                 this.outputChannel.appendLine('No workspace root found, using fallback');
@@ -618,6 +621,7 @@ IMPORTANT RULES:
 - **ls**: List directory contents with optional filtering, sorting, and detailed information (shows files and subdirectories)
 - **bash**: Execute shell/bash commands within the workspace (secure execution with timeouts and output capture)
 - **generateTheme**: Generate a theme for the design
+- **bundleComponent**: Bundle a component for the design
 
 When calling tools, you MUST use the actual tool call, do NOT just output text like 'Called tool: write with arguments: ...' or <tool-call>...</tool-call>, this won't actually call the tool. (This is very important to my life, please follow)
 `;}
@@ -678,8 +682,10 @@ When calling tools, you MUST use the actual tool call, do NOT just output text l
                 grep: createGrepTool(executionContext),
                 ls: createLsTool(executionContext),
                 bash: createBashTool(executionContext),
-                generateTheme: createThemeTool(executionContext)
+                generateTheme: createThemeTool(executionContext),
+                bundleComponent: createBundleComponentTool(executionContext)
             };
+            this.tools = tools;
 
             // Prepare AI SDK input based on available data
             const streamTextConfig: any = {

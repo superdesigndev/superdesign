@@ -74,7 +74,7 @@ const App: React.FC = () => {
                 console.log('🎨 Rendering CanvasView with vscode:', !!vscode, 'nonce:', nonce);
                 try {
                     // Canvas view doesn't need context - it gets data from extension directly
-                    return <CanvasView vscode={vscode} nonce={nonce} />;
+                    return <CanvasView vscode={vscode} />;
                 } catch (error) {
                     console.error('❌ Error rendering CanvasView:', error);
                     return <div>Error rendering canvas: {String(error)}</div>;

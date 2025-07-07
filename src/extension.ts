@@ -8,6 +8,8 @@ import { ChatMessageService } from './services/chatMessageService';
 import { generateWebviewHtml } from './templates/webviewTemplate';
 import { WebviewContext } from './types/context';
 import { Logger, LogLevel } from './services/logger';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -1597,6 +1599,8 @@ export function activate(context: vscode.ExtensionContext) {
 				console.log('🚀 Received initializeSuperdesign command from webview');
 				vscode.commands.executeCommand('superdesign.initializeProject');
 				break;
+
+
 		}
 	});
 
@@ -1818,6 +1822,153 @@ class SuperdesignCanvasPanel {
 							data: message.data
 						});
 						break;
+					case 'loadReactComponents': {
+						const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+						if (!workspaceFolder) {
+							Logger.error('[loadReactComponents] No workspace folder found.');
+							this._panel.webview.postMessage({
+								command: 'reactComponentsLoaded',
+								components: [],
+								error: 'No workspace folder found.'
+							});
+							return;
+						}
+						const candidateDirs = [
+							path.join(workspaceFolder.uri.fsPath, 'src', 'components'),
+							path.join(workspaceFolder.uri.fsPath, 'src', 'app'),
+							path.join(workspaceFolder.uri.fsPath, 'src', 'pages')
+						];
+						Logger.info(`[loadReactComponents] Scanning directories: ${candidateDirs.join(', ')}`);
+						let components: string[] = [];
+						candidateDirs.forEach(dir => {
+							if (fs.existsSync(dir)) {
+								const walk = (d: string) => {
+									fs.readdirSync(d).forEach(f => {
+										const full = path.join(d, f);
+										if (fs.statSync(full).isDirectory()) {
+											walk(full);
+										} else if (full.endsWith('.tsx') || full.endsWith('.jsx')) {
+											components.push(path.relative(workspaceFolder.uri.fsPath, full));
+										}
+									});
+								};
+								walk(dir);
+							} else {
+								Logger.info(`[loadReactComponents] Directory does not exist: ${dir}`);
+							}
+						});
+						Logger.info(`[loadReactComponents] Found components: ${components.join(', ')}`);
+						this._panel.webview.postMessage({
+							command: 'reactComponentsLoaded',
+							components
+						});
+						break;
+					}
+					case 'bundleComponent': {
+						Logger.info(`[bundleComponent] Bundling component: ${message.componentPath}`);
+						const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+						if (!workspaceFolder) {
+							this._panel.webview.postMessage({
+								command: 'bundleComponentResult',
+								success: false,
+								error: 'No workspace folder found.'
+							});
+							return;
+						}
+						
+						const { componentPath, outputName } = message;
+						const workspaceRoot = workspaceFolder.uri.fsPath;
+						const scriptPath = path.join(this._extensionUri.fsPath, 'scripts', 'bundleComponent.js');
+						const finalOutputName = outputName || path.parse(componentPath).name;
+						const outDir = path.join(workspaceRoot, '.superdesign', 'design_iterations', finalOutputName);
+						
+						Logger.info(`[bundleComponent] Extension path: ${this._extensionUri.fsPath}`);
+						Logger.info(`[bundleComponent] Script: ${scriptPath}`);
+						Logger.info(`[bundleComponent] Workspace: ${workspaceRoot}`);
+						Logger.info(`[bundleComponent] Component: ${componentPath}`);
+						Logger.info(`[bundleComponent] Output: ${outDir}`);
+						
+						// Check if the bundling script exists
+						if (!fs.existsSync(scriptPath)) {
+							Logger.error(`[bundleComponent] Script not found: ${scriptPath}`);
+							this._panel.webview.postMessage({
+								command: 'bundleComponentResult',
+								success: false,
+								error: `Bundling script not found at ${scriptPath}`
+							});
+							return;
+						}
+						
+						// Build the full component path - check if it's already absolute
+						const fullComponentPath = path.isAbsolute(componentPath) 
+							? componentPath 
+							: path.join(workspaceRoot, componentPath);
+						
+						// Check if the component file exists
+						if (!fs.existsSync(fullComponentPath)) {
+							Logger.error(`[bundleComponent] Component not found: ${fullComponentPath}`);
+							this._panel.webview.postMessage({
+								command: 'bundleComponentResult',
+								success: false,
+								error: `Component file not found: ${componentPath}`
+							});
+							return;
+						}
+						
+						// Use Node.js child_process to run the bundling script
+						// Pass the absolute component path to the script
+						const { spawn } = require('child_process');
+						const proc = spawn('node', [scriptPath, fullComponentPath, outDir, finalOutputName], { 
+							cwd: workspaceRoot,
+							stdio: ['inherit', 'pipe', 'pipe']
+						});
+						
+						let stdout = '';
+						let stderr = '';
+						
+						proc.stdout.on('data', (data: Buffer) => {
+							stdout += data.toString();
+							Logger.info(`[bundleComponent] ${data.toString().trim()}`);
+						});
+						
+						proc.stderr.on('data', (data: Buffer) => {
+							stderr += data.toString();
+							Logger.error(`[bundleComponent] ${data.toString().trim()}`);
+						});
+						
+						proc.on('close', (code: number) => {
+							if (code === 0) {
+								Logger.info(`[bundleComponent] Bundle created successfully`);
+								this._panel.webview.postMessage({
+									command: 'bundleComponentResult',
+									success: true,
+									summary: `Component bundled successfully to ${outDir}`,
+									output: stdout
+								});
+								// Trigger file reload to show the new preview
+								this._loadDesignFiles();
+							} else {
+								Logger.error(`[bundleComponent] Bundling failed with code ${code}`);
+								this._panel.webview.postMessage({
+									command: 'bundleComponentResult',
+									success: false,
+									error: stderr || `Bundling failed with exit code ${code}`,
+									output: stdout
+								});
+							}
+						});
+						
+						proc.on('error', (err: Error) => {
+							Logger.error(`[bundleComponent] Process error: ${err.message}`);
+							this._panel.webview.postMessage({
+								command: 'bundleComponentResult',
+								success: false,
+								error: `Failed to start bundling process: ${err.message}`
+							});
+						});
+						
+						break;
+					}
 				}
 			},
 			null,
@@ -1928,13 +2079,13 @@ class SuperdesignCanvasPanel {
 			<html lang="en">
 			<head>
 				<meta charset="UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} data: https: vscode-webview:; script-src 'nonce-${nonce}'; frame-src ${webview.cspSource};">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline' https:; img-src ${webview.cspSource} data: https: vscode-webview:; script-src ${webview.cspSource} 'unsafe-inline' https:; frame-src ${webview.cspSource}; connect-src https:;">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<title>Superdesign Canvas</title>
 			</head>
 			<body>
 				<div id="root" data-view="canvas" data-nonce="${nonce}"></div>
-				<script nonce="${nonce}">
+				<script>
 					// Debug: Check if context data is being generated
 					console.log('Canvas Panel - About to set webview context. Logo URIs:', ${JSON.stringify(logoUris)});
 					
@@ -1949,7 +2100,7 @@ class SuperdesignCanvasPanel {
 					console.log('Canvas Panel - Webview context set:', window.__WEBVIEW_CONTEXT__);
 					console.log('Canvas Panel - Logo URIs received in webview:', window.__WEBVIEW_CONTEXT__?.logoUris);
 				</script>
-				<script nonce="${nonce}" src="${scriptUri}"></script>
+				<script src="${scriptUri}"></script>
 			</body>
 			</html>`;
 	}
@@ -1984,19 +2135,43 @@ class SuperdesignCanvasPanel {
 				}
 			}
 
-			// Read all files in the directory
-			const files = await vscode.workspace.fs.readDirectory(designFolder);
-			const designFiles = files.filter(([name, type]) => 
-				type === vscode.FileType.File && (
-					name.toLowerCase().endsWith('.html') || 
-					name.toLowerCase().endsWith('.svg')
-				)
-			);
+			// Recursively find all HTML and SVG files
+			const findFiles = async (folder: vscode.Uri, relativePath: string = ''): Promise<Array<{fileName: string, filePath: vscode.Uri, relativePath: string}>> => {
+				const results: Array<{fileName: string, filePath: vscode.Uri, relativePath: string}> = [];
+				
+				try {
+					const files = await vscode.workspace.fs.readDirectory(folder);
+					
+					for (const [name, type] of files) {
+						const fullPath = vscode.Uri.joinPath(folder, name);
+						const currentRelativePath = relativePath ? `${relativePath}/${name}` : name;
+						
+						if (type === vscode.FileType.Directory) {
+							// Recursively scan subdirectories
+							const subResults = await findFiles(fullPath, currentRelativePath);
+							results.push(...subResults);
+						} else if (type === vscode.FileType.File && (
+							name.toLowerCase().endsWith('.html') || 
+							name.toLowerCase().endsWith('.svg')
+						)) {
+							results.push({
+								fileName: name,
+								filePath: fullPath,
+								relativePath: currentRelativePath
+							});
+						}
+					}
+				} catch (error) {
+					Logger.warn(`Could not read directory ${folder.fsPath}: ${error}`);
+				}
+				
+				return results;
+			};
+
+			const allFiles = await findFiles(designFolder);
 
 			const loadedFiles = await Promise.all(
-				designFiles.map(async ([fileName, _]) => {
-					const filePath = vscode.Uri.joinPath(designFolder, fileName);
-					
+				allFiles.map(async ({fileName, filePath, relativePath}) => {
 					try {
 						// Read file stats and content
 						const [stat, content] = await Promise.all([
@@ -2009,12 +2184,13 @@ class SuperdesignCanvasPanel {
 						
 						// For HTML files, inline any external CSS files
 						if (fileType === 'html') {
-							htmlContent = await this._inlineExternalCSS(htmlContent, designFolder);
+							htmlContent = await this._inlineExternalCSS(htmlContent, vscode.Uri.joinPath(filePath, '..'));
 						}
 						
 						return {
 							name: fileName,
 							path: filePath.fsPath,
+							relativePath: relativePath, // Include the relative path for nested files
 							content: htmlContent,
 							size: stat.size,
 							modified: new Date(stat.mtime),
@@ -2030,7 +2206,7 @@ class SuperdesignCanvasPanel {
 			// Filter out any failed file reads
 			const validFiles = loadedFiles.filter(file => file !== null);
 
-			Logger.info(`Loaded ${validFiles.length} design files (HTML & SVG)`);
+			Logger.info(`Loaded ${validFiles.length} design files (HTML & SVG) from all subdirectories`);
 			
 			this._panel.webview.postMessage({
 				command: 'designFilesLoaded',
