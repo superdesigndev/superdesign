@@ -156,6 +156,10 @@ export class ChatMessageService {
                         providerName = 'Anthropic';
                         configureCommand = 'superdesign.configureApiKey';
                         break;
+                    case 'claude-code':
+                        providerName = 'Claude Code';
+                        configureCommand = 'workbench.action.openSettings';
+                        break;
                     case 'openai':
                         providerName = 'OpenAI';
                         configureCommand = 'superdesign.configureOpenAIApiKey';

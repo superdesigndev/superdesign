@@ -7,6 +7,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { AgentService, ExecutionContext } from '../types/agent';
+import { ClaudeCodeService } from './claudeCodeService';
 import { createReadTool } from '../tools/read-tool';
 import { createWriteTool } from '../tools/write-tool';
 import { createBashTool } from '../tools/bash-tool';
@@ -21,10 +22,12 @@ export class CustomAgentService implements AgentService {
     private workingDirectory: string = '';
     private outputChannel: vscode.OutputChannel;
     private isInitialized = false;
+    private claudeCodeService: ClaudeCodeService;
 
     constructor(outputChannel: vscode.OutputChannel) {
         this.outputChannel = outputChannel;
         this.outputChannel.appendLine('CustomAgentService constructor called');
+        this.claudeCodeService = new ClaudeCodeService(outputChannel);
         this.setupWorkingDirectory();
     }
 
@@ -138,6 +141,10 @@ export class CustomAgentService implements AgentService {
                 this.outputChannel.appendLine(`Using Anthropic model: ${anthropicModel}`);
                 return anthropic(anthropicModel);
                 
+            case 'claude-code':
+                // This case is handled in the query method before reaching this point
+                throw new Error('Claude Code provider should be handled before getModel() is called');
+                
             case 'openai':
             default:
                 const openaiKey = config.get<string>('openaiApiKey');
@@ -179,6 +186,9 @@ export class CustomAgentService implements AgentService {
                     break;
                 case 'openrouter':
                     modelName = 'anthropic/claude-3-7-sonnet-20250219';
+                    break;
+                case 'claude-code':
+                    modelName = 'claude-code';
                     break;
                 case 'anthropic':
                 default:
@@ -589,6 +599,43 @@ I've created the html design, please reveiw and let me know if you need any chan
             await this.setupWorkingDirectory();
         }
 
+        // Check if claude-code is selected and use ClaudeCodeService instead
+        const config = vscode.workspace.getConfiguration('superdesign');
+        const aiModelProvider = config.get<string>('aiModelProvider', 'anthropic');
+        const llmProvider = config.get<string>('llmProvider', 'claude-api');
+        
+        // If either setting is set to claude-code, use ClaudeCodeService
+        if (aiModelProvider === 'claude-code' || llmProvider === 'claude-code') {
+            this.outputChannel.appendLine('Using ClaudeCodeService for claude-code provider');
+            
+            // Convert conversation history to prompt for ClaudeCodeService
+            let queryPrompt = '';
+            if (conversationHistory && conversationHistory.length > 0) {
+                queryPrompt = conversationHistory.map(msg => {
+                    const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+                    return `${msg.role}: ${content}`;
+                }).join('\n\n');
+            } else if (prompt) {
+                queryPrompt = prompt;
+            } else {
+                throw new Error('Either prompt or conversationHistory must be provided');
+            }
+            
+            // Use ClaudeCodeService with streaming callback
+            const claudeMessages = await this.claudeCodeService.query(
+                queryPrompt,
+                { streaming: true },
+                abortController,
+                onMessage
+            );
+            
+            // Convert LLMMessages to expected format
+            return claudeMessages.map(msg => ({
+                role: msg.role,
+                content: msg.content
+            }));
+        }
+
         const responseMessages: any[] = [];
         const sessionId = `session_${Date.now()}`;
         let messageBuffer = '';
@@ -905,6 +952,8 @@ I've created the html design, please reveiw and let me know if you need any chan
                 return !!config.get<string>('openrouterApiKey');
             case 'anthropic':
                 return !!config.get<string>('anthropicApiKey');
+            case 'claude-code':
+                return true; // Claude Code doesn't require an API key
             case 'openai':
             default:
                 return !!config.get<string>('openaiApiKey');
