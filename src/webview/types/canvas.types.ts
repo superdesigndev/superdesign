@@ -17,7 +17,7 @@ export interface DesignFile {
 
 export interface CanvasState {
     designFiles: DesignFile[];
-    selectedFrames: string[];
+    selectedFrame: string;
     isLoading: boolean;
     error: string | null;
     zoom: number;
@@ -78,16 +78,70 @@ export interface FileWatchMessage extends ExtensionMessage {
     };
 }
 
+// Preview-related message types
+export interface LoadPreviewsMessage extends ExtensionMessage {
+    command: 'loadPreviews';
+}
+
+export interface PreviewsLoadedMessage extends ExtensionMessage {
+    command: 'previewsLoaded';
+    data: {
+        previews: Preview[];
+        hotReload?: boolean;
+    };
+}
+
+export interface DeletePreviewMessage extends ExtensionMessage {
+    command: 'deletePreview';
+    data: {
+        previewId: string;
+    };
+}
+
+export interface OpenInBrowserMessage extends ExtensionMessage {
+    command: 'openInBrowser';
+    data: {
+        fileName?: string;
+        filePath?: string;
+        previewId?: string;
+        route?: string;
+    };
+}
+
+export interface OpenInSimpleBrowserMessage extends ExtensionMessage {
+    command: 'openInSimpleBrowser';
+    data: {
+        fileName?: string;
+        filePath?: string;
+        previewId?: string;
+        route?: string;
+    };
+}
+
+export interface PreviewDeletedMessage extends ExtensionMessage {
+    command: 'previewDeleted';
+    data: {
+        previewId: string;
+        previews: Preview[];
+    };
+}
+
 export type WebviewMessage = 
     | LoadDesignFilesMessage 
     | SelectFrameMessage
     | SetContextFromCanvasMessage
-    | SetChatPromptMessage;
+    | SetChatPromptMessage
+    | LoadPreviewsMessage
+    | DeletePreviewMessage
+    | OpenInBrowserMessage
+    | OpenInSimpleBrowserMessage;
 
 export type ExtensionToWebviewMessage = 
     | DesignFilesLoadedMessage 
     | ErrorMessage 
-    | FileWatchMessage;
+    | FileWatchMessage
+    | PreviewsLoadedMessage
+    | PreviewDeletedMessage;
 
 // Canvas grid layout types
 export interface GridPosition {
@@ -176,4 +230,30 @@ export interface HierarchyTree {
     nodes: Map<string, HierarchyNode>;
     connections: ConnectionLine[];
     bounds: { width: number; height: number };
+}
+
+// Preview configuration types
+export interface Preview {
+    id: string;
+    type: 'component' | 'page';
+    component?: string;
+    page?: string;
+    route: string;
+    props: Record<string, any>;
+    description: string;
+    parentId: string | null;
+    group: string;
+    createdBy: string;
+}
+
+export interface PreviewConfig {
+    version: number;
+    previews: Preview[];
+}
+
+// Extended CanvasState to include previews
+export interface ExtendedCanvasState extends CanvasState {
+    previews: Preview[];
+    previewsLoading: boolean;
+    previewsError: string | null;
 } 

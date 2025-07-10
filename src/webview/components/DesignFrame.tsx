@@ -1,6 +1,7 @@
 import React from 'react';
 import { DesignFile, GridPosition, FrameDimensions, ViewportMode, WebviewMessage } from '../types/canvas.types';
 import { MobileIcon, TabletIcon, DesktopIcon, GlobeIcon } from './Icons';
+import { FrameHeader, ViewportControls, ActionButton } from './FrameHeader';
 
 // Import logo images
 import cursorLogo from '../../assets/cursor_logo.png';
@@ -14,7 +15,7 @@ interface DesignFrameProps {
     position: GridPosition;
     dimensions: FrameDimensions;
     isSelected: boolean;
-    onSelect: (fileName: string) => void;
+    onSelect: (fileName: string, event?: React.MouseEvent) => void;
     renderMode?: 'placeholder' | 'iframe' | 'html';
     showMetadata?: boolean;
     viewport?: ViewportMode;
@@ -50,9 +51,20 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
     const [showCopyDropdown, setShowCopyDropdown] = React.useState(false);
     const [copyButtonState, setCopyButtonState] = React.useState<{ text: string; isSuccess: boolean }>({ text: 'Copy prompt', isSuccess: false });
     const [copyPathButtonState, setCopyPathButtonState] = React.useState<{ text: string; isSuccess: boolean }>({ text: 'Copy design path', isSuccess: false });
+    const [isMobile, setIsMobile] = React.useState(false);
+    
+    React.useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 600);
+        };
+        
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
-    const handleClick = () => {
-        onSelect(file.name);
+    const handleClick = (e: React.MouseEvent) => {
+        onSelect(file.name, e);
     };
 
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -586,54 +598,28 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
             title={`${file.name} (${(file.size / 1024).toFixed(1)} KB)`}
             onMouseDown={handleMouseDown}
         >
-            <div className="frame-header">
-                <span className="frame-title">{file.name}</span>
-                
-                {/* Viewport Controls */}
-                {onViewportChange && !useGlobalViewport && (
-                    <div className="frame-viewport-controls">
-                        <button
-                            className={`frame-viewport-btn ${viewport === 'mobile' ? 'active' : ''}`}
-                            onClick={() => handleViewportToggle('mobile')}
-                            title="Mobile View"
-                        >
-                            <MobileIcon />
-                        </button>
-                        <button
-                            className={`frame-viewport-btn ${viewport === 'tablet' ? 'active' : ''}`}
-                            onClick={() => handleViewportToggle('tablet')}
-                            title="Tablet View"
-                        >
-                            <TabletIcon />
-                        </button>
-                        <button
-                            className={`frame-viewport-btn ${viewport === 'desktop' ? 'active' : ''}`}
-                            onClick={() => handleViewportToggle('desktop')}
-                            title="Desktop View"
-                        >
-                            <DesktopIcon />
-                        </button>
-                    </div>
-                )}
-                
-                {/* Global viewport indicator */}
-                {useGlobalViewport && (
-                    <div className="frame-viewport-indicator">
-                        <span className="global-indicator"><GlobeIcon /></span>
-                        <span className="viewport-icon">{getViewportIcon(viewport)}</span>
-                    </div>
-                )}
-                
-                {showMetadata && (
-                    <div className="frame-meta">
-                        {isLoading && <span className="frame-status loading">●</span>}
-                        {hasError && <span className="frame-status error">●</span>}
-                        {!isLoading && !hasError && renderMode === 'iframe' && (
-                            <span className="frame-status loaded">●</span>
-                        )}
-                    </div>
-                )}
-            </div>
+            {/* Modern Design Header */}
+            <FrameHeader
+                title={file.name}
+                badge={file.fileType.toUpperCase()}
+                isSelected={isSelected}
+                isDragging={isDragging}
+                onMouseDown={handleMouseDown}
+                onClick={handleClick}
+                compact={isMobile}
+            >
+                <ActionButton
+                    icon={
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="m5,15H4a2,2 0 0,1 -2,-2V4a2,2 0 0,1 2,-2h9a2,2 0 0,1 2,2v1"/>
+                        </svg>
+                    }
+                    onClick={handleCopyDesignPath}
+                    title={copyPathButtonState.text}
+                    variant={copyPathButtonState.isSuccess ? 'success' : 'default'}
+                />
+            </FrameHeader>
             <div className="frame-content">
                 {renderContent()}
                 

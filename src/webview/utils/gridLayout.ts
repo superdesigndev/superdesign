@@ -1,4 +1,4 @@
-import { GridPosition, FrameDimensions, CanvasConfig, DesignFile, HierarchyTree, HierarchyNode, ConnectionLine } from '../types/canvas.types';
+import { GridPosition, FrameDimensions, CanvasConfig, DesignFile, HierarchyTree, HierarchyNode, ConnectionLine, Preview } from '../types/canvas.types';
 
 /**
  * Calculate grid position for a frame based on its index
@@ -187,6 +187,14 @@ export function buildHierarchyTree(designs: DesignFile[]): HierarchyTree {
         }
     });
     
+    // Ensure all designs are represented as roots if no hierarchical relationships exist
+    if (roots.length === 0 && designs.length > 0) {
+        // If no hierarchical relationships were detected, treat all designs as independent roots
+        designs.forEach(design => {
+            roots.push(design.name);
+        });
+    }
+    
     // Second pass: Build connections
     nodes.forEach((node, fileName) => {
         if (node.parent && nodes.has(node.parent)) {
@@ -224,25 +232,50 @@ export function calculateHierarchyPositions(
     
     // Position root nodes first with generous spacing
     let currentRootY = 100; // Start with some padding
-    tree.roots.forEach(rootName => {
-        const rootNode = tree.nodes.get(rootName)!;
-        rootNode.position = {
-            x: 50, // Start with some padding from left edge
-            y: currentRootY
-        };
-        
-        // Calculate subtree height to determine spacing for next root
-        const subtreeHeight = calculateSubtreeHeight(rootNode, tree.nodes, config, { width: frameWidth, height: frameHeight });
-        
-        // Position children recursively
-        const nextAvailableY = positionChildrenImproved(rootNode, tree.nodes, config, currentRootY, { width: frameWidth, height: frameHeight });
-        
-        // Update position for next root with large spacing to avoid overlaps
-        currentRootY = Math.max(
-            currentRootY + frameHeight + verticalSpacing * 2,
-            nextAvailableY + verticalSpacing * 2
-        );
+    let currentRootX = 50; // Start with some padding from left edge
+    
+    // Check if we have multiple independent roots (likely standalone frames)
+    const hasOnlyStandaloneRoots = tree.roots.every(rootName => {
+        const rootNode = tree.nodes.get(rootName);
+        return rootNode && rootNode.children.length === 0;
     });
+    
+    // If all roots are standalone, arrange them in a grid pattern
+    if (hasOnlyStandaloneRoots && tree.roots.length > 1) {
+        const rootsPerRow = Math.min(tree.roots.length, config.framesPerRow || 4);
+        
+        tree.roots.forEach((rootName, index) => {
+            const rootNode = tree.nodes.get(rootName)!;
+            const col = index % rootsPerRow;
+            const row = Math.floor(index / rootsPerRow);
+            
+            rootNode.position = {
+                x: currentRootX + col * (frameWidth + horizontalSpacing),
+                y: currentRootY + row * (frameHeight + verticalSpacing)
+            };
+        });
+    } else {
+        // Use hierarchical positioning for true hierarchy or single root
+        tree.roots.forEach(rootName => {
+            const rootNode = tree.nodes.get(rootName)!;
+            rootNode.position = {
+                x: currentRootX,
+                y: currentRootY
+            };
+            
+            // Calculate subtree height to determine spacing for next root
+            const subtreeHeight = calculateSubtreeHeight(rootNode, tree.nodes, config, { width: frameWidth, height: frameHeight });
+            
+            // Position children recursively
+            const nextAvailableY = positionChildrenImproved(rootNode, tree.nodes, config, currentRootY, { width: frameWidth, height: frameHeight });
+            
+            // Update position for next root with large spacing to avoid overlaps
+            currentRootY = Math.max(
+                currentRootY + frameHeight + verticalSpacing * 2,
+                nextAvailableY + verticalSpacing * 2
+            );
+        });
+    }
     
     // Update connection positions
     tree.connections.forEach(connection => {
@@ -324,7 +357,9 @@ function positionChildrenImproved(
         .map(childName => nodes.get(childName))
         .filter(child => child !== undefined) as HierarchyNode[];
     
-    if (children.length === 0) {return startY + frameHeight;}
+    if (children.length === 0) {
+        return startY + frameHeight;
+    }
     
     let currentY = startY;
     
@@ -350,10 +385,22 @@ function positionChildrenImproved(
  */
 export function getHierarchicalPosition(
     fileName: string,
-    tree: HierarchyTree
+    tree: HierarchyTree,
+    fallbackIndex?: number,
+    config?: CanvasConfig
 ): GridPosition {
     const node = tree.nodes.get(fileName);
-    return node ? node.position : { x: 0, y: 0 };
+    if (node) {
+        return node.position;
+    }
+    
+    // Improved fallback: use grid position if hierarchy position not found
+    if (fallbackIndex !== undefined && config) {
+        return calculateGridPosition(fallbackIndex, config);
+    }
+    
+    // Last resort fallback
+    return { x: 0, y: 0 };
 }
 
 /**
@@ -412,6 +459,286 @@ export function getCurrentLevelVersion(filename: string): string {
 /**
  * Detect design relationships based on hierarchical naming patterns
  */
+/**
+ * Preview hierarchy node structure (similar to HierarchyNode but for previews)
+ */
+export interface PreviewHierarchyNode {
+    previewId: string;
+    position: GridPosition;
+    generation: number;
+    branchIndex: number;
+    parent?: string;
+    children: string[];
+}
+
+/**
+ * Preview hierarchy tree structure
+ */
+export interface PreviewHierarchyTree {
+    roots: string[];
+    nodes: Map<string, PreviewHierarchyNode>;
+    connections: ConnectionLine[];
+    bounds: { width: number; height: number };
+}
+
+/**
+ * Build hierarchy tree from previews based on parentId relationships
+ */
+export function buildPreviewHierarchyTree(previews: Preview[]): PreviewHierarchyTree {
+    const nodes = new Map<string, PreviewHierarchyNode>();
+    const roots: string[] = [];
+    const connections: ConnectionLine[] = [];
+    
+    // First pass: Create nodes and identify roots
+    previews.forEach((preview, index) => {
+        const node: PreviewHierarchyNode = {
+            previewId: preview.id,
+            position: { x: 0, y: 0 }, // Will be calculated later
+            generation: 0, // Will be calculated
+            branchIndex: 0, // Will be calculated
+            parent: preview.parentId || undefined,
+            children: []
+        };
+        
+        nodes.set(preview.id, node);
+        
+        if (!preview.parentId) {
+            roots.push(preview.id);
+        }
+    });
+    
+    // Ensure all previews are represented as roots if no hierarchical relationships exist
+    if (roots.length === 0 && previews.length > 0) {
+        // If no hierarchical relationships were detected, treat all previews as independent roots
+        previews.forEach(preview => {
+            roots.push(preview.id);
+        });
+    }
+    
+    // Second pass: Build parent-child relationships and calculate generations
+    previews.forEach(preview => {
+        if (preview.parentId && nodes.has(preview.parentId)) {
+            const parentNode = nodes.get(preview.parentId)!;
+            const childNode = nodes.get(preview.id)!;
+            
+            // Add child to parent's children array
+            parentNode.children.push(preview.id);
+            
+            // Set generation (parent's generation + 1)
+            childNode.generation = parentNode.generation + 1;
+        }
+    });
+    
+    // Third pass: Calculate branch indices for siblings
+    roots.forEach(rootId => {
+        calculatePreviewBranchIndices(rootId, nodes);
+    });
+    
+    // Fourth pass: Build connections
+    nodes.forEach((node, previewId) => {
+        if (node.parent && nodes.has(node.parent)) {
+            const parentNode = nodes.get(node.parent)!;
+            connections.push({
+                id: `${node.parent}-${previewId}`,
+                fromFrame: node.parent,
+                toFrame: previewId,
+                fromPosition: parentNode.position,
+                toPosition: node.position
+            });
+        }
+    });
+    
+    return {
+        roots,
+        nodes,
+        connections,
+        bounds: { width: 0, height: 0 }
+    };
+}
+
+/**
+ * Calculate branch indices for preview siblings recursively
+ */
+function calculatePreviewBranchIndices(
+    nodeId: string,
+    nodes: Map<string, PreviewHierarchyNode>
+): void {
+    const node = nodes.get(nodeId);
+    if (!node) {
+        return;
+    }
+    
+    // Sort children by their IDs for consistent ordering
+    node.children.sort();
+    
+    // Assign branch indices to children
+    node.children.forEach((childId, index) => {
+        const childNode = nodes.get(childId);
+        if (childNode) {
+            childNode.branchIndex = index;
+            // Recursively calculate for grandchildren
+            calculatePreviewBranchIndices(childId, nodes);
+        }
+    });
+}
+
+/**
+ * Calculate hierarchical positions for preview tree
+ */
+export function calculatePreviewHierarchyPositions(
+    tree: PreviewHierarchyTree,
+    config: CanvasConfig,
+    actualFrameDimensions?: { width: number; height: number },
+    designHierarchyBounds?: { width: number; height: number }
+): PreviewHierarchyTree {
+    const { horizontalSpacing, verticalSpacing } = config.hierarchy;
+    // Use actual frame dimensions if provided, otherwise fall back to config or defaults
+    const frameWidth = actualFrameDimensions?.width || Math.max(config.frameSize.width, 400);
+    const frameHeight = actualFrameDimensions?.height || Math.max(config.frameSize.height, 550);
+    
+    // Position preview hierarchy to avoid overlapping with design hierarchy
+    // If design hierarchy bounds are provided, position previews below it with extra spacing
+    const startX = 50; // Start with some padding from left edge
+    const startY = designHierarchyBounds 
+        ? designHierarchyBounds.height + verticalSpacing * 3  // Start below design hierarchy with extra spacing
+        : 100; // Default padding if no design hierarchy
+    
+    // Position root nodes first with generous spacing
+    let currentRootY = startY;
+    
+    // Check if we have multiple independent preview roots (likely standalone previews)
+    const hasOnlyStandaloneRoots = tree.roots.every(rootId => {
+        const rootNode = tree.nodes.get(rootId);
+        return rootNode && rootNode.children.length === 0;
+    });
+    
+    // If all roots are standalone, arrange them in a grid pattern
+    if (hasOnlyStandaloneRoots && tree.roots.length > 1) {
+        const rootsPerRow = Math.min(tree.roots.length, config.framesPerRow || 4);
+        
+        tree.roots.forEach((rootId, index) => {
+            const rootNode = tree.nodes.get(rootId)!;
+            const col = index % rootsPerRow;
+            const row = Math.floor(index / rootsPerRow);
+            
+            rootNode.position = {
+                x: startX + col * (frameWidth + horizontalSpacing),
+                y: currentRootY + row * (frameHeight + verticalSpacing)
+            };
+        });
+    } else {
+        // Use hierarchical positioning for true hierarchy or single root
+        tree.roots.forEach(rootId => {
+            const rootNode = tree.nodes.get(rootId)!;
+            rootNode.position = {
+                x: startX,
+                y: currentRootY
+            };
+            
+            // Position children recursively
+            const nextAvailableY = positionPreviewChildrenImproved(rootNode, tree.nodes, config, currentRootY, { width: frameWidth, height: frameHeight });
+            
+            // Update position for next root with large spacing to avoid overlaps
+            currentRootY = Math.max(
+                currentRootY + frameHeight + verticalSpacing * 2,
+                nextAvailableY + verticalSpacing * 2
+            );
+        });
+    }
+    
+    // Update connection positions
+    tree.connections.forEach(connection => {
+        const fromNode = tree.nodes.get(connection.fromFrame);
+        const toNode = tree.nodes.get(connection.toFrame);
+        
+        if (fromNode && toNode) {
+            connection.fromPosition = {
+                x: fromNode.position.x + frameWidth,
+                y: fromNode.position.y + frameHeight / 2
+            };
+            connection.toPosition = {
+                x: toNode.position.x,
+                y: toNode.position.y + frameHeight / 2
+            };
+        }
+    });
+    
+    // Calculate total bounds
+    let maxX = 0, maxY = 0;
+    tree.nodes.forEach(node => {
+        maxX = Math.max(maxX, node.position.x + frameWidth + 100);
+        maxY = Math.max(maxY, node.position.y + frameHeight + 100);
+    });
+    
+    tree.bounds = { width: maxX, height: maxY };
+    
+    return tree;
+}
+
+/**
+ * Position preview children nodes recursively without overlaps
+ */
+function positionPreviewChildrenImproved(
+    parentNode: PreviewHierarchyNode,
+    nodes: Map<string, PreviewHierarchyNode>,
+    config: CanvasConfig,
+    startY: number,
+    frameDimensions: { width: number; height: number }
+): number {
+    const { horizontalSpacing, verticalSpacing } = config.hierarchy;
+    const frameWidth = frameDimensions.width;
+    const frameHeight = frameDimensions.height;
+    
+    const children = parentNode.children
+        .map(childId => nodes.get(childId))
+        .filter(child => child !== undefined) as PreviewHierarchyNode[];
+    
+    if (children.length === 0) {
+        return startY + frameHeight;
+    }
+    
+    let currentY = startY;
+    
+    // Position each child without overlapping
+    children.forEach((child) => {
+        child.position = {
+            x: parentNode.position.x + frameWidth + horizontalSpacing,
+            y: currentY
+        };
+        
+        // Recursively position grandchildren and get the next available Y
+        const nextY = positionPreviewChildrenImproved(child, nodes, config, currentY, frameDimensions);
+        
+        // Move to next position with generous spacing to avoid overlaps
+        currentY = Math.max(currentY + frameHeight + verticalSpacing, nextY + verticalSpacing);
+    });
+    
+    return currentY;
+}
+
+/**
+ * Get hierarchical position for a specific preview
+ */
+export function getPreviewHierarchicalPosition(
+    previewId: string,
+    tree: PreviewHierarchyTree,
+    fallbackIndex?: number,
+    config?: CanvasConfig
+): GridPosition {
+    const node = tree.nodes.get(previewId);
+    if (node) {
+        return node.position;
+    }
+    
+    // Improved fallback: use grid position if hierarchy position not found
+    if (fallbackIndex !== undefined && config) {
+        return calculateGridPosition(fallbackIndex, config);
+    }
+    
+    // Last resort fallback
+    return { x: 0, y: 0 };
+}
+
 export function detectDesignRelationships(designs: DesignFile[]): DesignFile[] {
     const updatedDesigns = designs.map(design => ({ ...design }));
     

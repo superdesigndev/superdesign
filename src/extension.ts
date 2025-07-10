@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import { ClaudeCodeService } from './services/claudeCodeService';
 import { CustomAgentService } from './services/customAgentService';
+import { PreviewService } from './services/previewService';
 import { ChatSidebarProvider } from './providers/chatSidebarProvider';
 import { ChatMessageService } from './services/chatMessageService';
 import { generateWebviewHtml } from './templates/webviewTemplate';
@@ -1760,6 +1761,7 @@ class SuperdesignCanvasPanel {
 	private readonly _sidebarProvider: ChatSidebarProvider;
 	private _disposables: vscode.Disposable[] = [];
 	private _fileWatcher: vscode.FileSystemWatcher | undefined;
+	private _previewFileWatcher: vscode.FileSystemWatcher | undefined;
 
 	public static createOrShow(extensionUri: vscode.Uri, sidebarProvider: ChatSidebarProvider) {
 		const column = vscode.window.activeTextEditor?.viewColumn;
@@ -1801,6 +1803,12 @@ class SuperdesignCanvasPanel {
 					case 'loadDesignFiles':
 						this._loadDesignFiles();
 						break;
+					case 'loadPreviews':
+						this._loadPreviews();
+						break;
+					case 'deletePreview':
+						this._deletePreview(message.data?.previewId);
+						break;
 					case 'selectFrame':
 						Logger.debug(`Frame selected: ${message.data?.fileName}`);
 						break;
@@ -1818,6 +1826,9 @@ class SuperdesignCanvasPanel {
 							data: message.data
 						});
 						break;
+					case 'openInSimpleBrowser':
+						this._openInSimpleBrowser(message.data);
+						break;
 				}
 			},
 			null,
@@ -1828,10 +1839,15 @@ class SuperdesignCanvasPanel {
 	public dispose() {
 		SuperdesignCanvasPanel.currentPanel = undefined;
 		
-		// Dispose of file watcher
+		// Dispose of file watchers
 		if (this._fileWatcher) {
 			this._fileWatcher.dispose();
 			this._fileWatcher = undefined;
+		}
+		
+		if (this._previewFileWatcher) {
+			this._previewFileWatcher.dispose();
+			this._previewFileWatcher = undefined;
 		}
 		
 		this._panel.dispose();
@@ -1897,6 +1913,34 @@ class SuperdesignCanvasPanel {
 				}
 			});
 		});
+
+		// Set up preview file watcher for hot loading
+		this._setupPreviewFileWatcher(workspaceFolder);
+	}
+
+	private _setupPreviewFileWatcher(workspaceFolder: vscode.WorkspaceFolder) {
+		try {
+			// Watch for changes to previews.json file
+			this._previewFileWatcher = PreviewService.watchPreviewsFile(
+				workspaceFolder.uri.fsPath,
+				(previews) => {
+					Logger.info(`🔄 Previews file changed - hot reloading ${previews.length} previews`);
+					// Send updated previews to webview with hot reload indicator
+					this._panel.webview.postMessage({
+						command: 'previewsLoaded',
+						data: { 
+							previews,
+							hotReload: true 
+						}
+					});
+				}
+			);
+
+			Logger.info('🚀 Preview file hot loading enabled - watching .superdesign/previews.json');
+		} catch (error) {
+			Logger.error(`Failed to setup preview file watcher: ${error}`);
+			// Continue without file watcher - manual refresh will still work
+		}
 	}
 
 	private _update() {
@@ -1928,7 +1972,7 @@ class SuperdesignCanvasPanel {
 			<html lang="en">
 			<head>
 				<meta charset="UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} data: https: vscode-webview:; script-src 'nonce-${nonce}'; frame-src ${webview.cspSource};">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} data: https: vscode-webview:; script-src 'nonce-${nonce}'; frame-src ${webview.cspSource} http://localhost:* https://localhost:* http://127.0.0.1:* https://127.0.0.1:*;">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<title>Superdesign Canvas</title>
 			</head>
@@ -2043,6 +2087,108 @@ class SuperdesignCanvasPanel {
 				command: 'error',
 				data: { error: `Failed to load design files: ${error}` }
 			});
+		}
+	}
+
+	private async _loadPreviews() {
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+		if (!workspaceFolder) {
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: 'No workspace folder found. Please open a workspace first.' }
+			});
+			return;
+		}
+
+		try {
+			// Ensure default previews file exists for file watcher to track
+			await PreviewService.createDefaultPreviewsFile(workspaceFolder.uri.fsPath);
+			
+			// Load previews using PreviewService
+			const previews = await PreviewService.loadPreviews(workspaceFolder.uri.fsPath);
+			
+			Logger.info(`Loaded ${previews.length} preview configurations`);
+			
+			this._panel.webview.postMessage({
+				command: 'previewsLoaded',
+				data: { previews }
+			});
+
+		} catch (error) {
+			Logger.error(`Error loading previews: ${error}`);
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: `Failed to load previews: ${error}` }
+			});
+		}
+	}
+
+	private async _deletePreview(previewId: string) {
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+		if (!workspaceFolder) {
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: 'No workspace folder found. Please open a workspace first.' }
+			});
+			return;
+		}
+
+		if (!previewId) {
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: 'Preview ID is required for deletion.' }
+			});
+			return;
+		}
+
+		try {
+			// Delete preview using PreviewService
+			const updatedPreviews = await PreviewService.deletePreview(workspaceFolder.uri.fsPath, previewId);
+			
+			Logger.info(`Deleted preview "${previewId}" successfully`);
+			
+			this._panel.webview.postMessage({
+				command: 'previewDeleted',
+				data: { 
+					previewId,
+					previews: updatedPreviews 
+				}
+			});
+
+		} catch (error) {
+			Logger.error(`Error deleting preview: ${error}`);
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: `Failed to delete preview: ${error}` }
+			});
+		}
+	}
+
+	private async _openInSimpleBrowser(data: any) {
+		try {
+			let url: string | undefined;
+
+			if (data.filePath) {
+				// For design files, convert file path to file:// URL
+				url = vscode.Uri.file(data.filePath).toString();
+				Logger.info(`Opening design file in simple browser: ${data.fileName}`);
+			} else if (data.route) {
+				// For previews, use the route directly
+				url = data.route;
+				Logger.info(`Opening preview in simple browser: ${data.previewId}`);
+			}
+
+			if (url) {
+				// Use VS Code's simple browser to open the URL
+				await vscode.commands.executeCommand('simpleBrowser.show', url);
+				Logger.info(`Successfully opened in simple browser: ${url}`);
+			} else {
+				Logger.error('No valid URL found for opening in simple browser');
+				vscode.window.showErrorMessage('Unable to open in browser: No valid URL found');
+			}
+		} catch (error) {
+			Logger.error(`Error opening in simple browser: ${error}`);
+			vscode.window.showErrorMessage(`Failed to open in browser: ${error}`);
 		}
 	}
 
