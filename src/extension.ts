@@ -178,6 +178,52 @@ async function getCssFileContent(filePath: string, sidebarProvider: ChatSidebarP
 }
 
 
+// Function to detect current IDE
+function detectCurrentIDE(): { isCursor: boolean; isWindsurf: boolean } {
+	const appName = vscode.env.appName.toLowerCase();
+	return {
+		isCursor: appName.includes('cursor'),
+		isWindsurf: appName.includes('windsurf')
+	};
+}
+
+// Function to check if Claude command exists
+async function claudeCommandExists(): Promise<boolean> {
+	try {
+		const { exec } = require('child_process');
+		
+		// Check on Windows host first
+		const checkHost = new Promise<boolean>((resolve) => {
+			exec('where claude', (error: any) => {
+				resolve(!error);
+			});
+		});
+		
+		// If on Windows, also check WSL
+		const isWindows = process.platform === 'win32';
+		if (isWindows) {
+			const checkWSL = new Promise<boolean>((resolve) => {
+				exec('wsl which claude', (error: any) => {
+					resolve(!error);
+				});
+			});
+			
+			// Return true if found in either location
+			const [hostResult, wslResult] = await Promise.all([checkHost, checkWSL]);
+			return hostResult || wslResult;
+		}
+		
+		// On non-Windows, just check normally
+		return new Promise<boolean>((resolve) => {
+			exec('which claude', (error: any) => {
+				resolve(!error);
+			});
+		});
+	} catch {
+		return false;
+	}
+}
+
 // Function to initialize Superdesign project structure
 async function initializeSuperdesignProject() {
 	const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
@@ -1123,57 +1169,78 @@ html.dark {
 			Logger.info('Created default_ui_darkmode.css file');
 		}
 
-		// Create .cursor/rules directory if it doesn't exist
-		const cursorRulesFolder = vscode.Uri.joinPath(workspaceRoot, '.cursor', 'rules');
-		try {
-			await vscode.workspace.fs.stat(cursorRulesFolder);
-		} catch {
-			await vscode.workspace.fs.createDirectory(cursorRulesFolder);
-		}
+		// Detect current IDE and Claude command availability
+		const { isCursor, isWindsurf } = detectCurrentIDE();
+		const hasClaudeCommand = await claudeCommandExists();
+		
+		const createdFiles: string[] = [];
 
-		// Create or append to design.mdc
-		const designMdcPath = vscode.Uri.joinPath(cursorRulesFolder, 'design.mdc');
-		try {
-			const existingContent = await vscode.workspace.fs.readFile(designMdcPath);
-			const currentContent = Buffer.from(existingContent).toString('utf8');
-			if (!currentContent.includes('superdesign: Open Canvas View')) {
-				const updatedContent = currentContent + '\n\n' + designRuleMdcContent;
-				await vscode.workspace.fs.writeFile(designMdcPath, Buffer.from(updatedContent, 'utf8'));
+		// Create .cursor/rules/design.mdc only if running in Cursor
+		if (isCursor) {
+			const cursorRulesFolder = vscode.Uri.joinPath(workspaceRoot, '.cursor', 'rules');
+			try {
+				await vscode.workspace.fs.stat(cursorRulesFolder);
+			} catch {
+				await vscode.workspace.fs.createDirectory(cursorRulesFolder);
 			}
-		} catch {
-			// File doesn't exist, create it
-			await vscode.workspace.fs.writeFile(designMdcPath, Buffer.from(designRuleMdcContent, 'utf8'));
-		}
 
-		// Create or append to CLAUDE.md
-		const claudeMdPath = vscode.Uri.joinPath(workspaceRoot, 'CLAUDE.md');
-		try {
-			const existingContent = await vscode.workspace.fs.readFile(claudeMdPath);
-			const currentContent = Buffer.from(existingContent).toString('utf8');
-			if (!currentContent.includes('superdesign: Open Canvas View')) {
-				const updatedContent = currentContent + '\n\n' + designRuleContent;
-				await vscode.workspace.fs.writeFile(claudeMdPath, Buffer.from(updatedContent, 'utf8'));
+			const designMdcPath = vscode.Uri.joinPath(cursorRulesFolder, 'design.mdc');
+			try {
+				const existingContent = await vscode.workspace.fs.readFile(designMdcPath);
+				const currentContent = Buffer.from(existingContent).toString('utf8');
+				if (!currentContent.includes('superdesign: Open Canvas View')) {
+					const updatedContent = currentContent + '\n\n' + designRuleMdcContent;
+					await vscode.workspace.fs.writeFile(designMdcPath, Buffer.from(updatedContent, 'utf8'));
+					createdFiles.push('.cursor/rules/design.mdc');
+				}
+			} catch {
+				// File doesn't exist, create it
+				await vscode.workspace.fs.writeFile(designMdcPath, Buffer.from(designRuleMdcContent, 'utf8'));
+				createdFiles.push('.cursor/rules/design.mdc');
 			}
-		} catch {
-			// File doesn't exist, create it
-			await vscode.workspace.fs.writeFile(claudeMdPath, Buffer.from(designRuleContent, 'utf8'));
 		}
 
-		// Create or append to .windsurfrules
-		const windsurfRulesPath = vscode.Uri.joinPath(workspaceRoot, '.windsurfrules');
-		try {
-			const existingContent = await vscode.workspace.fs.readFile(windsurfRulesPath);
-			const currentContent = Buffer.from(existingContent).toString('utf8');
-			if (!currentContent.includes('superdesign: Open Canvas View')) {
-				const updatedContent = currentContent + '\n\n' + designRuleContent;
-				await vscode.workspace.fs.writeFile(windsurfRulesPath, Buffer.from(updatedContent, 'utf8'));
+		// Create CLAUDE.md only if Claude command exists
+		if (hasClaudeCommand) {
+			const claudeMdPath = vscode.Uri.joinPath(workspaceRoot, 'CLAUDE.md');
+			try {
+				const existingContent = await vscode.workspace.fs.readFile(claudeMdPath);
+				const currentContent = Buffer.from(existingContent).toString('utf8');
+				if (!currentContent.includes('superdesign: Open Canvas View')) {
+					const updatedContent = currentContent + '\n\n' + designRuleContent;
+					await vscode.workspace.fs.writeFile(claudeMdPath, Buffer.from(updatedContent, 'utf8'));
+					createdFiles.push('CLAUDE.md');
+				}
+			} catch {
+				// File doesn't exist, create it
+				await vscode.workspace.fs.writeFile(claudeMdPath, Buffer.from(designRuleContent, 'utf8'));
+				createdFiles.push('CLAUDE.md');
 			}
-		} catch {
-			// File doesn't exist, create it
-			await vscode.workspace.fs.writeFile(windsurfRulesPath, Buffer.from(designRuleContent, 'utf8'));
 		}
 
-		vscode.window.showInformationMessage('✅ Superdesign project initialized successfully! Created .superdesign folder and design rules for Cursor, Claude, and Windsurf.');
+		// Create .windsurfrules only if running in Windsurf
+		if (isWindsurf) {
+			const windsurfRulesPath = vscode.Uri.joinPath(workspaceRoot, '.windsurfrules');
+			try {
+				const existingContent = await vscode.workspace.fs.readFile(windsurfRulesPath);
+				const currentContent = Buffer.from(existingContent).toString('utf8');
+				if (!currentContent.includes('superdesign: Open Canvas View')) {
+					const updatedContent = currentContent + '\n\n' + designRuleContent;
+					await vscode.workspace.fs.writeFile(windsurfRulesPath, Buffer.from(updatedContent, 'utf8'));
+					createdFiles.push('.windsurfrules');
+				}
+			} catch {
+				// File doesn't exist, create it
+				await vscode.workspace.fs.writeFile(windsurfRulesPath, Buffer.from(designRuleContent, 'utf8'));
+				createdFiles.push('.windsurfrules');
+			}
+		}
+
+		const filesMessage = createdFiles.length > 0 
+			? `Created design rules: ${createdFiles.join(', ')}`
+			: 'No new design rule files needed for current environment';
+		
+		vscode.window.showInformationMessage(`✅ Superdesign project initialized successfully! Created .superdesign folder. ${filesMessage}`);
 		
 	} catch (error) {
 		vscode.window.showErrorMessage(`Failed to initialize Superdesign project: ${error}`);
