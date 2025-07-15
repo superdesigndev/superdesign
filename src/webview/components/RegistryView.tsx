@@ -18,14 +18,21 @@ const RegistryView: React.FC<RegistryViewProps> = ({ vscode }) => {
             console.log('RegistryView received message:', message);
 
             switch (message.type) {
+                case 'registryLoading':
+                    setLoading(true);
+                    setError(null);
+                    console.log('Registry loading started...');
+                    break;
                 case 'registryLoaded':
                     setRegistry(message.registry);
                     setError(null);
                     setLoading(false);
+                    console.log('Registry loaded successfully:', message.registry);
                     break;
                 case 'registryError':
                     setError(message.error);
                     setLoading(false);
+                    console.log('Registry error:', message.error);
                     break;
             }
         };

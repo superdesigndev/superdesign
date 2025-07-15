@@ -95,6 +95,12 @@
         "title": "Open Settings",
         "category": "Superdesign",
         "icon": "$(settings-gear)"
+      },
+      {
+        "command": "superdesign.refreshRegistry",
+        "title": "Refresh Registry",
+        "category": "Superdesign",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
@@ -112,6 +118,11 @@
         {
           "command": "superdesign.clearChat",
           "when": "view == superdesign.chatView",
+          "group": "navigation"
+        },
+        {
+          "command": "superdesign.refreshRegistry",
+          "when": "view == superdesign.componentRegistryView",
           "group": "navigation"
         }
       ]

@@ -175,6 +175,7 @@ export type ExtensionToWebviewMessage =
     | FileWatchMessage
     | PreviewsLoadedMessage
     | RegistryLoadedMessage
+    | RegistryLoadingMessage
     | PreviewDeletedMessage
     | FrameRefreshedMessage;
 
@@ -339,4 +340,8 @@ export interface RegistryLoadedMessage extends ExtensionMessage {
     data: {
         registry: RegistryConfig;
     };
+}
+
+export interface RegistryLoadingMessage extends ExtensionMessage {
+    command: 'registryLoading';
 } 

@@ -1518,6 +1518,12 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	);
 
+	// Add disposal to context
+	context.subscriptions.push(
+		componentRegistryDisposable,
+		{ dispose: () => componentRegistryProvider.dispose() }
+	);
+
 	// Register command to show sidebar
 	const showSidebarDisposable = vscode.commands.registerCommand('superdesign.showChatSidebar', () => {
 		vscode.commands.executeCommand('workbench.view.extension.superdesign-sidebar');
@@ -1551,6 +1557,13 @@ export function activate(context: vscode.ExtensionContext) {
 	// Register open settings command
 	const openSettingsDisposable = vscode.commands.registerCommand('superdesign.openSettings', () => {
 		vscode.commands.executeCommand('workbench.action.openSettings', '@ext:iganbold.superdesign');
+	});
+
+	// Register refresh registry command
+	const refreshRegistryDisposable = vscode.commands.registerCommand('superdesign.refreshRegistry', () => {
+		componentRegistryProvider.sendMessage({
+			type: 'loadRegistry'
+		});
 	});
 
 	// Register configure API key command (alternative to the existing one)
@@ -1629,6 +1642,7 @@ export function activate(context: vscode.ExtensionContext) {
 		resetWelcomeDisposable,
 		initializeProjectDisposable,
 		openSettingsDisposable,
+		refreshRegistryDisposable,
 		configureApiKeyQuickDisposable
 	);
 }
@@ -1793,6 +1807,7 @@ class SuperdesignCanvasPanel {
 			column || vscode.ViewColumn.One,
 			{
 				enableScripts: true,
+				retainContextWhenHidden: true,
 				localResourceRoots: [
 					vscode.Uri.joinPath(extensionUri, 'dist'),
 					vscode.Uri.joinPath(extensionUri, 'src', 'assets')
@@ -2395,37 +2410,105 @@ class SuperdesignCanvasPanel {
 				throw new Error('No workspace folder found');
 			}
 
-			// Convert relative path to absolute if needed
-			let absolutePath: string;
-			if (filePath.startsWith('.')) {
-				// Relative path - resolve relative to workspace
-				absolutePath = vscode.Uri.joinPath(workspaceFolder.uri, filePath).fsPath;
+			// Try multiple path resolution strategies
+			const pathsToTry: string[] = [];
+
+			if (filePath.startsWith('/')) {
+				// Already absolute path
+				pathsToTry.push(filePath);
 			} else {
-				// Assume it's already absolute
-				absolutePath = filePath;
+				// Relative path - try multiple resolution strategies
+				
+				// Strategy 1: Relative to current workspace
+				const workspaceRelativePath = vscode.Uri.joinPath(workspaceFolder.uri, filePath).fsPath;
+				pathsToTry.push(workspaceRelativePath);
+				
+				// Strategy 2: Check if we're in a superdesign workspace and look for common project structures
+				if (workspaceFolder.uri.fsPath.includes('superdesign')) {
+					// Look for common project locations
+					const projectDirs = [
+						'/Users/jackjack/github/playground/medapp',
+						'/Users/jackjack/github/medapp',
+						'/Users/jackjack/playground/medapp',
+						'/Users/jackjack/medapp'
+					];
+					
+					for (const projectDir of projectDirs) {
+						const projectRelativePath = vscode.Uri.file(projectDir).with({ path: vscode.Uri.file(projectDir).path + '/' + filePath }).fsPath;
+						pathsToTry.push(projectRelativePath);
+					}
+				}
+				
+				// Strategy 3: Search in all open workspace folders
+				for (const folder of vscode.workspace.workspaceFolders || []) {
+					if (folder.uri.fsPath !== workspaceFolder.uri.fsPath) {
+						const otherWorkspaceRelativePath = vscode.Uri.joinPath(folder.uri, filePath).fsPath;
+						pathsToTry.push(otherWorkspaceRelativePath);
+					}
+				}
 			}
 
-			const fileUri = vscode.Uri.file(absolutePath);
-			
-			// Check if file exists
-			try {
-				await vscode.workspace.fs.stat(fileUri);
-			} catch {
-				throw new Error(`File not found: ${absolutePath}`);
+			// Try each path until we find one that exists
+			let foundPath: string | null = null;
+			let foundUri: vscode.Uri | null = null;
+
+			for (const tryPath of pathsToTry) {
+				try {
+					const fileUri = vscode.Uri.file(tryPath);
+					const stat = await vscode.workspace.fs.stat(fileUri);
+					foundPath = tryPath;
+					foundUri = fileUri;
+					break;
+				} catch {
+					// Continue to next path
+				}
+			}
+
+			if (!foundPath || !foundUri) {
+				// If file not found, offer to search for it
+				const searchAction = await vscode.window.showErrorMessage(
+					`File not found: ${filePath}\n\nWould you like to search for it or open the target project?`,
+					'Search for File',
+					'Open Target Project',
+					'Cancel'
+				);
+
+				if (searchAction === 'Search for File') {
+					// Use VS Code's quick open to search for the file
+					const fileName = filePath.split('/').pop() || filePath;
+					await vscode.commands.executeCommand('workbench.action.quickOpen', fileName);
+					return;
+				} else if (searchAction === 'Open Target Project') {
+					// Suggest opening the target project
+					const folderUri = await vscode.window.showOpenDialog({
+						canSelectFiles: false,
+						canSelectFolders: true,
+						canSelectMany: false,
+						openLabel: 'Open Project Folder'
+					});
+					
+					if (folderUri && folderUri[0]) {
+						await vscode.commands.executeCommand('vscode.openFolder', folderUri[0]);
+					}
+					return;
+				}
+
+				throw new Error(`File not found: ${filePath}. Tried paths:\n${pathsToTry.map(p => `  - ${p}`).join('\n')}`);
 			}
 
 			// Open the file in VS Code editor
-			const document = await vscode.workspace.openTextDocument(fileUri);
+			const document = await vscode.workspace.openTextDocument(foundUri);
 			await vscode.window.showTextDocument(document, {
 				preview: false, // Open in a permanent tab
 				viewColumn: vscode.ViewColumn.One
 			});
 
-			Logger.info(`📄 Opened file in editor: ${absolutePath}`);
+			Logger.info(`Opened file in editor: ${foundPath}`);
 
 		} catch (error) {
-			Logger.error(`Error opening file ${filePath}: ${error}`);
-			vscode.window.showErrorMessage(`Failed to open file: ${error instanceof Error ? error.message : String(error)}`);
+			const errorMessage = error instanceof Error ? error.message : String(error);
+			Logger.error(`Error opening file ${filePath}: ${errorMessage}`);
+			vscode.window.showErrorMessage(`Failed to open file: ${errorMessage}`);
 		}
 	}
 

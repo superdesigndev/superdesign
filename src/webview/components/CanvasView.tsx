@@ -58,8 +58,6 @@ interface IframeOverlayProps {
     onRenameChange: (value: string) => void;
     onRenameKeyDown: (e: React.KeyboardEvent) => void;
     onRenameCancel: () => void;
-    onViewportChange: (viewport: ViewportMode) => void;
-    currentViewport: ViewportMode;
     onViewCode: () => void;
     onOpenInBrowser: () => void;
     onMore: () => void;
@@ -81,8 +79,6 @@ const IframeOverlay: React.FC<IframeOverlayProps> = ({
     onRenameChange,
     onRenameKeyDown,
     onRenameCancel,
-    onViewportChange,
-    currentViewport,
     onViewCode,
     onOpenInBrowser,
     onMore,
@@ -180,28 +176,6 @@ const IframeOverlay: React.FC<IframeOverlayProps> = ({
                     alignItems: 'center', 
                     gap: '3px'
                 }}>
-                    {/* Viewport Controls */}
-                    <button
-                        className={`iframe-overlay-btn ${currentViewport === 'mobile' ? 'active' : ''}`}
-                        onClick={() => onViewportChange('mobile')}
-                        title="Mobile View"
-                    >
-                        <MobileIcon />
-                    </button>
-                    <button
-                        className={`iframe-overlay-btn ${currentViewport === 'tablet' ? 'active' : ''}`}
-                        onClick={() => onViewportChange('tablet')}
-                        title="Tablet View"
-                    >
-                        <TabletIcon />
-                    </button>
-                    <button
-                        className={`iframe-overlay-btn ${currentViewport === 'desktop' ? 'active' : ''}`}
-                        onClick={() => onViewportChange('desktop')}
-                        title="Desktop View"
-                    >
-                        <DesktopIcon />
-                    </button>
                     <div className="iframe-overlay-btn-container">
                         <button
                             className="iframe-overlay-btn"
@@ -293,16 +267,29 @@ const CANVAS_CONFIG: CanvasConfig = {
 
 const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
     
+    // Initialize state from VS Code webview state if available
+    const getInitialState = () => {
+        try {
+            const savedState = vscode.getState();
+            return savedState || {};
+        } catch {
+            return {};
+        }
+    };
+
+    const initialState = getInitialState();
+    
     const [designFiles, setDesignFiles] = useState<DesignFile[]>([]);
-    const [selectedFrame, setSelectedFrame] = useState<string>('');
+    const [selectedFrame, setSelectedFrame] = useState<string>(initialState.selectedFrame || '');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [currentZoom, setCurrentZoom] = useState(1);
+    const [currentZoom, setCurrentZoom] = useState(initialState.currentZoom || 1);
+    const [currentPan, setCurrentPan] = useState({ x: initialState.panX || 0, y: initialState.panY || 0 });
     const [currentConfig, setCurrentConfig] = useState<CanvasConfig>(CANVAS_CONFIG);
-    const [globalViewportMode, setGlobalViewportMode] = useState<ViewportMode>('tablet');
-    const [frameViewports, setFrameViewports] = useState<FrameViewportState>({});
-    const [useGlobalViewport, setUseGlobalViewport] = useState(true);
-    const [customPositions, setCustomPositions] = useState<FramePositionState>({});
+    const [globalViewportMode, setGlobalViewportMode] = useState<ViewportMode>(initialState.globalViewportMode || 'tablet');
+    const [frameViewports, setFrameViewports] = useState<FrameViewportState>(initialState.frameViewports || {});
+    const [useGlobalViewport, setUseGlobalViewport] = useState(initialState.useGlobalViewport !== undefined ? initialState.useGlobalViewport : true);
+    const [customPositions, setCustomPositions] = useState<FramePositionState>(initialState.customPositions || {});
     const [dragState, setDragState] = useState<DragState>({
         isDragging: false,
         draggedFrame: null,
@@ -310,9 +297,9 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
         currentPosition: { x: 0, y: 0 },
         offset: { x: 0, y: 0 }
     });
-    const [layoutMode, setLayoutMode] = useState<LayoutMode>('grid');
+    const [layoutMode, setLayoutMode] = useState<LayoutMode>(initialState.layoutMode || 'grid');
     const [hierarchyTree, setHierarchyTree] = useState<HierarchyTree | null>(null);
-    const [showConnections, setShowConnections] = useState(true);
+    const [showConnections, setShowConnections] = useState(initialState.showConnections !== undefined ? initialState.showConnections : true);
     // Preview state variables
     const [previews, setPreviews] = useState<Preview[]>([]);
     const [previewsLoading, setPreviewsLoading] = useState(true);
@@ -328,6 +315,32 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
     const [dropdownFrameId, setDropdownFrameId] = useState<string>('');
     // Frame refresh state - used to force iframe reload
     const [frameRefreshKeys, setFrameRefreshKeys] = useState<Record<string, number>>({});
+
+    // Save state to VS Code webview whenever important state changes
+    const saveState = () => {
+        try {
+            const stateToSave = {
+                selectedFrame,
+                currentZoom,
+                panX: currentPan.x,
+                panY: currentPan.y,
+                globalViewportMode,
+                frameViewports,
+                useGlobalViewport,
+                customPositions,
+                layoutMode,
+                showConnections
+            };
+            vscode.setState(stateToSave);
+        } catch (error) {
+            console.warn('Failed to save canvas state:', error);
+        }
+    };
+
+    // Auto-save state when important values change
+    useEffect(() => {
+        saveState();
+    }, [selectedFrame, currentZoom, currentPan, globalViewportMode, frameViewports, useGlobalViewport, customPositions, layoutMode, showConnections]);
 
     
     // Custom confirmation dialog state
@@ -532,10 +545,20 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                     // Design files loading complete - show canvas immediately
                     setIsLoading(false);
                     
-                    // Auto-center view after files are loaded
+                    // Restore saved transform state if available, otherwise center view
                     setTimeout(() => {
                         if (transformRef.current) {
-                            transformRef.current.resetTransform();
+                            if (initialState.currentZoom && (initialState.panX !== undefined || initialState.panY !== undefined)) {
+                                // Restore saved transform state
+                                transformRef.current.setTransform(
+                                    initialState.panX || 0,
+                                    initialState.panY || 0,
+                                    initialState.currentZoom || 1
+                                );
+                            } else {
+                                // Default to reset transform for new users
+                                transformRef.current.resetTransform();
+                            }
                         }
                     }, 100);
                     break;
@@ -685,8 +708,6 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
 
 
     const handleOverlayViewCode = (frameId: string) => {
-        console.log('View code for:', frameId);
-        
         // Check if it's a design file
         const selectedFile = designFiles.find(file => file.name === frameId);
         if (selectedFile) {
@@ -696,21 +717,29 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                 data: { filePath: selectedFile.path }
             };
             vscode.postMessage(openFileMessage);
-        } else {
-            // Check if it's a preview
-            const selectedPreview = previews.find(preview => preview.id === frameId);
-            if (selectedPreview && selectedPreview.filePath) {
+            return;
+        }
+        
+        // Check if it's a preview
+        const selectedPreview = previews.find(preview => preview.id === frameId);
+        if (selectedPreview) {
+            if (selectedPreview.filePath) {
                 // For previews, open the filePath in VS Code
                 const openFileMessage: WebviewMessage = {
                     command: 'openFile',
                     data: { filePath: selectedPreview.filePath }
                 };
                 vscode.postMessage(openFileMessage);
+                return;
             } else {
                 // Fallback to chat if no file path available
                 handleSendToChat(frameId, "Can you help me generate code to recreate this design?");
+                return;
             }
         }
+        
+        // Last resort fallback
+        handleSendToChat(frameId, "Can you help me generate code to recreate this design?");
     };
 
     const handleOverlayOpenInBrowser = (frameId: string) => {
@@ -910,9 +939,9 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
             return;
         }
         
-        // Update current zoom level
-        // console.log('🔄 TRANSFORM CHANGE:', { scale: state.scale, positionX: state.positionX, positionY: state.positionY });
+        // Update current zoom and pan levels
         setCurrentZoom(state.scale);
+        setCurrentPan({ x: state.positionX, y: state.positionY });
     };
 
     // Get frame position (custom, hierarchy, or default grid position)
@@ -1539,8 +1568,6 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                                             onRenameChange={setRenameValue}
                                             onRenameKeyDown={handleRenameKeyDown}
                                             onRenameCancel={handleRenameCancel}
-                                            onViewportChange={(viewport) => handleFrameViewportChange(selectedFrame, viewport)}
-                                            currentViewport={getFrameViewport(selectedFrame)}
                                             onViewCode={() => handleOverlayViewCode(selectedFrame)}
                                             onOpenInBrowser={() => handleOverlayOpenInBrowser(selectedFrame)}
                                             onMore={() => handleOverlayMore(selectedFrame)}
@@ -1572,8 +1599,6 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                                             onRenameChange={setRenameValue}
                                             onRenameKeyDown={handleRenameKeyDown}
                                             onRenameCancel={handleRenameCancel}
-                                            onViewportChange={(viewport) => handleFrameViewportChange(selectedFrame, viewport)}
-                                            currentViewport={getFrameViewport(selectedFrame)}
                                             onViewCode={() => handleOverlayViewCode(selectedFrame)}
                                             onOpenInBrowser={() => handleOverlayOpenInBrowser(selectedFrame)}
                                             onMore={() => handleOverlayMore(selectedFrame)}
