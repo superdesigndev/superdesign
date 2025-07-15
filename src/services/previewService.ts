@@ -208,6 +208,73 @@ export class PreviewService {
     }
 
     /**
+     * Rename a preview in the previews.json file
+     * @param workspaceRoot The workspace root directory
+     * @param previewId The ID of the preview to rename
+     * @param newName The new name for the preview
+     * @returns Promise<Preview[]> Updated array of preview configurations
+     */
+    public static async renamePreview(workspaceRoot: string, previewId: string, newName: string): Promise<Preview[]> {
+        try {
+            const previewsFilePath = path.join(workspaceRoot, this.PREVIEWS_FILE_PATH);
+            
+            // Check if the previews file exists
+            if (!fs.existsSync(previewsFilePath)) {
+                console.log('Previews file not found at:', previewsFilePath);
+                return [];
+            }
+
+            // Read and parse the current previews file
+            const fileContent = fs.readFileSync(previewsFilePath, 'utf8');
+            const previewConfig: PreviewConfig = JSON.parse(fileContent);
+
+            // Validate the structure
+            if (!previewConfig.version || !Array.isArray(previewConfig.previews)) {
+                throw new Error('Invalid previews.json structure');
+            }
+
+            // Find and update the preview
+            let previewFound = false;
+            const updatedPreviews = previewConfig.previews.map(preview => {
+                if (preview.id === previewId) {
+                    previewFound = true;
+                    return {
+                        ...preview,
+                        name: newName.trim()
+                    };
+                }
+                return preview;
+            });
+
+            // Check if preview was found
+            if (!previewFound) {
+                throw new Error(`Preview with ID "${previewId}" not found`);
+            }
+
+            // Update the config with renamed preview
+            const updatedConfig: PreviewConfig = {
+                ...previewConfig,
+                previews: updatedPreviews
+            };
+
+            // Write the updated config back to the file
+            fs.writeFileSync(previewsFilePath, JSON.stringify(updatedConfig, null, 2));
+            
+            console.log(`Renamed preview "${previewId}" to "${newName}" in ${previewsFilePath}`);
+            vscode.window.showInformationMessage(`Preview renamed to "${newName}" successfully`);
+            
+            // Return updated previews (re-validate to be safe)
+            return updatedPreviews.filter(preview => this.validatePreview(preview));
+
+        } catch (error) {
+            console.error('Error renaming preview:', error);
+            vscode.window.showErrorMessage(`Failed to rename preview: ${error instanceof Error ? error.message : String(error)}`);
+            // Return current previews on error
+            return await this.loadPreviews(workspaceRoot);
+        }
+    }
+
+    /**
      * Watch for changes to the previews.json file
      * @param workspaceRoot The workspace root directory
      * @param onChangeCallback Callback function to call when the file changes

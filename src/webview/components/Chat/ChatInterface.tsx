@@ -7,6 +7,8 @@ import { TaskIcon, ClockIcon, CheckIcon, LightBulbIcon, GroupIcon, BrainIcon } f
 import Welcome from '../Welcome';
 import ThemePreviewCard from './ThemePreviewCard';
 import ModelSelector from './ModelSelector';
+
+import { WebviewMessage } from '../../types/canvas.types';
 import chatStyles from './ChatInterface.css';
 import welcomeStyles from '../Welcome/Welcome.css';
 
@@ -29,11 +31,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
     const [uploadingImages, setUploadingImages] = useState<string[]>([]);
     const [pendingImages, setPendingImages] = useState<{fileName: string; originalName: string; fullPath: string}[]>([]);
 
+
+
     // Request current provider on mount
     useEffect(() => {
         vscode.postMessage({
             command: 'getCurrentProvider'
         });
+        
+
         
         const handleMessage = (event: MessageEvent) => {
             const message = event.data;
@@ -54,6 +60,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                 setSelectedModel(message.model || fallbackModel);
             } else if (message.command === 'providerChanged') {
                 setSelectedModel(message.model);
+
             }
         };
         
@@ -68,6 +75,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             model: model
         });
     };
+
+
 
     useEffect(() => {
         // Inject ChatInterface CSS styles
@@ -1289,6 +1298,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                     </button>
                 </header>
             )}
+
+
 
             <div className="chat-container">
                 <div className="chat-history">

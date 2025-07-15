@@ -19,7 +19,13 @@ import {
   List,
   Link,
   Settings,
-  Brain
+  Brain,
+  Trash2,
+  MessageCircle,
+  Edit2,
+  Share2,
+  Code2,
+  MoreHorizontal
 } from 'lucide-react';
 
 const iconStyle: React.CSSProperties = {
@@ -63,6 +69,12 @@ export const LightBulbIcon = () => <Lightbulb style={toolIconStyle} />;
 export const GroupIcon = () => <Folder style={toolIconStyle} />;
 export const WarningIcon = () => <AlertTriangle style={toolIconStyle} />;
 export const TaskIcon = () => <CheckSquare style={toolIconStyle} />;
+export const TrashIcon = () => <Trash2 style={toolIconStyle} />;
+export const CommentIcon = () => <MessageCircle style={toolIconStyle} />;
+export const EditIcon = () => <Edit2 style={toolIconStyle} />;
+export const ShareIcon = () => <Share2 style={toolIconStyle} />;
+export const CodeIcon = () => <Code2 style={toolIconStyle} />;
+export const MoreIcon = () => <MoreHorizontal style={toolIconStyle} />;
 
 // Selector Icons (smallest size)
 export const BrainIcon = () => <Brain style={selectorIconStyle} />;

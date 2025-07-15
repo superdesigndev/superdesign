@@ -26,6 +26,7 @@ interface DesignFrameProps {
     isDragging?: boolean;
     nonce?: string | null;
     onSendToChat?: (fileName: string, prompt: string) => void;
+    refreshKey?: number;
 }
 
 const DesignFrame: React.FC<DesignFrameProps> = ({
@@ -43,7 +44,8 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
     onDragStart,
     isDragging = false,
     nonce = null,
-    onSendToChat
+    onSendToChat,
+    refreshKey = 0
 }) => {
     const [isLoading, setIsLoading] = React.useState(renderMode === 'iframe');
     const [hasError, setHasError] = React.useState(false);
@@ -320,6 +322,7 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                     
                     return (
                         <iframe
+                            key={`svg-${file.name}-${refreshKey}`}
                             srcDoc={svgHtml}
                             title={`${file.name} - SVG`}
                             style={{
@@ -494,6 +497,7 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
 
                 return (
                     <iframe
+                        key={`html-${file.name}-${refreshKey}`}
                         srcDoc={modifiedContent}
                         title={`${file.name} - ${getViewportLabel(viewport)}`}
                         style={{

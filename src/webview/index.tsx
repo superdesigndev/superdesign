@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import ChatInterface from './components/Chat/ChatInterface';
+import RegistryView from './components/RegistryView';
 import { WebviewContext } from '../types/context';
 
 // Import main App styles for panel layout
@@ -27,8 +28,12 @@ if (container) {
         console.log('🌐 Context found:', !!context);
         
         if (!context) {
-            console.error('❌ No context provided for chat view');
-            root.render(<div>Error: No context provided for chat view</div>);
+            console.error('❌ No context provided for view');
+            root.render(<div>Error: No context provided for view</div>);
+        } else if (context.viewType === 'registry') {
+            console.log('📊 Registry view detected, rendering RegistryView');
+            const vscode = acquireVsCodeApi();
+            root.render(<RegistryView vscode={vscode} />);
         } else if (context.layout === 'panel') {
             console.log('📋 Panel layout, rendering full App');
             // Use full App component for panel (includes header and styling)

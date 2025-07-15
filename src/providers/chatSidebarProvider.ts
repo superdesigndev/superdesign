@@ -46,6 +46,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
 
         const webviewContext: WebviewContext = {
             layout: 'sidebar',
+            viewType: 'chat',
             extensionUri: this._extensionUri.toString()
         };
 

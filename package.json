@@ -123,6 +123,12 @@
           "id": "superdesign.chatView",
           "name": "SUPER DESIGN",
           "when": "true"
+        },
+        {
+          "type": "webview",
+          "id": "superdesign.componentRegistryView",
+          "name": "COMPONENT REGISTRY",
+          "when": "true"
         }
       ]
     },

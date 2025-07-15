@@ -5,6 +5,7 @@ import { ClaudeCodeService } from './services/claudeCodeService';
 import { CustomAgentService } from './services/customAgentService';
 import { PreviewService } from './services/previewService';
 import { ChatSidebarProvider } from './providers/chatSidebarProvider';
+import { ComponentRegistryProvider } from './providers/componentRegistryProvider';
 import { ChatMessageService } from './services/chatMessageService';
 import { generateWebviewHtml } from './templates/webviewTemplate';
 import { WebviewContext } from './types/context';
@@ -1503,6 +1504,20 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	);
 
+	// Create the component registry provider
+	const componentRegistryProvider = new ComponentRegistryProvider(context.extensionUri, Logger.getOutputChannel());
+	
+	// Register the webview view provider for component registry
+	const componentRegistryDisposable = vscode.window.registerWebviewViewProvider(
+		ComponentRegistryProvider.VIEW_TYPE,
+		componentRegistryProvider,
+		{
+			webviewOptions: {
+				retainContextWhenHidden: true
+			}
+		}
+	);
+
 	// Register command to show sidebar
 	const showSidebarDisposable = vscode.commands.registerCommand('superdesign.showChatSidebar', () => {
 		vscode.commands.executeCommand('workbench.view.extension.superdesign-sidebar');
@@ -1607,6 +1622,7 @@ export function activate(context: vscode.ExtensionContext) {
 		configureOpenAIApiKeyDisposable,
 		configureOpenRouterApiKeyDisposable,
 		sidebarDisposable,
+		componentRegistryDisposable,
 		showSidebarDisposable,
 		openCanvasDisposable,
 		clearChatDisposable,
@@ -1806,6 +1822,9 @@ class SuperdesignCanvasPanel {
 					case 'loadPreviews':
 						this._loadPreviews();
 						break;
+					case 'loadRegistry':
+						this._loadRegistry();
+						break;
 					case 'deletePreview':
 						this._deletePreview(message.data?.previewId);
 						break;
@@ -1828,6 +1847,15 @@ class SuperdesignCanvasPanel {
 						break;
 					case 'openInSimpleBrowser':
 						this._openInSimpleBrowser(message.data);
+						break;
+					case 'renameFrame':
+						this._renameFrame(message.data?.frameId, message.data?.newName);
+						break;
+					case 'refreshFrame':
+						this._refreshFrame(message.data?.frameId);
+						break;
+					case 'openFile':
+						this._openFile(message.data?.filePath);
 						break;
 				}
 			},
@@ -2123,6 +2151,42 @@ class SuperdesignCanvasPanel {
 		}
 	}
 
+	private async _loadRegistry() {
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+		if (!workspaceFolder) {
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: 'No workspace folder found. Please open a workspace first.' }
+			});
+			return;
+		}
+
+		try {
+			// Import the RegistryService
+			const { RegistryService } = await import('./services/registryService');
+			
+			// Ensure default registry file exists for file watcher to track
+			await RegistryService.createDefaultRegistryFile(workspaceFolder.uri.fsPath);
+			
+			// Load registry using RegistryService
+			const registry = await RegistryService.loadRegistry(workspaceFolder.uri.fsPath);
+			
+			Logger.info(`Loaded ${registry.components.length} components and ${registry.pages.length} pages from registry`);
+			
+			this._panel.webview.postMessage({
+				command: 'registryLoaded',
+				data: { registry }
+			});
+
+		} catch (error) {
+			Logger.error(`Error loading registry: ${error}`);
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: `Failed to load registry: ${error}` }
+			});
+		}
+	}
+
 	private async _deletePreview(previewId: string) {
 		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
 		if (!workspaceFolder) {
@@ -2189,6 +2253,179 @@ class SuperdesignCanvasPanel {
 		} catch (error) {
 			Logger.error(`Error opening in simple browser: ${error}`);
 			vscode.window.showErrorMessage(`Failed to open in browser: ${error}`);
+		}
+	}
+
+	private async _renameFrame(frameId: string, newName: string) {
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+		if (!workspaceFolder) {
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: 'No workspace folder found. Please open a workspace first.' }
+			});
+			return;
+		}
+
+		if (!frameId || !newName?.trim()) {
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: 'Frame ID and new name are required for renaming.' }
+			});
+			return;
+		}
+
+		try {
+			// First, try to rename as a preview
+			const previews = await PreviewService.loadPreviews(workspaceFolder.uri.fsPath);
+			const isPreview = previews.some(preview => preview.id === frameId);
+			
+			if (isPreview) {
+				// Rename preview using PreviewService
+				const updatedPreviews = await PreviewService.renamePreview(workspaceFolder.uri.fsPath, frameId, newName);
+				
+				Logger.info(`Renamed preview "${frameId}" to "${newName}" successfully`);
+				
+				// Send updated previews to webview
+				this._panel.webview.postMessage({
+					command: 'previewsLoaded',
+					data: { previews: updatedPreviews }
+				});
+			} else {
+				// Handle design file renaming
+				const designIterationsDir = vscode.Uri.joinPath(workspaceFolder.uri, '.superdesign', 'design_iterations');
+				
+				try {
+					// Check if design iterations directory exists
+					await vscode.workspace.fs.stat(designIterationsDir);
+					
+					// Find the file to rename
+					const files = await vscode.workspace.fs.readDirectory(designIterationsDir);
+					const targetFile = files.find(([fileName]) => fileName === frameId);
+					
+					if (targetFile) {
+						const [originalFileName] = targetFile;
+						const fileExtension = originalFileName.split('.').pop();
+						const newFileName = `${newName.trim()}.${fileExtension}`;
+						
+						const oldFilePath = vscode.Uri.joinPath(designIterationsDir, originalFileName);
+						const newFilePath = vscode.Uri.joinPath(designIterationsDir, newFileName);
+						
+						// Check if new file name already exists
+						try {
+							await vscode.workspace.fs.stat(newFilePath);
+							throw new Error(`A file with the name "${newFileName}" already exists`);
+						} catch (statError) {
+							// File doesn't exist, proceed with rename
+							await vscode.workspace.fs.rename(oldFilePath, newFilePath);
+							
+							Logger.info(`Renamed design file "${originalFileName}" to "${newFileName}" successfully`);
+							vscode.window.showInformationMessage(`Design file renamed to "${newFileName}" successfully`);
+							
+							// Reload design files to reflect the change
+							this._loadDesignFiles();
+						}
+					} else {
+						throw new Error(`Design file "${frameId}" not found`);
+					}
+				} catch (dirError) {
+					throw new Error(`Design iterations directory not found: ${dirError}`);
+				}
+			}
+		} catch (error) {
+			Logger.error(`Error renaming frame: ${error}`);
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: `Failed to rename frame: ${error instanceof Error ? error.message : String(error)}` }
+			});
+		}
+	}
+
+	private async _refreshFrame(frameId: string) {
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+		if (!workspaceFolder) {
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: 'No workspace folder found. Please open a workspace first.' }
+			});
+			return;
+		}
+
+		if (!frameId) {
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: 'Frame ID is required for refresh.' }
+			});
+			return;
+		}
+
+		try {
+			// Send refresh command to webview to force iframe reload
+			Logger.info(`Refreshing frame "${frameId}"`);
+			this._panel.webview.postMessage({
+				command: 'frameRefreshed',
+				data: { frameId }
+			});
+
+			// Also reload the data in case files changed
+			const previews = await PreviewService.loadPreviews(workspaceFolder.uri.fsPath);
+			const isPreview = previews.some(preview => preview.id === frameId);
+			
+			if (isPreview) {
+				this._loadPreviews();
+			} else {
+				this._loadDesignFiles();
+			}
+		} catch (error) {
+			Logger.error(`Error refreshing frame: ${error}`);
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: `Failed to refresh frame: ${error instanceof Error ? error.message : String(error)}` }
+			});
+		}
+	}
+
+	private async _openFile(filePath: string) {
+		try {
+			if (!filePath) {
+				throw new Error('No file path provided');
+			}
+
+			const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+			if (!workspaceFolder) {
+				throw new Error('No workspace folder found');
+			}
+
+			// Convert relative path to absolute if needed
+			let absolutePath: string;
+			if (filePath.startsWith('.')) {
+				// Relative path - resolve relative to workspace
+				absolutePath = vscode.Uri.joinPath(workspaceFolder.uri, filePath).fsPath;
+			} else {
+				// Assume it's already absolute
+				absolutePath = filePath;
+			}
+
+			const fileUri = vscode.Uri.file(absolutePath);
+			
+			// Check if file exists
+			try {
+				await vscode.workspace.fs.stat(fileUri);
+			} catch {
+				throw new Error(`File not found: ${absolutePath}`);
+			}
+
+			// Open the file in VS Code editor
+			const document = await vscode.workspace.openTextDocument(fileUri);
+			await vscode.window.showTextDocument(document, {
+				preview: false, // Open in a permanent tab
+				viewColumn: vscode.ViewColumn.One
+			});
+
+			Logger.info(`📄 Opened file in editor: ${absolutePath}`);
+
+		} catch (error) {
+			Logger.error(`Error opening file ${filePath}: ${error}`);
+			vscode.window.showErrorMessage(`Failed to open file: ${error instanceof Error ? error.message : String(error)}`);
 		}
 	}
 

@@ -3,6 +3,7 @@ export type WebviewLayout = 'sidebar' | 'panel';
 export interface WebviewContext {
     layout: WebviewLayout;
     extensionUri: string;
+    viewType?: 'chat' | 'registry' | 'canvas';
     logoUris?: {
         cursor: string;
         windsurf: string;

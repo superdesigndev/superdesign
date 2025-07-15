@@ -17,6 +17,7 @@ interface PreviewFrameProps {
     isDragging?: boolean;
     onDelete?: (previewId: string) => void;
     onSendToChat?: (previewId: string, prompt: string) => void;
+    refreshKey?: number;
 }
 
 const PreviewFrame: React.FC<PreviewFrameProps> = ({
@@ -32,7 +33,8 @@ const PreviewFrame: React.FC<PreviewFrameProps> = ({
     onDragStart,
     isDragging = false,
     onDelete,
-    onSendToChat
+    onSendToChat,
+    refreshKey = 0
 }) => {
     const [isLoading, setIsLoading] = React.useState(true);
     const [hasError, setHasError] = React.useState(false);
@@ -233,6 +235,7 @@ const PreviewFrame: React.FC<PreviewFrameProps> = ({
 
             {/* Preview Content */}
             <iframe
+                key={`preview-${preview.id}-${refreshKey}`}
                 src={preview.route}
                 style={{
                     width: '100%',

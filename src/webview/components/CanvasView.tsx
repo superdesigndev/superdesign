@@ -34,70 +34,63 @@ import {
     TabletIcon,
     DesktopIcon,
     TreeIcon,
-    LinkIcon
+    LinkIcon,
+    TrashIcon,
+    CommentIcon,
+    EditIcon,
+    ShareIcon,
+    CodeIcon,
+    MoreIcon
 } from './Icons';
 
-// Iframe overlay control icons
-const CommentIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M14 1H2a1 1 0 00-1 1v8a1 1 0 001 1h2v4l4-4h6a1 1 0 001-1V2a1 1 0 00-1-1zM13 9H8l-2 2V9H3V3h10v6z"/>
-    </svg>
-);
-
-const EditIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M12.854 2.854a.5.5 0 00-.708-.708L3 11.293V13h1.707l9.147-9.146z"/>
-        <path d="M2 12.5V15h.5a.5.5 0 00.5-.5V13h1.5a.5.5 0 00.5-.5V12H2.5a.5.5 0 00-.5.5z"/>
-    </svg>
-);
-
-const ShareIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M3.5 6a.5.5 0 00-.5.5v8a.5.5 0 00.5.5h9a.5.5 0 00.5-.5v-8a.5.5 0 00-.5-.5h-2a.5.5 0 010-1h2A1.5 1.5 0 0114 6.5v8a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 14.5v-8A1.5 1.5 0 013.5 5h2a.5.5 0 010 1h-2z"/>
-        <path d="M7.646.146a.5.5 0 01.708 0l3 3a.5.5 0 01-.708.708L8.5 1.707V10.5a.5.5 0 01-1 0V1.707L5.354 3.854a.5.5 0 11-.708-.708l3-3z"/>
-    </svg>
-);
-
-const CodeIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M5.854 4.854a.5.5 0 10-.708-.708l-3.5 3.5a.5.5 0 000 .708l3.5 3.5a.5.5 0 00.708-.708L2.707 8l3.147-3.146zm4.292 0a.5.5 0 01.708-.708l3.5 3.5a.5.5 0 010 .708l-3.5 3.5a.5.5 0 01-.708-.708L13.293 8l-3.147-3.146z"/>
-    </svg>
-);
-
-
-
-const MoreIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M3 9.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm5 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm5 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/>
-    </svg>
-);
+// Iframe overlay control icons - now using library icons
 
 // IframeOverlay component for selected frames
 interface IframeOverlayProps {
     frameId: string;
+    displayName: string;
     position: GridPosition;
     dimensions: FrameDimensions;
     frameType: 'design' | 'preview';
     zoomLevel?: number;
-    onComment: () => void;
-    onEdit: () => void;
-    onShare: () => void;
+    isRenaming: boolean;
+    renameValue: string;
+    onRenameChange: (value: string) => void;
+    onRenameKeyDown: (e: React.KeyboardEvent) => void;
+    onRenameCancel: () => void;
+    onViewportChange: (viewport: ViewportMode) => void;
+    currentViewport: ViewportMode;
     onViewCode: () => void;
     onOpenInBrowser: () => void;
     onMore: () => void;
+    showDropdown: boolean;
+    onDropdownRename: () => void;
+    onDropdownRefresh: () => void;
+    onDropdownDelete: () => void;
+    onDropdownClose: () => void;
 }
 
 const IframeOverlay: React.FC<IframeOverlayProps> = ({
     frameId,
+    displayName,
     position,
     dimensions,
     frameType,
-    onComment,
-    onEdit,
-    onShare,
+    isRenaming,
+    renameValue,
+    onRenameChange,
+    onRenameKeyDown,
+    onRenameCancel,
+    onViewportChange,
+    currentViewport,
     onViewCode,
     onOpenInBrowser,
     onMore,
+    showDropdown,
+    onDropdownRename,
+    onDropdownRefresh,
+    onDropdownDelete,
+    onDropdownClose,
     zoomLevel = 1
 }) => {
     const toolbarHeight = 40;
@@ -141,34 +134,44 @@ const IframeOverlay: React.FC<IframeOverlayProps> = ({
                     transformOrigin: 'top center' // Center the scaling origin
                 }}
             >
-                {/* Left side - Frame info (compact) */}
+                {/* Left side - Frame info */}
                 <div style={{ 
                     display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '6px',
+                    alignItems: 'center',
                     color: 'var(--vscode-foreground)',
                     fontSize: '11px',
                     fontWeight: 500,
-                    maxWidth: '120px',
-                    overflow: 'hidden'
+                    flex: 1,
+                    minWidth: 0
                 }}>
-                    <span style={{
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        maxWidth: '80px'
-                    }}>{frameId}</span>
-                    <span style={{ 
-                        background: frameType === 'design' ? 'var(--vscode-button-background)' : 'var(--vscode-errorForeground)',
-                        color: frameType === 'design' ? 'var(--vscode-button-foreground)' : 'var(--vscode-errorBackground)',
-                        padding: '1px 4px',
-                        borderRadius: '2px',
-                        fontSize: '8px',
-                        textTransform: 'uppercase',
-                        flexShrink: 0
-                    }}>
-                        {frameType.substring(0, 1)} {/* Just first letter: D or P */}
-                    </span>
+                    {isRenaming ? (
+                        <input
+                            type="text"
+                            value={renameValue}
+                            onChange={(e) => onRenameChange(e.target.value)}
+                            onKeyDown={onRenameKeyDown}
+                            onBlur={onRenameCancel}
+                            autoFocus
+                            style={{
+                                background: 'var(--vscode-input-background)',
+                                border: '1px solid var(--vscode-input-border)',
+                                color: 'var(--vscode-input-foreground)',
+                                fontSize: '11px',
+                                padding: '2px 4px',
+                                borderRadius: '2px',
+                                outline: 'none',
+                                width: '100%',
+                                flex: 1,
+                                marginRight: 8
+                            }}
+                        />
+                    ) : (
+                        <span style={{
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                        }}>{displayName}</span>
+                    )}
                 </div>
 
                 {/* Right side - Controls */}
@@ -177,34 +180,37 @@ const IframeOverlay: React.FC<IframeOverlayProps> = ({
                     alignItems: 'center', 
                     gap: '3px'
                 }}>
+                    {/* Viewport Controls */}
                     <button
-                        className="iframe-overlay-btn"
-                        onClick={onComment}
-                        title="Add Comment"
+                        className={`iframe-overlay-btn ${currentViewport === 'mobile' ? 'active' : ''}`}
+                        onClick={() => onViewportChange('mobile')}
+                        title="Mobile View"
                     >
-                        <CommentIcon />
+                        <MobileIcon />
                     </button>
                     <button
-                        className="iframe-overlay-btn"
-                        onClick={onEdit}
-                        title="Edit"
+                        className={`iframe-overlay-btn ${currentViewport === 'tablet' ? 'active' : ''}`}
+                        onClick={() => onViewportChange('tablet')}
+                        title="Tablet View"
                     >
-                        <EditIcon />
+                        <TabletIcon />
                     </button>
                     <button
-                        className="iframe-overlay-btn"
-                        onClick={onShare}
-                        title="Share"
+                        className={`iframe-overlay-btn ${currentViewport === 'desktop' ? 'active' : ''}`}
+                        onClick={() => onViewportChange('desktop')}
+                        title="Desktop View"
                     >
-                        <ShareIcon />
+                        <DesktopIcon />
                     </button>
-                    <button
-                        className="iframe-overlay-btn"
-                        onClick={onViewCode}
-                        title="View Code"
-                    >
-                        <CodeIcon />
-                    </button>
+                    <div className="iframe-overlay-btn-container">
+                        <button
+                            className="iframe-overlay-btn"
+                            onClick={onViewCode}
+                        >
+                            <CodeIcon />
+                        </button>
+                        <div className="iframe-overlay-tooltip">View Source Code</div>
+                    </div>
                     <div className="iframe-overlay-btn-container">
                         <button
                             className="iframe-overlay-btn"
@@ -214,13 +220,40 @@ const IframeOverlay: React.FC<IframeOverlayProps> = ({
                         </button>
                         <div className="iframe-overlay-tooltip">Open in New Tab</div>
                     </div>
-                    <button
-                        className="iframe-overlay-btn"
-                        onClick={onMore}
-                        title="More Options"
-                    >
-                        <MoreIcon />
-                    </button>
+                    <div className="iframe-overlay-more-container">
+                        <button
+                            className="iframe-overlay-btn"
+                            onClick={onMore}
+                            title="More Options"
+                        >
+                            <MoreIcon />
+                        </button>
+                        {showDropdown && (
+                            <div className="iframe-overlay-dropdown">
+                                <button 
+                                    className="iframe-overlay-dropdown-item"
+                                    onClick={onDropdownRefresh}
+                                >
+                                    <RefreshIcon />
+                                    <span>Refresh</span>
+                                </button>
+                                <button 
+                                    className="iframe-overlay-dropdown-item"
+                                    onClick={onDropdownRename}
+                                >
+                                    <EditIcon />
+                                    <span>Rename</span>
+                                </button>
+                                <button 
+                                    className="iframe-overlay-dropdown-item"
+                                    onClick={onDropdownDelete}
+                                >
+                                    <TrashIcon />
+                                    <span>Delete</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
@@ -286,7 +319,15 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
     const [previewsError, setPreviewsError] = useState<string | null>(null);
     // Preview hierarchy state
     const [previewHierarchyTree, setPreviewHierarchyTree] = useState<PreviewHierarchyTree | null>(null);
-    
+    // Rename state
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [renamingFrameId, setRenamingFrameId] = useState<string>('');
+    const [renameValue, setRenameValue] = useState<string>('');
+    // Dropdown state
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [dropdownFrameId, setDropdownFrameId] = useState<string>('');
+    // Frame refresh state - used to force iframe reload
+    const [frameRefreshKeys, setFrameRefreshKeys] = useState<Record<string, number>>({});
 
     
     // Custom confirmation dialog state
@@ -554,6 +595,14 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                     // Re-request files when changes occur
                     vscode.postMessage({ command: 'loadDesignFiles' });
                     break;
+
+                case 'frameRefreshed':
+                    // Force iframe reload by updating the refresh key
+                    setFrameRefreshKeys(prev => ({
+                        ...prev,
+                        [message.data.frameId]: (prev[message.data.frameId] || 0) + 1
+                    }));
+                    break;
             }
         };
 
@@ -561,34 +610,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
         return () => window.removeEventListener('message', messageHandler);
     }, [vscode]); // Removed currentConfig dependency to prevent constant re-renders
 
-    // Handle keyboard events for confirmation dialog and global shortcuts
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (confirmDialog.isOpen) {
-                if (event.key === 'Escape') {
-                    event.preventDefault();
-                    confirmDialog.onCancel();
-                } else if (event.key === 'Enter') {
-                    event.preventDefault();
-                    confirmDialog.onConfirm();
-                }
-                return;
-            }
-
-            // Global keyboard shortcuts (when not in confirmation dialog)
-            switch (event.key) {
-                case 'Escape':
-                    if (selectedFrame) {
-                        event.preventDefault();
-                        setSelectedFrame('');
-                    }
-                    break;
-            }
-        };
-
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [confirmDialog, selectedFrame]);
+    // Handle keyboard events for confirmation dialog and global shortcuts - moved after function declarations
 
 
 
@@ -660,51 +682,34 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
         });
     };
 
-    // Iframe overlay handlers
-    const handleOverlayComment = (frameId: string) => {
-        console.log('Add comment to:', frameId);
-        // TODO: Implement comment functionality
-        handleSendToChat(frameId, "I'd like to add a comment about this design. What feedback or suggestions do you have?");
-    };
 
-    const handleOverlayEdit = (frameId: string) => {
-        console.log('Edit frame:', frameId);
-        // TODO: Implement edit functionality
-        handleSendToChat(frameId, "I'd like to modify this design. Can you help me make some changes?");
-    };
-
-    const handleOverlayShare = (frameId: string) => {
-        console.log('Share frame:', frameId);
-        // Copy frame URL or file path to clipboard
-        const selectedFile = designFiles.find(file => file.name === frameId);
-        const selectedPreview = previews.find(preview => preview.id === frameId);
-        
-        if (selectedFile) {
-            navigator.clipboard.writeText(selectedFile.path);
-            console.log('Copied file path to clipboard:', selectedFile.path);
-        } else if (selectedPreview) {
-            const shareData = {
-                title: `Preview: ${selectedPreview.id}`,
-                text: selectedPreview.description || 'Check out this design preview',
-                url: selectedPreview.route
-            };
-            
-            if (navigator.share) {
-                navigator.share(shareData);
-            } else {
-                navigator.clipboard.writeText(selectedPreview.route);
-                console.log('Copied preview route to clipboard:', selectedPreview.route);
-            }
-        }
-    };
 
     const handleOverlayViewCode = (frameId: string) => {
         console.log('View code for:', frameId);
+        
+        // Check if it's a design file
         const selectedFile = designFiles.find(file => file.name === frameId);
         if (selectedFile) {
-            handleSendToChat(frameId, "Can you show me the code for this design and explain how it works?");
+            // For design files, open the file in VS Code
+            const openFileMessage: WebviewMessage = {
+                command: 'openFile',
+                data: { filePath: selectedFile.path }
+            };
+            vscode.postMessage(openFileMessage);
         } else {
-            handleSendToChat(frameId, "Can you help me generate code to recreate this design?");
+            // Check if it's a preview
+            const selectedPreview = previews.find(preview => preview.id === frameId);
+            if (selectedPreview && selectedPreview.filePath) {
+                // For previews, open the filePath in VS Code
+                const openFileMessage: WebviewMessage = {
+                    command: 'openFile',
+                    data: { filePath: selectedPreview.filePath }
+                };
+                vscode.postMessage(openFileMessage);
+            } else {
+                // Fallback to chat if no file path available
+                handleSendToChat(frameId, "Can you help me generate code to recreate this design?");
+            }
         }
     };
 
@@ -735,8 +740,145 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
 
     const handleOverlayMore = (frameId: string) => {
         console.log('More options for:', frameId);
-        // TODO: Implement more options menu
-        handleSendToChat(frameId, "What other actions or options are available for working with this design?");
+        // Show dropdown menu
+        setShowDropdown(true);
+        setDropdownFrameId(frameId);
+    };
+
+    const handleDropdownRename = (frameId: string) => {
+        // Close dropdown and start rename mode
+        setShowDropdown(false);
+        setDropdownFrameId('');
+        
+        setIsRenaming(true);
+        setRenamingFrameId(frameId);
+        
+        // Set initial rename value
+        const selectedFile = designFiles.find(file => file.name === frameId);
+        const selectedPreview = previews.find(preview => preview.id === frameId);
+        
+        if (selectedFile) {
+            setRenameValue(selectedFile.name);
+        } else if (selectedPreview) {
+            setRenameValue(selectedPreview.name || selectedPreview.id);
+        }
+    };
+
+    const handleDropdownRefresh = (frameId: string) => {
+        console.log('Refresh frame:', frameId);
+        setShowDropdown(false);
+        setDropdownFrameId('');
+        
+        // Send refresh message to extension
+        const refreshMessage: WebviewMessage = {
+            command: 'refreshFrame',
+            data: { frameId }
+        };
+        vscode.postMessage(refreshMessage);
+    };
+
+    const handleDropdownDelete = (frameId: string) => {
+        console.log('Delete frame:', frameId);
+        setShowDropdown(false);
+        setDropdownFrameId('');
+        
+        // For previews, use existing delete functionality
+        const selectedPreview = previews.find(preview => preview.id === frameId);
+        if (selectedPreview) {
+            handleDeletePreview(frameId);
+        } else {
+            // TODO: Implement design file deletion
+            vscode.window.showWarningMessage('Design file deletion not yet implemented');
+        }
+    };
+
+    const handleDropdownClose = () => {
+        setShowDropdown(false);
+        setDropdownFrameId('');
+    };
+
+    // Handle keyboard events for confirmation dialog and global shortcuts
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (confirmDialog.isOpen) {
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    confirmDialog.onCancel();
+                } else if (event.key === 'Enter') {
+                    event.preventDefault();
+                    confirmDialog.onConfirm();
+                }
+                return;
+            }
+
+            // Global keyboard shortcuts (when not in confirmation dialog)
+            switch (event.key) {
+                case 'Escape':
+                    if (showDropdown) {
+                        event.preventDefault();
+                        handleDropdownClose();
+                    } else if (selectedFrame) {
+                        event.preventDefault();
+                        setSelectedFrame('');
+                    }
+                    break;
+            }
+        };
+
+        const handleClickOutside = (event: MouseEvent) => {
+            // Close dropdown when clicking outside
+            if (showDropdown) {
+                const target = event.target as HTMLElement;
+                if (!target.closest('.iframe-overlay-more-container')) {
+                    handleDropdownClose();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('click', handleClickOutside);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [confirmDialog, selectedFrame, showDropdown, handleDropdownClose]);
+
+    const handleRenameSubmit = () => {
+        if (!renamingFrameId || !renameValue.trim()) {
+            handleRenameCancel();
+            return;
+        }
+
+        // Send rename message to extension
+        const renameMessage: WebviewMessage = {
+            command: 'renameFrame',
+            data: { 
+                frameId: renamingFrameId,
+                newName: renameValue.trim()
+            }
+        };
+        vscode.postMessage(renameMessage);
+
+        // Reset rename state
+        setIsRenaming(false);
+        setRenamingFrameId('');
+        setRenameValue('');
+    };
+
+    const handleRenameCancel = () => {
+        setIsRenaming(false);
+        setRenamingFrameId('');
+        setRenameValue('');
+    };
+
+    const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleRenameSubmit();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            handleRenameCancel();
+        }
     };
 
     // Canvas control functions
@@ -1310,7 +1452,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                             
                             return (
                                 <DesignFrame
-                                    key={file.name}
+                                    key={`${file.name}-${frameRefreshKeys[file.name] || 0}`}
                                     file={file}
                                     position={finalPosition}
                                     dimensions={{ width: actualWidth, height: actualHeight }}
@@ -1325,6 +1467,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                                     isDragging={dragState.isDragging && dragState.draggedFrame === file.name}
                                     nonce={nonce}
                                     onSendToChat={handleSendToChat}
+                                    refreshKey={frameRefreshKeys[file.name] || 0}
                                 />
                             );
                         })}
@@ -1349,7 +1492,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                             
                             return (
                                 <PreviewFrame
-                                    key={`preview-${preview.id}`}
+                                    key={`preview-${preview.id}-${frameRefreshKeys[preview.id] || 0}`}
                                     preview={preview}
                                     position={finalPosition}
                                     dimensions={{ width: actualWidth, height: actualHeight }}
@@ -1363,6 +1506,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                                     isDragging={dragState.isDragging && dragState.draggedFrame === preview.id}
                                     onDelete={handleDeletePreview}
                                     onSendToChat={handleSendToChat}
+                                    refreshKey={frameRefreshKeys[preview.id] || 0}
                                 />
                             );
                         })}
@@ -1382,21 +1526,31 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                                     const actualHeight = viewportDimensions.height + 50;
                                     const position = getFramePosition(selectedFrame, fileIndex, false);
                                     
-                                    return (
+                                                                        return (
                                         <IframeOverlay
                                             frameId={selectedFrame}
+                                            displayName={selectedFile.name}
                                             position={position}
                                             dimensions={{ width: actualWidth, height: actualHeight }}
                                             frameType="design"
                                             zoomLevel={currentZoom}
-                                            onComment={() => handleOverlayComment(selectedFrame)}
-                                            onEdit={() => handleOverlayEdit(selectedFrame)}
-                                                                                    onShare={() => handleOverlayShare(selectedFrame)}
-                                        onViewCode={() => handleOverlayViewCode(selectedFrame)}
-                                        onOpenInBrowser={() => handleOverlayOpenInBrowser(selectedFrame)}
-                                        onMore={() => handleOverlayMore(selectedFrame)}
-                                    />
-                                );
+                                            isRenaming={isRenaming && renamingFrameId === selectedFrame}
+                                            renameValue={renameValue}
+                                            onRenameChange={setRenameValue}
+                                            onRenameKeyDown={handleRenameKeyDown}
+                                            onRenameCancel={handleRenameCancel}
+                                            onViewportChange={(viewport) => handleFrameViewportChange(selectedFrame, viewport)}
+                                            currentViewport={getFrameViewport(selectedFrame)}
+                                            onViewCode={() => handleOverlayViewCode(selectedFrame)}
+                                            onOpenInBrowser={() => handleOverlayOpenInBrowser(selectedFrame)}
+                                            onMore={() => handleOverlayMore(selectedFrame)}
+                                            showDropdown={showDropdown && dropdownFrameId === selectedFrame}
+                                            onDropdownRename={() => handleDropdownRename(selectedFrame)}
+                                            onDropdownRefresh={() => handleDropdownRefresh(selectedFrame)}
+                                            onDropdownDelete={() => handleDropdownDelete(selectedFrame)}
+                                            onDropdownClose={handleDropdownClose}
+                                        />
+                                    );
                             } else if (selectedPreview) {
                                     const previewIndex = previews.findIndex(preview => preview.id === selectedFrame);
                                     const frameViewport = getFrameViewport(selectedFrame);
@@ -1408,16 +1562,26 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                                     return (
                                         <IframeOverlay
                                             frameId={selectedFrame}
+                                            displayName={selectedPreview.name || selectedPreview.id}
                                             position={position}
                                             dimensions={{ width: actualWidth, height: actualHeight }}
                                             frameType="preview"
                                             zoomLevel={currentZoom}
-                                            onComment={() => handleOverlayComment(selectedFrame)}
-                                            onEdit={() => handleOverlayEdit(selectedFrame)}
-                                            onShare={() => handleOverlayShare(selectedFrame)}
+                                            isRenaming={isRenaming && renamingFrameId === selectedFrame}
+                                            renameValue={renameValue}
+                                            onRenameChange={setRenameValue}
+                                            onRenameKeyDown={handleRenameKeyDown}
+                                            onRenameCancel={handleRenameCancel}
+                                            onViewportChange={(viewport) => handleFrameViewportChange(selectedFrame, viewport)}
+                                            currentViewport={getFrameViewport(selectedFrame)}
                                             onViewCode={() => handleOverlayViewCode(selectedFrame)}
                                             onOpenInBrowser={() => handleOverlayOpenInBrowser(selectedFrame)}
                                             onMore={() => handleOverlayMore(selectedFrame)}
+                                            showDropdown={showDropdown && dropdownFrameId === selectedFrame}
+                                            onDropdownRename={() => handleDropdownRename(selectedFrame)}
+                                            onDropdownRefresh={() => handleDropdownRefresh(selectedFrame)}
+                                            onDropdownDelete={() => handleDropdownDelete(selectedFrame)}
+                                            onDropdownClose={handleDropdownClose}
                                         />
                                     );
                                 }
@@ -1743,6 +1907,12 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                     color: var(--vscode-button-foreground);
                 }
 
+                .iframe-overlay-btn.active {
+                    background: var(--vscode-button-background);
+                    color: var(--vscode-button-foreground);
+                    border-color: var(--vscode-focusBorder);
+                }
+
                 /* Ensure overlay doesn't interfere with zoom/pan */
                 .iframe-overlay * {
                     user-select: none;
@@ -1788,6 +1958,90 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                 .iframe-overlay-btn-container:hover .iframe-overlay-tooltip {
                     opacity: 1;
                     visibility: visible;
+                }
+
+                /* Dropdown Styles */
+                .iframe-overlay-more-container {
+                    position: relative;
+                    display: inline-block;
+                }
+
+                .iframe-overlay-dropdown {
+                    position: absolute;
+                    top: 100%;
+                    right: 0;
+                    background: var(--vscode-dropdown-background);
+                    border: 1px solid var(--vscode-dropdown-border);
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px var(--vscode-widget-shadow);
+                    z-index: 10001;
+                    min-width: 180px;
+                    margin-top: 4px;
+                    padding: 4px 0;
+                    box-sizing: border-box;
+                    animation: dropdownSlideIn 0.15s ease-out;
+                }
+
+                .iframe-overlay-dropdown-item {
+                    display: flex;
+                    align-items: center;
+                    width: 100%;
+                    padding: 8px 16px;
+                    background: transparent;
+                    border: none;
+                    color: var(--vscode-dropdown-foreground);
+                    cursor: pointer;
+                    font-size: 13px;
+                    text-align: left;
+                    gap: 8px;
+                    border-radius: 6px;
+                    font-weight: 500;
+                    transition: background-color 0.15s ease, color 0.15s ease;
+                    box-sizing: border-box;
+                }
+
+                .iframe-overlay-dropdown-item:hover {
+                    background: var(--vscode-list-hoverBackground);
+                    color: var(--vscode-list-hoverForeground);
+                }
+
+                .iframe-overlay-dropdown-item.rename-item {
+                    background: transparent;
+                    color: var(--vscode-dropdown-foreground);
+                }
+                .iframe-overlay-dropdown-item.rename-item:hover {
+                    background: var(--vscode-list-hoverBackground);
+                    color: var(--vscode-list-hoverForeground);
+                }
+
+                .iframe-overlay-dropdown-item.delete-item {
+                    color: var(--vscode-errorForeground);
+                    background: transparent;
+                }
+                .iframe-overlay-dropdown-item.delete-item:hover {
+                    background: var(--vscode-errorBackground);
+                    color: var(--vscode-errorForeground);
+                }
+
+                .iframe-overlay-dropdown-item span:first-of-type {
+                    flex: 1;
+                }
+
+                .dropdown-shortcut {
+                    font-size: 11px;
+                    color: var(--vscode-descriptionForeground);
+                    margin-left: auto;
+                }
+
+                @keyframes dropdownSlideIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-4px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
                 }
             `}</style>
         </div>

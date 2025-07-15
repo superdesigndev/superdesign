@@ -118,6 +118,28 @@ export interface OpenInSimpleBrowserMessage extends ExtensionMessage {
     };
 }
 
+export interface RenameFrameMessage extends ExtensionMessage {
+    command: 'renameFrame';
+    data: {
+        frameId: string;
+        newName: string;
+    };
+}
+
+export interface RefreshFrameMessage extends ExtensionMessage {
+    command: 'refreshFrame';
+    data: {
+        frameId: string;
+    };
+}
+
+export interface OpenFileMessage extends ExtensionMessage {
+    command: 'openFile';
+    data: {
+        filePath: string;
+    };
+}
+
 export interface PreviewDeletedMessage extends ExtensionMessage {
     command: 'previewDeleted';
     data: {
@@ -126,22 +148,35 @@ export interface PreviewDeletedMessage extends ExtensionMessage {
     };
 }
 
+export interface FrameRefreshedMessage extends ExtensionMessage {
+    command: 'frameRefreshed';
+    data: {
+        frameId: string;
+    };
+}
+
 export type WebviewMessage = 
-    | LoadDesignFilesMessage 
+    | LoadDesignFilesMessage
     | SelectFrameMessage
     | SetContextFromCanvasMessage
     | SetChatPromptMessage
     | LoadPreviewsMessage
+    | LoadRegistryMessage
     | DeletePreviewMessage
     | OpenInBrowserMessage
-    | OpenInSimpleBrowserMessage;
+    | OpenInSimpleBrowserMessage
+    | RenameFrameMessage
+    | RefreshFrameMessage
+    | OpenFileMessage;
 
 export type ExtensionToWebviewMessage = 
     | DesignFilesLoadedMessage 
     | ErrorMessage 
     | FileWatchMessage
     | PreviewsLoadedMessage
-    | PreviewDeletedMessage;
+    | RegistryLoadedMessage
+    | PreviewDeletedMessage
+    | FrameRefreshedMessage;
 
 // Canvas grid layout types
 export interface GridPosition {
@@ -235,6 +270,7 @@ export interface HierarchyTree {
 // Preview configuration types
 export interface Preview {
     id: string;
+    name: string;
     type: 'component' | 'page';
     component?: string;
     page?: string;
@@ -244,6 +280,7 @@ export interface Preview {
     parentId: string | null;
     group: string;
     createdBy: string;
+    filePath?: string;
 }
 
 export interface PreviewConfig {
@@ -256,4 +293,50 @@ export interface ExtendedCanvasState extends CanvasState {
     previews: Preview[];
     previewsLoading: boolean;
     previewsError: string | null;
+} 
+
+// Registry configuration types
+export interface RegistryComponent {
+    name: string;
+    filePath: string;
+    type: 'provider' | 'ui' | 'layout';
+    route: string;
+    exported: boolean;
+    props: string[];
+    propTypes: Record<string, string>;
+    description: string;
+    group: string;
+    createdAt: string;
+    createdBy: string;
+}
+
+export interface RegistryPage {
+    name: string;
+    filePath: string;
+    page: string;
+    route: string;
+    exported: boolean;
+    description: string;
+    group: string;
+    createdAt: string;
+    createdBy: string;
+}
+
+export interface RegistryConfig {
+    version: number;
+    lastUpdated: string;
+    components: RegistryComponent[];
+    pages: RegistryPage[];
+}
+
+// Registry-related message types
+export interface LoadRegistryMessage extends ExtensionMessage {
+    command: 'loadRegistry';
+}
+
+export interface RegistryLoadedMessage extends ExtensionMessage {
+    command: 'registryLoaded';
+    data: {
+        registry: RegistryConfig;
+    };
 } 
