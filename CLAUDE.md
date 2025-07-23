@@ -39,6 +39,12 @@ npm run test:tools     # Test file operation tools
 
 ### Key Components
 
+**Extension Entry Point** (`src/extension.ts`)
+- Main activation function and command registration
+- Manages WebView panels for chat sidebar and canvas view
+- Handles file operations (image saving, CSS reading)
+- Coordinates between different services and providers
+
 **CustomAgentService** (`src/services/customAgentService.ts`):
 - Handles AI provider integration (OpenAI, Anthropic, OpenRouter)
 - Manages tool execution context and file operations
@@ -54,6 +60,18 @@ npm run test:tools     # Test file operation tools
 - **Chat/**: Chat interface components with model selection and theming
 - **DesignFrame**: Renders design mockups and components
 - **ConnectionLines**: Visual connections in design layouts
+
+**Services Layer**
+- `CustomAgentService`: Manages AI interactions with multiple providers
+- `ClaudeCodeService`: (Deprecated) Legacy Claude Code SDK integration
+- `ChatMessageService`: Processes chat messages and streams responses
+- `Logger`: Centralized logging system
+
+**WebView Components** (`src/webview/`)
+- React-based UI for chat interface and canvas view
+- Supports both sidebar and panel layouts
+- Theme-aware design system with color palette management
+- Canvas view for design file visualization
 
 ### Tool System
 The extension includes a comprehensive tool system for file operations:
@@ -71,6 +89,20 @@ The extension includes a comprehensive tool system for file operations:
 - API keys configured per provider (Anthropic, OpenAI, OpenRouter)
 - Design files stored in `.superdesign/` directory
 - Moodboard images saved to `.superdesign/moodboard/`
+
+### Design File Management
+
+**File Structure**
+- Design files stored in `.superdesign/design_iterations/`
+- Supports HTML and SVG formats
+- CSS theme files for consistent styling
+- Automatic file watching and live updates
+
+**Design Agent Integration**
+- Integrated design rules for AI agents
+- Template system for generating consistent UI components
+- Theme generation tools
+- Responsive design patterns
 
 ## Development Patterns
 
@@ -91,6 +123,12 @@ The extension uses a message-based system for webview communication:
 - Working directory managed relative to workspace root
 - Tool results include proper error handling and validation
 
+### Error Handling
+Centralized error handling with user-friendly messages and actionable error responses (e.g., API key configuration prompts).
+
+### Extension Lifecycle
+Proper disposal patterns for file watchers, webview panels, and event subscriptions to prevent memory leaks.
+
 ## Testing Strategy
 
 The project uses a modular testing approach:
@@ -100,6 +138,11 @@ The project uses a modular testing approach:
 - **Agent tests**: Combined agent functionality
 
 Run specific test suites based on the area being modified.
+
+### Security Considerations
+- API keys stored in VS Code's secure configuration system
+- Content Security Policy enforcement for webviews
+- Sandboxed file operations within workspace boundaries
 
 ## Important Notes
 

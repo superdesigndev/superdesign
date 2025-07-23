@@ -35,12 +35,12 @@ export class CustomAgentService implements AgentService {
             // Try to get workspace root first
             const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
             this.outputChannel.appendLine(`Workspace root detected: ${workspaceRoot}`);
-            
+
             if (workspaceRoot) {
                 // Create .superdesign folder in workspace root
                 const superdesignDir = path.join(workspaceRoot, '.superdesign');
                 this.outputChannel.appendLine(`Setting up .superdesign directory at: ${superdesignDir}`);
-                
+
                 // Create directory if it doesn't exist
                 if (!fs.existsSync(superdesignDir)) {
                     fs.mkdirSync(superdesignDir, { recursive: true });
@@ -48,27 +48,27 @@ export class CustomAgentService implements AgentService {
                 } else {
                     this.outputChannel.appendLine(`.superdesign directory already exists: ${superdesignDir}`);
                 }
-                
+
                 this.workingDirectory = superdesignDir;
                 this.outputChannel.appendLine(`Working directory set to: ${this.workingDirectory}`);
             } else {
                 this.outputChannel.appendLine('No workspace root found, using fallback');
                 // Fallback to OS temp directory if no workspace
                 const tempDir = path.join(os.tmpdir(), 'superdesign-custom');
-                
+
                 if (!fs.existsSync(tempDir)) {
                     fs.mkdirSync(tempDir, { recursive: true });
                     this.outputChannel.appendLine(`Created temporary superdesign directory: ${tempDir}`);
                 }
-                
+
                 this.workingDirectory = tempDir;
                 this.outputChannel.appendLine(`Working directory set to (fallback): ${this.workingDirectory}`);
-                
+
                 vscode.window.showWarningMessage(
                     'No workspace folder found. Using temporary directory for Custom Agent operations.'
                 );
             }
-            
+
             this.isInitialized = true;
         } catch (error) {
             this.outputChannel.appendLine(`Failed to setup working directory: ${error}`);
@@ -83,12 +83,12 @@ export class CustomAgentService implements AgentService {
         const config = vscode.workspace.getConfiguration('securedesign');
         const specificModel = config.get<string>('aiModel');
         const provider = config.get<string>('aiModelProvider', 'anthropic');
-        
+
         this.outputChannel.appendLine(`Using AI provider: ${provider}`);
         if (specificModel) {
             this.outputChannel.appendLine(`Using specific AI model: ${specificModel}`);
         }
-        
+
         // Determine provider from model name if specific model is set
         let effectiveProvider = provider;
         if (specificModel) {
@@ -106,11 +106,13 @@ export class CustomAgentService implements AgentService {
                        specificModel.startsWith('cohere.') ||
                        specificModel.startsWith('mistral.')) {
                 effectiveProvider = 'bedrock';
+            } else if (specificModel.includes('kimi') || specificModel.includes('moonshot')) {
+                effectiveProvider = 'moonshot';
             } else {
                effectiveProvider = 'openai';
            }
        }
-        
+
         switch (effectiveProvider) {
             case 'google':
                 const googleKey = config.get<string>('googleApiKey');
@@ -133,18 +135,18 @@ export class CustomAgentService implements AgentService {
                 if (!openrouterKey) {
                     throw new Error('OpenRouter API key not configured. Please run "Configure OpenRouter API Key" command.');
                 }
-                
+
                 this.outputChannel.appendLine(`OpenRouter API key found: ${openrouterKey.substring(0, 12)}...`);
-                
+
                 const openrouter = createOpenRouter({
                     apiKey: openrouterKey
                 });
-                
+
                 // Use specific model if available, otherwise default to Claude 3.7 Sonnet via OpenRouter
                 const openrouterModel = specificModel || 'anthropic/claude-3-7-sonnet-20250219';
                 this.outputChannel.appendLine(`Using OpenRouter model: ${openrouterModel}`);
-                return openrouter.chat(openrouterModel);
-                
+                return openrouter.chat(openrouterModel);                
+
             case 'bedrock':
                 const awsRegion = config.get<string>('awsRegion') || 'us-east-1';
                 const awsAccessKeyId = config.get<string>('awsAccessKeyId');
@@ -167,24 +169,43 @@ export class CustomAgentService implements AgentService {
                 const bedrockModel = specificModel || 'us.anthropic.claude-3-5-sonnet-20241022-v2:0';
                 this.outputChannel.appendLine(`Using Bedrock model: ${bedrockModel}`);
                 return bedrock(bedrockModel);
-                
+
+            case 'moonshot':
+                const moonshotKey = config.get<string>('moonshotApiKey');
+                if (!moonshotKey) {
+                    throw new Error('Moonshot API key not configured. Please run "Configure Moonshot API Key" command.');
+                }
+
+                this.outputChannel.appendLine(`Moonshot API key found: ${moonshotKey.substring(0, 12)}...`);
+                this.outputChannel.appendLine(`Using Moonshot API baseURL: https://api.moonshot.ai/v1`);
+
+                const moonshot = createOpenAI({
+                    apiKey: moonshotKey,
+                    baseURL: "https://api.moonshot.ai/v1",
+                });
+
+                // Use specific model if available, otherwise default to kimi-k2-0711-preview
+                const moonshotModel = specificModel || 'kimi-k2-0711-preview';
+                this.outputChannel.appendLine(`Using Moonshot model: ${moonshotModel}`);
+                return moonshot(moonshotModel);
+
             case 'anthropic':
                 const anthropicKey = config.get<string>('anthropicApiKey');
                 if (!anthropicKey) {
                     throw new Error('Anthropic API key not configured. Please run "Configure Anthropic API Key" command.');
                 }
-                
+
                 this.outputChannel.appendLine(`Anthropic API key found: ${anthropicKey.substring(0, 12)}...`);
-                
+
                 const anthropic = createAnthropic({
                     apiKey: anthropicKey
                 });
-                
+
                 // Use specific model if available, otherwise default to claude-3-5-sonnet
                 const anthropicModel = specificModel || 'claude-3-5-sonnet-20241022';
                 this.outputChannel.appendLine(`Using Anthropic model: ${anthropicModel}`);
                 return anthropic(anthropicModel);
-                
+
             case 'openai':
             default:
                 const openaiKey = config.get<string>('openaiApiKey');
@@ -192,14 +213,14 @@ export class CustomAgentService implements AgentService {
                 if (!openaiKey) {
                     throw new Error('OpenAI API key not configured. Please run "Configure OpenAI API Key" command.');
                 }
-                
+
                 this.outputChannel.appendLine(`OpenAI API key found: ${openaiKey.substring(0, 7)}...`);
-                
+
                 const openai = createOpenAI({
                     apiKey: openaiKey,
                     baseURL: openaiUrl,
                 });
-                
+
                 // Use specific model if available, otherwise default to gpt-4o
                 const openaiModel = specificModel || 'gpt-4o';
                 this.outputChannel.appendLine(`Using OpenAI model: ${openaiModel}`);
@@ -211,7 +232,7 @@ export class CustomAgentService implements AgentService {
         const config = vscode.workspace.getConfiguration('securedesign');
         const specificModel = config.get<string>('aiModel');
         const provider = config.get<string>('aiModelProvider', 'anthropic');
-        
+
         // Determine the actual model name being used
         let modelName: string;
         if (specificModel) {
@@ -229,6 +250,8 @@ export class CustomAgentService implements AgentService {
                     modelName = 'gemini-2.5-pro';
                 case 'bedrock':
                     modelName = 'us.anthropic.claude-3-5-sonnet-20241022-v2:0';
+                case 'moonshot':
+                    modelName = 'kimi-k2-0711-preview';
                     break;
                 case 'anthropic':
                 default:
@@ -236,7 +259,7 @@ export class CustomAgentService implements AgentService {
                     break;
             }
         }
-        
+
         return `# Role
 You are superdesign, a senior frontend designer integrated into VS Code as part of the Super Design extension.
 Your goal is to help user generate amazing design using code
@@ -610,7 +633,8 @@ I've created the html design, please reveiw and let me know if you need any chan
 - **ls**: List directory contents with optional filtering, sorting, and detailed information (shows files and subdirectories)
 - **bash**: Execute shell/bash commands within the workspace (secure execution with timeouts and output capture)
 - **generateTheme**: Generate a theme for the design
-`;}
+`;
+    }
 
     async query(
         prompt?: string,
@@ -620,10 +644,10 @@ I've created the html design, please reveiw and let me know if you need any chan
         onMessage?: (message: any) => void
     ): Promise<any[]> {
         this.outputChannel.appendLine('=== CUSTOM AGENT QUERY CALLED ===');
-        
+
         // Determine which input format we're using
         const usingConversationHistory = !!conversationHistory && conversationHistory.length > 0;
-        
+
         if (usingConversationHistory) {
             this.outputChannel.appendLine(`Query using conversation history: ${conversationHistory!.length} messages`);
         } else if (prompt) {
@@ -631,7 +655,7 @@ I've created the html design, please reveiw and let me know if you need any chan
         } else {
             throw new Error('Either prompt or conversationHistory must be provided');
         }
-        
+
         this.outputChannel.appendLine(`Query options: ${JSON.stringify(options, null, 2)}`);
         this.outputChannel.appendLine(`Streaming enabled: ${!!onMessage}`);
 
@@ -642,7 +666,7 @@ I've created the html design, please reveiw and let me know if you need any chan
         const responseMessages: any[] = [];
         const sessionId = `session_${Date.now()}`;
         let messageBuffer = '';
-        
+
         // Tool call streaming state
         let currentToolCall: any = null;
         let toolCallBuffer = '';
@@ -680,12 +704,12 @@ I've created the html design, please reveiw and let me know if you need any chan
                 maxSteps: 10, // Enable multi-step reasoning with tools
                 maxTokens: 8192 // Increase token limit to prevent truncation
             };
-            
+
             if (usingConversationHistory) {
                 // Use conversation messages
                 streamTextConfig.messages = conversationHistory;
                 this.outputChannel.appendLine(`Using conversation history with ${conversationHistory!.length} messages`);
-                
+
                 // Debug: Log the actual messages being sent to AI SDK
                 this.outputChannel.appendLine('=== AI SDK MESSAGES DEBUG ===');
                 conversationHistory!.forEach((msg, index) => {
@@ -705,7 +729,7 @@ I've created the html design, please reveiw and let me know if you need any chan
 
             this.outputChannel.appendLine('AI SDK streamText created, starting to process chunks...');
 
-            
+
 
             for await (const chunk of result.fullStream) {
                 // Check for abort signal
@@ -725,7 +749,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                             role: 'assistant',
                             content: chunk.text
                         };
-                        
+
                         onMessage?.(textMessage);
                         responseMessages.push(textMessage);
                         break;
@@ -740,7 +764,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                             role: 'assistant',
                             content: chunk.finishReason === 'stop' ? 'Response completed successfully' : 'Response completed'
                         };
-                        
+
                         onMessage?.(resultMessage);
                         responseMessages.push(resultMessage);
                         break;
@@ -754,7 +778,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                             role: 'assistant',
                             content: `Error: ${errorMsg}`
                         };
-                        
+
                         onMessage?.(errorMessage);
                         responseMessages.push(errorMessage);
                         break;
@@ -768,7 +792,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                         toolCallBuffer = '';
                         
                         this.outputChannel.appendLine(`Tool call streaming started: ${chunk.toolName} (ID: ${chunk.id})`);
-                        
+
                         // Send initial tool call message in CoreAssistantMessage format
                         const toolCallStartMessage: ModelMessage = {
                             role: 'assistant',
@@ -779,7 +803,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                                 input: {} // Empty initially, will be updated with deltas
                             }]
                         };
-                        
+
                         onMessage?.(toolCallStartMessage);
                         responseMessages.push(toolCallStartMessage);
                         break;
@@ -788,11 +812,11 @@ I've created the html design, please reveiw and let me know if you need any chan
                         // Streaming tool call parameters - update existing message
                         if (currentToolCall && chunk.delta) {
                             toolCallBuffer += chunk.delta;
-                            
+
                             // Try to parse current buffer as JSON and send update
                             try {
                                 const parsedArgs = JSON.parse(toolCallBuffer);
-                                
+
                                 // Send UPDATE signal (not new message) with special marker
                                 const updateMessage: ModelMessage & { _isUpdate?: boolean, _updateToolId?: string } = {
                                     role: 'assistant',
@@ -805,9 +829,9 @@ I've created the html design, please reveiw and let me know if you need any chan
                                     _isUpdate: true,
                                     _updateToolId: currentToolCall.toolCallId
                                 };
-                                
+
                                 onMessage?.(updateMessage);
-                                
+
                             } catch (parseError) {
                                 // JSON not complete yet, continue buffering
                                 if (toolCallBuffer.length % 100 === 0) {
@@ -821,7 +845,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                         // Handle final complete tool call - CoreAssistantMessage format
                         this.outputChannel.appendLine(`=====Tool call complete: ${JSON.stringify(chunk)}`);
                         this.outputChannel.appendLine(`========================================`);
-                        
+
                         // Skip sending duplicate tool call message if we already sent streaming start
                         if (!currentToolCall) {
                             // Only send if we didn't already send a streaming start message
@@ -834,13 +858,13 @@ I've created the html design, please reveiw and let me know if you need any chan
                                     input: chunk.input
                                 }]
                             };
-                            
+
                             onMessage?.(toolCallMessage);
                             responseMessages.push(toolCallMessage);
                         } else {
                             this.outputChannel.appendLine(`Skipping duplicate tool call message - already sent streaming start for ID: ${chunk.toolCallId}`);
                         }
-                        
+
                         // Reset tool call streaming state
                         currentToolCall = null;
                         toolCallBuffer = '';
@@ -851,7 +875,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                         if ((chunk as any).type === 'tool-result') {
                             const toolResult = chunk as any;
                             this.outputChannel.appendLine(`Tool result received for ID: ${toolResult.toolCallId}: ${JSON.stringify(toolResult.result).substring(0, 200)}...`);
-                            
+
                             // Send tool result in CoreToolMessage format
                             const toolResultMessage: ModelMessage = {
                                 role: 'tool',
@@ -862,7 +886,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                                     output: toolResult.result
                                 }]
                             };
-                            
+
                             onMessage?.(toolResultMessage);
                             responseMessages.push(toolResultMessage);
                             
@@ -875,13 +899,13 @@ I've created the html design, please reveiw and let me know if you need any chan
 
             this.outputChannel.appendLine(`Query completed successfully. Total messages: ${responseMessages.length}`);
             this.outputChannel.appendLine(`Complete response: "${messageBuffer}"`);
-            
+
             return responseMessages;
 
         } catch (error) {
             this.outputChannel.appendLine(`Custom Agent query failed: ${error}`);
             this.outputChannel.appendLine(`Error stack: ${error instanceof Error ? error.stack : 'No stack trace'}`);
-            
+
             // Send error message if streaming callback is available
             if (onMessage) {
                 const errorMessage = {
@@ -893,7 +917,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                 };
                 onMessage(errorMessage);
             }
-            
+
             throw error;
         }
     }
@@ -917,7 +941,7 @@ I've created the html design, please reveiw and let me know if you need any chan
         const config = vscode.workspace.getConfiguration('securedesign');
         const specificModel = config.get<string>('aiModel');
         const provider = config.get<string>('aiModelProvider', 'anthropic');
-        
+
         // Determine provider from model name if specific model is set
         let effectiveProvider = provider;
         if (specificModel) {
@@ -933,11 +957,13 @@ I've created the html design, please reveiw and let me know if you need any chan
                        specificModel.startsWith('cohere.') ||
                        specificModel.startsWith('mistral.')) {
                 effectiveProvider = 'bedrock';
+            } else if (specificModel.includes('kimi') || specificModel.includes('k2')) {
+                effectiveProvider = 'moonshot';
             } else {
                 effectiveProvider = 'openai';
             }
         }
-        
+
         switch (effectiveProvider) {
             case 'openrouter':
                 return !!config.get<string>('openrouterApiKey');
@@ -947,6 +973,8 @@ I've created the html design, please reveiw and let me know if you need any chan
                 return !!config.get<string>('anthropicApiKey');
             case 'google':
                 return !!config.get<string>('googleApiKey');
+            case 'moonshot':
+                return !!config.get<string>('moonshotApiKey');
             case 'openai':
             default:
                 return !!config.get<string>('openaiApiKey');
@@ -957,14 +985,14 @@ I've created the html design, please reveiw and let me know if you need any chan
         if (!errorMessage) {
             return false;
         }
-        
+
         const lowerError = errorMessage.toLowerCase();
         return lowerError.includes('api key') ||
-               lowerError.includes('authentication') ||
-               lowerError.includes('unauthorized') ||
-               lowerError.includes('invalid_api_key') ||
-               lowerError.includes('permission_denied') ||
-               lowerError.includes('api_key_invalid') ||
-               lowerError.includes('unauthenticated');
+            lowerError.includes('authentication') ||
+            lowerError.includes('unauthorized') ||
+            lowerError.includes('invalid_api_key') ||
+            lowerError.includes('permission_denied') ||
+            lowerError.includes('api_key_invalid') ||
+            lowerError.includes('unauthenticated');
     }
 } 

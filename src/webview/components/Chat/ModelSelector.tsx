@@ -66,7 +66,9 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
         // AWS Bedrock - Anthropic (Claude 3)
         { id: 'anthropic.claude-3-5-sonnet-20241022-v2:0', name: 'Claude 3.5 Sonnet v2', provider: 'AWS Bedrock (Anthropic)', category: 'Balanced' },
         { id: 'anthropic.claude-3-opus-20240229-v1:0', name: 'Claude 3 Opus', provider: 'AWS Bedrock (Anthropic)', category: 'Premium' },
-        { id: 'anthropic.claude-3-haiku-20240307-v1:0', name: 'Claude 3 Haiku', provider: 'AWS Bedrock (Anthropic)', category: 'Fast' }
+        { id: 'anthropic.claude-3-haiku-20240307-v1:0', name: 'Claude 3 Haiku', provider: 'AWS Bedrock (Anthropic)', category: 'Fast' },
+        // Moonshot AI
+        { id: 'kimi-k2-0711-preview', name: 'Kimi K2', provider: 'Moonshot', category: 'Balanced' }
     ];
 
     const filteredModels = models.filter(model =>
@@ -86,7 +88,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
 
         // Calculate vertical position (above the trigger)
         let top = triggerRect.top - modalHeight - padding;
-        
+
         // If there's not enough space above, show below
         if (top < padding) {
             top = triggerRect.bottom + padding;
@@ -94,7 +96,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
 
         // Calculate horizontal position (align with trigger)
         let left = triggerRect.left;
-        
+
         // Ensure modal doesn't go off-screen horizontally
         const rightEdge = left + modalWidth;
         if (rightEdge > window.innerWidth - padding) {
@@ -369,7 +371,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
             </style>
 
             <div className="model-selector-wrapper">
-                <button 
+                <button
                     ref={triggerRef}
                     className="model-selector-trigger"
                     onClick={handleToggleOpen}
@@ -379,18 +381,18 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
                         <BrainIcon />
                     </div>
                     <span>{selectedModelName}</span>
-                    <svg 
+                    <svg
                         className={`model-selector-arrow ${isOpen ? 'open' : ''}`}
-                        width="12" 
-                        height="12" 
-                        viewBox="0 0 20 20" 
+                        width="12"
+                        height="12"
+                        viewBox="0 0 20 20"
                         fill="currentColor"
                     >
-                        <path 
-                            stroke="currentColor" 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth="1.5" 
+                        <path
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.5"
                             d="m6 12 4-4 4 4"
                         />
                     </svg>
@@ -398,8 +400,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
 
                 {isOpen && (
                     <div className="model-selector-modal">
-                        <div 
-                            className="model-selector-content" 
+                        <div
+                            className="model-selector-content"
                             ref={modalRef}
                             style={{
                                 top: dropdownPosition.top,

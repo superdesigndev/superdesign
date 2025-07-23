@@ -26,7 +26,7 @@ async function saveImageToMoodboard(data: {
 	try {
 		// Create .superdesign/moodboard directory if it doesn't exist
 		const moodboardDir = vscode.Uri.joinPath(workspaceFolder.uri, '.superdesign', 'moodboard');
-		
+
 		try {
 			await vscode.workspace.fs.stat(moodboardDir);
 		} catch {
@@ -39,11 +39,11 @@ async function saveImageToMoodboard(data: {
 		const base64Content = data.base64Data.split(',')[1]; // Remove data:image/jpeg;base64, prefix
 		const buffer = Buffer.from(base64Content, 'base64');
 		const filePath = vscode.Uri.joinPath(moodboardDir, data.fileName);
-		
+
 		await vscode.workspace.fs.writeFile(filePath, buffer);
-		
+
 		Logger.info(`Image saved to moodboard: ${data.fileName} (${(data.size / 1024).toFixed(1)} KB)`);
-		
+
 		// Send back the full absolute path to the webview
 		sidebarProvider.sendMessage({
 			command: 'imageSavedToMoodboard',
@@ -53,11 +53,11 @@ async function saveImageToMoodboard(data: {
 				fullPath: filePath.fsPath
 			}
 		});
-		
+
 	} catch (error) {
 		Logger.error(`Error saving image to moodboard: ${error}`);
 		vscode.window.showErrorMessage(`Failed to save image: ${error}`);
-		
+
 		// Send error back to webview
 		sidebarProvider.sendMessage({
 			command: 'imageSaveError',
@@ -76,7 +76,7 @@ async function getBase64Image(filePath: string, sidebarProvider: ChatSidebarProv
 		// Read the image file
 		const fileUri = vscode.Uri.file(filePath);
 		const fileData = await vscode.workspace.fs.readFile(fileUri);
-		
+
 		// Determine MIME type from file extension
 		const extension = filePath.toLowerCase().split('.').pop();
 		let mimeType: string;
@@ -100,13 +100,13 @@ async function getBase64Image(filePath: string, sidebarProvider: ChatSidebarProv
 			default:
 				mimeType = 'image/png'; // Default fallback
 		}
-		
+
 		// Convert to base64
 		const base64Content = Buffer.from(fileData).toString('base64');
 		const base64DataUri = `data:${mimeType};base64,${base64Content}`;
-		
+
 		console.log(`Converted image to base64: ${filePath} (${(fileData.length / 1024).toFixed(1)} KB)`);
-		
+
 		// Send back the base64 data to webview
 		sidebarProvider.sendMessage({
 			command: 'base64ImageResponse',
@@ -115,10 +115,10 @@ async function getBase64Image(filePath: string, sidebarProvider: ChatSidebarProv
 			mimeType: mimeType,
 			size: fileData.length
 		});
-		
+
 	} catch (error) {
 		console.error('Error converting image to base64:', error);
-		
+
 		// Send error back to webview
 		sidebarProvider.sendMessage({
 			command: 'base64ImageResponse',
@@ -133,30 +133,30 @@ async function getCssFileContent(filePath: string, sidebarProvider: ChatSidebarP
 	try {
 		// Handle relative paths - resolve them to workspace root
 		let resolvedPath = filePath;
-		
+
 		if (!path.isAbsolute(filePath)) {
 			const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
 			if (!workspaceFolder) {
 				throw new Error('No workspace folder found');
 			}
-			
+
 			// If path doesn't start with .superdesign, add it
 			if (!filePath.startsWith('.superdesign/') && filePath.startsWith('design_iterations/')) {
 				resolvedPath = `.superdesign/${filePath}`;
 			}
-			
+
 			resolvedPath = path.join(workspaceFolder.uri.fsPath, resolvedPath);
 		}
-		
+
 		// Read the CSS file
 		const fileUri = vscode.Uri.file(resolvedPath);
 		const fileData = await vscode.workspace.fs.readFile(fileUri);
-		
+
 		// Convert to string
 		const cssContent = Buffer.from(fileData).toString('utf8');
-		
+
 		console.log(`Read CSS file: ${resolvedPath} (${(fileData.length / 1024).toFixed(1)} KB)`);
-		
+
 		// Send back the CSS content to webview
 		sidebarProvider.sendMessage({
 			command: 'cssFileContentResponse',
@@ -164,10 +164,10 @@ async function getCssFileContent(filePath: string, sidebarProvider: ChatSidebarP
 			content: cssContent,
 			size: fileData.length
 		});
-		
+
 	} catch (error) {
 		console.error('Error reading CSS file:', error);
-		
+
 		// Send error back to webview
 		sidebarProvider.sendMessage({
 			command: 'cssFileContentResponse',
@@ -1240,7 +1240,6 @@ html.dark {
 			: 'No new design rule files needed for current environment';
 		
 		vscode.window.showInformationMessage(`✅ SecureDesign project initialized successfully! Created .superdesign folder. ${filesMessage}`);
-		
 	} catch (error) {
 		vscode.window.showErrorMessage(`Failed to initialize SecureDesign project: ${error}`);
 	}
@@ -1286,10 +1285,13 @@ export function activate(context: vscode.ExtensionContext) {
   const configureAWSBedrockDisposable = vscode.commands.registerCommand('superdesign.configureAWSBedrock', async () => {
 		await configureAWSBedrock();
 	});
+	const configureMoonshotApiKeyDisposable = vscode.commands.registerCommand('superdesign.configureMoonshotApiKey', async () => {
+		await configureMoonshotApiKey();
+	});
 
 	// Create the chat sidebar provider
 	const sidebarProvider = new ChatSidebarProvider(context.extensionUri, customAgent, Logger.getOutputChannel());
-	
+
 	// Register the webview view provider for sidebar
 	const sidebarDisposable = vscode.window.registerWebviewViewProvider(
 		ChatSidebarProvider.VIEW_TYPE,
@@ -1352,7 +1354,7 @@ export function activate(context: vscode.ExtensionContext) {
 					isOpen: isCanvasOpen
 				});
 				break;
-				
+
 			case 'autoOpenCanvas':
 				// Auto-open canvas if not already open
 				SuperdesignCanvasPanel.createOrShow(context.extensionUri, sidebarProvider);
@@ -1396,7 +1398,7 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	context.subscriptions.push(
-		helloWorldDisposable, 
+		helloWorldDisposable,
 		configureApiKeyDisposable,
 		configureOpenAIApiKeyDisposable,
 		configureOpenRouterApiKeyDisposable,
@@ -1443,7 +1445,7 @@ async function configureAnthropicApiKey() {
 			try {
 				await vscode.workspace.getConfiguration('securedesign').update(
 					'anthropicApiKey', 
-					input.trim(), 
+					input.trim(),
 					vscode.ConfigurationTarget.Global
 				);
 				vscode.window.showInformationMessage('✅ Anthropic API key configured successfully!');
@@ -1815,13 +1817,13 @@ class SuperdesignCanvasPanel {
 
 	public dispose() {
 		SuperdesignCanvasPanel.currentPanel = undefined;
-		
+
 		// Dispose of file watcher
 		if (this._fileWatcher) {
 			this._fileWatcher.dispose();
 			this._fileWatcher = undefined;
 		}
-		
+
 		this._panel.dispose();
 		while (this._disposables.length) {
 			const x = this._disposables.pop();
@@ -1839,7 +1841,7 @@ class SuperdesignCanvasPanel {
 
 		// Watch for changes in .superdesign/design_iterations/*.html, *.svg, and *.css
 		const pattern = new vscode.RelativePattern(
-			workspaceFolder, 
+			workspaceFolder,
 			'.superdesign/design_iterations/**/*.{html,svg,css}'
 		);
 
@@ -1954,7 +1956,7 @@ class SuperdesignCanvasPanel {
 
 		try {
 			const designFolder = vscode.Uri.joinPath(workspaceFolder.uri, '.superdesign', 'design_iterations');
-			
+
 			// Check if the design_files folder exists
 			try {
 				await vscode.workspace.fs.stat(designFolder);
@@ -1974,9 +1976,9 @@ class SuperdesignCanvasPanel {
 
 			// Read all files in the directory
 			const files = await vscode.workspace.fs.readDirectory(designFolder);
-			const designFiles = files.filter(([name, type]) => 
+			const designFiles = files.filter(([name, type]) =>
 				type === vscode.FileType.File && (
-					name.toLowerCase().endsWith('.html') || 
+					name.toLowerCase().endsWith('.html') ||
 					name.toLowerCase().endsWith('.svg')
 				)
 			);
@@ -1984,7 +1986,7 @@ class SuperdesignCanvasPanel {
 			const loadedFiles = await Promise.all(
 				designFiles.map(async ([fileName, _]) => {
 					const filePath = vscode.Uri.joinPath(designFolder, fileName);
-					
+
 					try {
 						// Read file stats and content
 						const [stat, content] = await Promise.all([
@@ -1994,12 +1996,12 @@ class SuperdesignCanvasPanel {
 
 						const fileType = fileName.toLowerCase().endsWith('.svg') ? 'svg' : 'html';
 						let htmlContent = Buffer.from(content).toString('utf8');
-						
+
 						// For HTML files, inline any external CSS files
 						if (fileType === 'html') {
 							htmlContent = await this._inlineExternalCSS(htmlContent, designFolder);
 						}
-						
+
 						return {
 							name: fileName,
 							path: filePath.fsPath,
@@ -2019,7 +2021,7 @@ class SuperdesignCanvasPanel {
 			const validFiles = loadedFiles.filter(file => file !== null);
 
 			Logger.info(`Loaded ${validFiles.length} design files (HTML & SVG)`);
-			
+
 			this._panel.webview.postMessage({
 				command: 'designFilesLoaded',
 				data: { files: validFiles }
@@ -2039,25 +2041,25 @@ class SuperdesignCanvasPanel {
 		const linkRegex = /<link\s+[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi;
 		let modifiedContent = htmlContent;
 		const matches = Array.from(htmlContent.matchAll(linkRegex));
-		
+
 		for (const match of matches) {
 			const fullLinkTag = match[0];
 			const cssFileName = match[1];
-			
+
 			try {
 				// Only process relative paths (not absolute URLs)
 				if (!cssFileName.startsWith('http') && !cssFileName.startsWith('//')) {
 					const cssFilePath = vscode.Uri.joinPath(designFolder, cssFileName);
-					
+
 					// Check if CSS file exists
 					try {
 						const cssContent = await vscode.workspace.fs.readFile(cssFilePath);
 						const cssText = Buffer.from(cssContent).toString('utf8');
-						
+
 						// Replace the link tag with a style tag containing the CSS content
 						const styleTag = `<style>\n${cssText}\n</style>`;
 						modifiedContent = modifiedContent.replace(fullLinkTag, styleTag);
-						
+
 						Logger.debug(`Inlined CSS file: ${cssFileName}`);
 					} catch (cssError) {
 						Logger.warn(`Could not read CSS file ${cssFileName}: ${cssError}`);
@@ -2068,7 +2070,7 @@ class SuperdesignCanvasPanel {
 				Logger.warn(`Error processing CSS link ${cssFileName}: ${error}`);
 			}
 		}
-		
+
 		return modifiedContent;
 	}
 }
@@ -2083,6 +2085,51 @@ function getNonce() {
 }
 
 // This method is called when your extension is deactivated
+// Function to configure Moonshot API key
+async function configureMoonshotApiKey() {
+	const currentKey = vscode.workspace.getConfiguration('superdesign').get<string>('moonshotApiKey');
+
+	const input = await vscode.window.showInputBox({
+		title: 'Configure Moonshot API Key',
+		prompt: 'Enter your Moonshot AI API key (get one from https://platform.moonshot.cn/)',
+		value: currentKey ? '••••••••••••••••' : '',
+		password: true,
+		placeHolder: 'sk-...',
+		validateInput: (value) => {
+			if (!value || value.trim().length === 0) {
+				return 'API key cannot be empty';
+			}
+			if (value === '••••••••••••••••') {
+				return null; // User didn't change the masked value, that's OK
+			}
+			if (!value.startsWith('sk-')) {
+				return 'Moonshot API keys should start with "sk-"';
+			}
+			return null;
+		}
+	});
+
+	if (input !== undefined) {
+		// Only update if user didn't just keep the masked value
+		if (input !== '••••••••••••••••') {
+			try {
+				await vscode.workspace.getConfiguration('superdesign').update(
+					'moonshotApiKey',
+					input.trim(),
+					vscode.ConfigurationTarget.Global
+				);
+				vscode.window.showInformationMessage('✅ Moonshot API key configured successfully!');
+			} catch (error) {
+				vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
+			}
+		} else if (currentKey) {
+			vscode.window.showInformationMessage('API key unchanged (already configured)');
+		} else {
+			vscode.window.showWarningMessage('No API key was set');
+		}
+	}
+}
+
 export function deactivate() {
 	Logger.dispose();
 }
