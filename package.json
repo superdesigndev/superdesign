@@ -64,6 +64,11 @@
         "category": "Superdesign"
       },
       {
+        "command": "superdesign.configureMoonshotApiKey",
+        "title": "Configure Moonshot API Key",
+        "category": "Superdesign"
+      },
+      {
         "command": "superdesign.showChatSidebar",
         "title": "Show Chat Sidebar",
         "category": "Superdesign"
@@ -158,10 +163,16 @@
           "enum": [
             "openai",
             "anthropic",
-            "openrouter"
+            "openrouter",
+            "moonshot"
           ],
           "default": "anthropic",
-          "description": "AI model provider for custom agent (OpenAI, Anthropic, or OpenRouter)",
+          "description": "AI model provider for custom agent (OpenAI, Anthropic, OpenRouter, or Moonshot)",
+          "scope": "application"
+        },
+        "superdesign.moonshotApiKey": {
+          "type": "string",
+          "description": "Moonshot AI API key for Kimi K2 integration",
           "scope": "application"
         },
         "superdesign.aiModel": {

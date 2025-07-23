@@ -55,7 +55,9 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
         { id: 'rekaai/reka-flash-3', name: 'Reka Flash 3', provider: 'OpenRouter (Reka)', category: 'Balanced' },
         // Existing OpenAI (direct)
         { id: 'gpt-4.1', name: 'GPT-4.1', provider: 'OpenAI', category: 'Balanced' },
-        { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', provider: 'OpenAI', category: 'Fast' }
+        { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', provider: 'OpenAI', category: 'Fast' },
+        // Moonshot AI
+        { id: 'kimi-k2-0711-preview', name: 'Kimi K2', provider: 'Moonshot', category: 'Balanced' }
     ];
 
     const filteredModels = models.filter(model =>
@@ -75,7 +77,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
 
         // Calculate vertical position (above the trigger)
         let top = triggerRect.top - modalHeight - padding;
-        
+
         // If there's not enough space above, show below
         if (top < padding) {
             top = triggerRect.bottom + padding;
@@ -83,7 +85,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
 
         // Calculate horizontal position (align with trigger)
         let left = triggerRect.left;
-        
+
         // Ensure modal doesn't go off-screen horizontally
         const rightEdge = left + modalWidth;
         if (rightEdge > window.innerWidth - padding) {
@@ -358,7 +360,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
             </style>
 
             <div className="model-selector-wrapper">
-                <button 
+                <button
                     ref={triggerRef}
                     className="model-selector-trigger"
                     onClick={handleToggleOpen}
@@ -368,18 +370,18 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
                         <BrainIcon />
                     </div>
                     <span>{selectedModelName}</span>
-                    <svg 
+                    <svg
                         className={`model-selector-arrow ${isOpen ? 'open' : ''}`}
-                        width="12" 
-                        height="12" 
-                        viewBox="0 0 20 20" 
+                        width="12"
+                        height="12"
+                        viewBox="0 0 20 20"
                         fill="currentColor"
                     >
-                        <path 
-                            stroke="currentColor" 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth="1.5" 
+                        <path
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.5"
                             d="m6 12 4-4 4 4"
                         />
                     </svg>
@@ -387,8 +389,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
 
                 {isOpen && (
                     <div className="model-selector-modal">
-                        <div 
-                            className="model-selector-content" 
+                        <div
+                            className="model-selector-content"
                             ref={modalRef}
                             style={{
                                 top: dropdownPosition.top,
