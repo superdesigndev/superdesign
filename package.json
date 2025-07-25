@@ -69,6 +69,11 @@
         "category": "Superdesign"
       },
       {
+        "command": "superdesign.configureGoogleApiKey",
+        "title": "Configure Google API Key",
+        "category": "Superdesign"
+      },
+      {
         "command": "superdesign.showChatSidebar",
         "title": "Show Chat Sidebar",
         "category": "Superdesign"
@@ -163,15 +168,21 @@
           "description": "OpenRouter API key for custom agent",
           "scope": "application"
         },
+        "superdesign.googleApiKey": {
+          "type": "string",
+          "description": "Google API key for Gemini models.",
+          "scope": "application"
+        },
         "superdesign.aiModelProvider": {
           "type": "string",
           "enum": [
             "openai",
             "anthropic",
-            "openrouter"
+            "openrouter",
+            "google"
           ],
           "default": "anthropic",
-          "description": "AI model provider for custom agent (OpenAI, Anthropic, or OpenRouter)",
+          "description": "AI model provider for custom agent (OpenAI, Anthropic, OpenRouter, Google)",
           "scope": "application"
         },
         "superdesign.aiModel": {
