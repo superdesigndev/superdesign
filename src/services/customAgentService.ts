@@ -1,6 +1,7 @@
 import { streamText, CoreMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import * as vscode from 'vscode';
 import * as path from 'path';
@@ -94,12 +95,30 @@ export class CustomAgentService implements AgentService {
                 effectiveProvider = 'openrouter';
             } else if (specificModel.startsWith('claude-')) {
                 effectiveProvider = 'anthropic';
+            } else if (specificModel.startsWith('gemini-')) {
+               effectiveProvider = 'google';
             } else {
-                effectiveProvider = 'openai';
-            }
-        }
+               effectiveProvider = 'openai';
+           }
+       }
         
         switch (effectiveProvider) {
+            case 'google':
+                const googleKey = config.get<string>('googleApiKey');
+                if (!googleKey) {
+                    throw new Error('Google API key not configured. Please run "Configure Google API Key" command.');
+                }
+                
+                this.outputChannel.appendLine(`Google API key found.`);
+                
+                const google = createGoogleGenerativeAI({
+                    apiKey: googleKey,
+                });
+                
+                const googleModel = specificModel || 'gemini-2.5-pro';
+                this.outputChannel.appendLine(`Using Google model: ${googleModel}`);
+                return google(googleModel);
+
             case 'openrouter':
                 const openrouterKey = config.get<string>('openrouterApiKey');
                 if (!openrouterKey) {
@@ -179,6 +198,9 @@ export class CustomAgentService implements AgentService {
                     break;
                 case 'openrouter':
                     modelName = 'anthropic/claude-3-7-sonnet-20250219';
+                    break;
+                case 'google':
+                    modelName = 'gemini-2.5-pro';
                     break;
                 case 'anthropic':
                 default:
@@ -905,6 +927,8 @@ I've created the html design, please reveiw and let me know if you need any chan
                 return !!config.get<string>('openrouterApiKey');
             case 'anthropic':
                 return !!config.get<string>('anthropicApiKey');
+            case 'google':
+                return !!config.get<string>('googleApiKey');
             case 'openai':
             default:
                 return !!config.get<string>('openaiApiKey');
