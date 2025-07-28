@@ -142,6 +142,8 @@ export class ChatMessageService {
                         effectiveProvider = 'openrouter';
                     } else if (specificModel.startsWith('claude-')) {
                         effectiveProvider = 'anthropic';
+                    } else if (specificModel.startsWith('gemini-')) {
+                        effectiveProvider = 'google';
                     } else {
                         effectiveProvider = 'openai';
                     }
@@ -155,6 +157,10 @@ export class ChatMessageService {
                     case 'anthropic':
                         providerName = 'Anthropic';
                         configureCommand = 'superdesign.configureApiKey';
+                        break;
+                    case 'google':
+                        providerName = 'Google';
+                        configureCommand = 'superdesign.configureGoogleApiKey';
                         break;
                     case 'openai':
                         providerName = 'OpenAI';

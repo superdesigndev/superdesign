@@ -50,12 +50,24 @@ Works seamlessly with Cursor, Windsurf, Claude Code, and plain VS Code.
 
 ---
 
+## 🧠 Supported AI Providers
+
+SuperDesign supports multiple AI providers. You can configure your preferred provider and model in the settings.
+
+- **Anthropic:** Claude models
+- **OpenAI:** GPT models
+- **Google:** Gemini models
+- **OpenRouter:** Access a wide range of models
+
+To configure an API key, use the Command Palette (`Cmd+Shift+P`) and search for "Superdesign: Configure [Provider] API Key".
+
 ## Can I use my own Claude Code or Cursor subscription?
+
 Yes, after you initialise superdesign extension, some cursor/claude code rules will be added, so you can prompt the agent to do design and preview in superdesign canva (cmd + shift + p -> superdesign: open canva)
 
 If using Cursor - I will highly suggest copy the prompt in 'design.mdc' and create a custom mode in cursor with that same system prompt; This should give you much better performance
 
-Instructions here (Click to play): 
+Instructions here (Click to play):
 [![Instruction video](v0.0.11.png)](https://youtu.be/KChmJMCDOB0?si=pvU0kNRO4GRWjsec&t=122)
 
 ## 📂 Where Are My Designs Stored?
@@ -89,4 +101,3 @@ Pull requests are welcome. Star the repo and join us on [Discord](https://discor
 - 📦 GitHub: [https://github.com/superdesigndev/superdesign](https://github.com/superdesigndev/superdesign)
 - 💬 Discord: [Join the Community](https://discord.gg/XYZ)
 - 🐦 Twitter / X: [@SuperDesignDev](https://x.com/SuperDesignDev)
-
