@@ -1713,7 +1713,7 @@ async function configureAWSBedrock() {
 
 		try {
 			// Save all configurations
-			const updates: Promise<void>[] = [];
+			const updates: Thenable<void>[] = [];
 			
 			if (accessKeyInput !== '••••••••••••••••') {
 				updates.push(config.update('awsAccessKeyId', accessKeyInput.trim(), vscode.ConfigurationTarget.Global));

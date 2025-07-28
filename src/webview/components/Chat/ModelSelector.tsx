@@ -59,7 +59,14 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
         { id: 'rekaai/reka-flash-3', name: 'Reka Flash 3', provider: 'OpenRouter (Reka)', category: 'Balanced' },
         // Existing OpenAI (direct)
         { id: 'gpt-4.1', name: 'GPT-4.1', provider: 'OpenAI', category: 'Balanced' },
-        { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', provider: 'OpenAI', category: 'Fast' }
+        { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', provider: 'OpenAI', category: 'Fast' },
+        // AWS Bedrock - Anthropic (Claude 4)
+        { id: 'us.anthropic.claude-opus-4-20250514-v1:0', name: 'Claude 4 Opus', provider: 'AWS Bedrock (Anthropic)', category: 'Premium' },
+        { id: 'us.anthropic.claude-sonnet-4-20250514-v1:0', name: 'Claude 4 Sonnet', provider: 'AWS Bedrock (Anthropic)', category: 'Balanced' },
+        // AWS Bedrock - Anthropic (Claude 3)
+        { id: 'anthropic.claude-3-5-sonnet-20241022-v2:0', name: 'Claude 3.5 Sonnet v2', provider: 'AWS Bedrock (Anthropic)', category: 'Balanced' },
+        { id: 'anthropic.claude-3-opus-20240229-v1:0', name: 'Claude 3 Opus', provider: 'AWS Bedrock (Anthropic)', category: 'Premium' },
+        { id: 'anthropic.claude-3-haiku-20240307-v1:0', name: 'Claude 3 Haiku', provider: 'AWS Bedrock (Anthropic)', category: 'Fast' }
     ];
 
     const filteredModels = models.filter(model =>

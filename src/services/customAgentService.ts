@@ -99,6 +99,7 @@ export class CustomAgentService implements AgentService {
             } else if (specificModel.startsWith('gemini-')) {
                effectiveProvider = 'google';
             } else if (specificModel.startsWith('anthropic.') || 
+                       specificModel.startsWith('us.anthropic.') ||
                        specificModel.startsWith('amazon.') ||
                        specificModel.startsWith('meta.') ||
                        specificModel.startsWith('ai21.') ||
@@ -163,7 +164,7 @@ export class CustomAgentService implements AgentService {
                 });
                 
                 // Use specific model if available, otherwise default to Claude 3.5 Sonnet on Bedrock
-                const bedrockModel = specificModel || 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+                const bedrockModel = specificModel || 'us.anthropic.claude-3-5-sonnet-20241022-v2:0';
                 this.outputChannel.appendLine(`Using Bedrock model: ${bedrockModel}`);
                 return bedrock(bedrockModel);
                 
@@ -227,7 +228,7 @@ export class CustomAgentService implements AgentService {
                 case 'google':
                     modelName = 'gemini-2.5-pro';
                 case 'bedrock':
-                    modelName = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+                    modelName = 'us.anthropic.claude-3-5-sonnet-20241022-v2:0';
                     break;
                 case 'anthropic':
                 default:
@@ -925,6 +926,7 @@ I've created the html design, please reveiw and let me know if you need any chan
             } else if (specificModel.startsWith('claude-')) {
                 effectiveProvider = 'anthropic';
             } else if (specificModel.startsWith('anthropic.') || 
+                       specificModel.startsWith('us.anthropic.') ||
                        specificModel.startsWith('amazon.') ||
                        specificModel.startsWith('meta.') ||
                        specificModel.startsWith('ai21.') ||
