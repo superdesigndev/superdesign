@@ -1,6 +1,7 @@
 import { streamText, CoreMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
+import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import * as vscode from 'vscode';
 import * as path from 'path';
@@ -94,6 +95,13 @@ export class CustomAgentService implements AgentService {
                 effectiveProvider = 'openrouter';
             } else if (specificModel.startsWith('claude-')) {
                 effectiveProvider = 'anthropic';
+            } else if (specificModel.startsWith('anthropic.') || 
+                       specificModel.startsWith('amazon.') ||
+                       specificModel.startsWith('meta.') ||
+                       specificModel.startsWith('ai21.') ||
+                       specificModel.startsWith('cohere.') ||
+                       specificModel.startsWith('mistral.')) {
+                effectiveProvider = 'bedrock';
             } else {
                 effectiveProvider = 'openai';
             }
@@ -116,6 +124,29 @@ export class CustomAgentService implements AgentService {
                 const openrouterModel = specificModel || 'anthropic/claude-3-7-sonnet-20250219';
                 this.outputChannel.appendLine(`Using OpenRouter model: ${openrouterModel}`);
                 return openrouter.chat(openrouterModel);
+                
+            case 'bedrock':
+                const awsRegion = config.get<string>('awsRegion') || 'us-east-1';
+                const awsAccessKeyId = config.get<string>('awsAccessKeyId');
+                const awsSecretAccessKey = config.get<string>('awsSecretAccessKey');
+                
+                if (!awsAccessKeyId || !awsSecretAccessKey) {
+                    throw new Error('AWS credentials not configured. Please run "Configure AWS Bedrock" command.');
+                }
+                
+                this.outputChannel.appendLine(`AWS region: ${awsRegion}`);
+                this.outputChannel.appendLine(`AWS access key found: ${awsAccessKeyId.substring(0, 8)}...`);
+                
+                const bedrock = createAmazonBedrock({
+                    region: awsRegion,
+                    accessKeyId: awsAccessKeyId,
+                    secretAccessKey: awsSecretAccessKey
+                });
+                
+                // Use specific model if available, otherwise default to Claude 3.5 Sonnet on Bedrock
+                const bedrockModel = specificModel || 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+                this.outputChannel.appendLine(`Using Bedrock model: ${bedrockModel}`);
+                return bedrock(bedrockModel);
                 
             case 'anthropic':
                 const anthropicKey = config.get<string>('anthropicApiKey');
@@ -179,6 +210,9 @@ export class CustomAgentService implements AgentService {
                     break;
                 case 'openrouter':
                     modelName = 'anthropic/claude-3-7-sonnet-20250219';
+                    break;
+                case 'bedrock':
+                    modelName = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
                     break;
                 case 'anthropic':
                 default:
@@ -895,6 +929,13 @@ I've created the html design, please reveiw and let me know if you need any chan
                 effectiveProvider = 'openrouter';
             } else if (specificModel.startsWith('claude-')) {
                 effectiveProvider = 'anthropic';
+            } else if (specificModel.startsWith('anthropic.') || 
+                       specificModel.startsWith('amazon.') ||
+                       specificModel.startsWith('meta.') ||
+                       specificModel.startsWith('ai21.') ||
+                       specificModel.startsWith('cohere.') ||
+                       specificModel.startsWith('mistral.')) {
+                effectiveProvider = 'bedrock';
             } else {
                 effectiveProvider = 'openai';
             }
@@ -903,6 +944,8 @@ I've created the html design, please reveiw and let me know if you need any chan
         switch (effectiveProvider) {
             case 'openrouter':
                 return !!config.get<string>('openrouterApiKey');
+            case 'bedrock':
+                return !!config.get<string>('awsAccessKeyId') && !!config.get<string>('awsSecretAccessKey');
             case 'anthropic':
                 return !!config.get<string>('anthropicApiKey');
             case 'openai':

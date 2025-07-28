@@ -109,6 +109,9 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             case 'openrouter':
                 defaultModel = 'anthropic/claude-3-7-sonnet-20250219';
                 break;
+            case 'bedrock':
+                defaultModel = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+                break;
             case 'anthropic':
             default:
                 defaultModel = 'claude-3-5-sonnet-20241022';
@@ -143,6 +146,16 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 apiKeyKey = 'anthropicApiKey';
                 configureCommand = 'superdesign.configureApiKey';
                 displayName = `Anthropic (${this.getModelDisplayName(model)})`;
+            } else if (model.startsWith('anthropic.') || 
+                       model.startsWith('amazon.') ||
+                       model.startsWith('meta.') ||
+                       model.startsWith('ai21.') ||
+                       model.startsWith('cohere.') ||
+                       model.startsWith('mistral.')) {
+                provider = 'bedrock';
+                apiKeyKey = 'awsAccessKeyId'; // We'll check both AWS keys in the validation
+                configureCommand = 'superdesign.configureAWSBedrock';
+                displayName = `AWS Bedrock (${this.getModelDisplayName(model)})`;
             } else {
                 provider = 'openai';
                 apiKeyKey = 'openaiApiKey';
@@ -154,17 +167,25 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             await config.update('aiModelProvider', provider, vscode.ConfigurationTarget.Global);
             await config.update('aiModel', model, vscode.ConfigurationTarget.Global);
             
-            // Check if the API key is configured for the selected provider
-            const apiKey = config.get<string>(apiKeyKey);
+            // Check if the credentials are configured for the selected provider
+            let isConfigured = false;
+            if (provider === 'bedrock') {
+                const awsAccessKeyId = config.get<string>('awsAccessKeyId');
+                const awsSecretAccessKey = config.get<string>('awsSecretAccessKey');
+                isConfigured = !!(awsAccessKeyId && awsSecretAccessKey);
+            } else {
+                const apiKey = config.get<string>(apiKeyKey);
+                isConfigured = !!apiKey;
+            }
             
-            if (!apiKey) {
+            if (!isConfigured) {
                 const result = await vscode.window.showWarningMessage(
-                    `${displayName} selected, but API key is not configured. Would you like to configure it now?`,
-                    'Configure API Key',
+                    `${displayName} selected, but credentials are not configured. Would you like to configure them now?`,
+                    'Configure Credentials',
                     'Later'
                 );
                 
-                if (result === 'Configure API Key') {
+                if (result === 'Configure Credentials') {
                     await vscode.commands.executeCommand(configureCommand);
                 }
             }
@@ -197,6 +218,35 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             'claude-3-opus-20240229': 'Claude 3 Opus',
             'claude-3-sonnet-20240229': 'Claude 3 Sonnet',
             'claude-3-haiku-20240307': 'Claude 3 Haiku',
+            // AWS Bedrock - Anthropic models
+            'anthropic.claude-3-5-sonnet-20241022-v2:0': 'Claude 3.5 Sonnet v2',
+            'anthropic.claude-3-5-sonnet-20240620-v1:0': 'Claude 3.5 Sonnet',
+            'anthropic.claude-3-opus-20240229-v1:0': 'Claude 3 Opus',
+            'anthropic.claude-3-sonnet-20240229-v1:0': 'Claude 3 Sonnet',
+            'anthropic.claude-3-haiku-20240307-v1:0': 'Claude 3 Haiku',
+            // AWS Bedrock - Amazon models
+            'amazon.nova-pro-v1:0': 'Amazon Nova Pro',
+            'amazon.nova-lite-v1:0': 'Amazon Nova Lite',
+            'amazon.nova-micro-v1:0': 'Amazon Nova Micro',
+            // AWS Bedrock - Meta models
+            'meta.llama3-2-90b-instruct-v1:0': 'Llama 3.2 90B Instruct',
+            'meta.llama3-2-11b-instruct-v1:0': 'Llama 3.2 11B Instruct',
+            'meta.llama3-2-3b-instruct-v1:0': 'Llama 3.2 3B Instruct',
+            'meta.llama3-2-1b-instruct-v1:0': 'Llama 3.2 1B Instruct',
+            'meta.llama3-1-405b-instruct-v1:0': 'Llama 3.1 405B Instruct',
+            'meta.llama3-1-70b-instruct-v1:0': 'Llama 3.1 70B Instruct',
+            'meta.llama3-1-8b-instruct-v1:0': 'Llama 3.1 8B Instruct',
+            // AWS Bedrock - Mistral models
+            'mistral.mistral-large-2407-v1:0': 'Mistral Large 2407',
+            'mistral.mistral-small-2402-v1:0': 'Mistral Small 2402',
+            'mistral.mistral-7b-instruct-v0:2': 'Mistral 7B Instruct',
+            'mistral.mixtral-8x7b-instruct-v0:1': 'Mixtral 8x7B Instruct',
+            // AWS Bedrock - AI21 models
+            'ai21.jamba-1-5-large-v1:0': 'AI21 Jamba 1.5 Large',
+            'ai21.jamba-1-5-mini-v1:0': 'AI21 Jamba 1.5 Mini',
+            // AWS Bedrock - Cohere models
+            'cohere.command-r-plus-v1:0': 'Cohere Command R+',
+            'cohere.command-r-v1:0': 'Cohere Command R',
             // OpenRouter - Google models
             'google/gemini-2.5-pro': 'Gemini 2.5 Pro',
             'google/gemini-2.5-flash': 'Gemini 2.5 Flash',
