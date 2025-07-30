@@ -141,6 +141,7 @@ export class CustomAgentService implements AgentService {
             case 'openai':
             default:
                 const openaiKey = config.get<string>('openaiApiKey');
+                 const openaiUrl = config.get<string>('openaiUrl');
                 if (!openaiKey) {
                     throw new Error('OpenAI API key not configured. Please run "Configure OpenAI API Key" command.');
                 }
@@ -149,7 +150,7 @@ export class CustomAgentService implements AgentService {
                 
                 const openai = createOpenAI({
                     apiKey: openaiKey,
-                    baseURL: "https://oai.helicone.ai/v1",
+                    baseURL: openaiUrl ?? "https://oai.helicone.ai/v1",
                     headers: {
                         "Helicone-Auth": `Bearer sk-helicone-utidjzi-eprey7i-tvjl25y-yl7mosi`,
                     }
