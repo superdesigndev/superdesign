@@ -137,6 +137,7 @@ export class CustomAgentService implements AgentService {
             case 'openai':
             default:
                 const openaiKey = config.get<string>('openaiApiKey');
+                const openaiUrl = config.get<string>('openaiUrl');
                 if (!openaiKey) {
                     throw new Error('OpenAI API key not configured. Please run "Configure OpenAI API Key" command.');
                 }
@@ -144,7 +145,8 @@ export class CustomAgentService implements AgentService {
                 this.outputChannel.appendLine(`OpenAI API key found: ${openaiKey.substring(0, 7)}...`);
                 
                 const openai = createOpenAI({
-                    apiKey: openaiKey
+                    apiKey: openaiKey,
+                    baseURL: openaiUrl,
                 });
                 
                 // Use specific model if available, otherwise default to gpt-4o
