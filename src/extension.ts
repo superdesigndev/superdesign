@@ -1274,6 +1274,9 @@ export function activate(context: vscode.ExtensionContext) {
 		await configureOpenRouterApiKey();
 	});
 
+  const configureOpenAIUrlDisposable = vscode.commands.registerCommand('superdesign.configureOpenAIUrl', async () => {
+    await configureOpenAIUrl();
+  });
 
 	// Create the chat sidebar provider
 	const sidebarProvider = new ChatSidebarProvider(context.extensionUri, customAgent, Logger.getOutputChannel());
@@ -1392,6 +1395,7 @@ export function activate(context: vscode.ExtensionContext) {
 		configureApiKeyDisposable,
 		configureOpenAIApiKeyDisposable,
 		configureOpenRouterApiKeyDisposable,
+    configureOpenAIUrlDisposable,
 		sidebarDisposable,
 		showSidebarDisposable,
 		openCanvasDisposable,
@@ -1536,6 +1540,45 @@ async function configureOpenRouterApiKey() {
 			vscode.window.showWarningMessage('No API key was set');
 		}
 	}
+}
+
+// Function to configure OpenAI url
+async function configureOpenAIUrl() {
+  const currentKey = vscode.workspace.getConfiguration('superdesign').get<string>('openaiUrl');
+
+  const input = await vscode.window.showInputBox({
+    title: 'Configure OpenAI url',
+    prompt: 'Enter your OpenAI url',
+    value: currentKey ?? '',
+    password: false,
+    placeHolder: 'http://localhost:1234/v1',
+    validateInput: (value) => {
+      if (!value || value.trim().length === 0) {
+        return 'Url cannot be empty';
+      }
+      if (!value.startsWith('http')) {
+        return 'Url should start with "http"';
+      }
+      return null;
+    }
+  });
+
+  if (input !== undefined) {
+    if (input !== '') {
+      try {
+        await vscode.workspace
+          .getConfiguration('superdesign')
+          .update('openaiUrl', input.trim(), vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage('✅ OpenAI url configured successfully!');
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to save url: ${error}`);
+      }
+    } else if (currentKey) {
+      vscode.window.showInformationMessage('Url unchanged (already configured)');
+    } else {
+      vscode.window.showWarningMessage('No Url was set');
+    }
+  }
 }
 
 class SuperdesignCanvasPanel {
