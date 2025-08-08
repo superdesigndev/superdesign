@@ -66,53 +66,6 @@
     max-width: 260px;
 }
 
-.email-input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.email-input {
-    padding: 8px 12px;
-    border: 1px solid var(--vscode-input-border);
-    border-radius: 4px;
-    background: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
-    font-size: 12px;
-    font-family: var(--vscode-font-family);
-    transition: border-color 0.2s ease;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.email-input:focus {
-    outline: none;
-    border-color: var(--vscode-focusBorder);
-    background: var(--vscode-input-background);
-}
-
-.email-input::placeholder {
-    color: var(--vscode-input-placeholderForeground);
-}
-
-.email-input:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.email-input.error {
-    border-color: var(--vscode-inputValidation-errorBorder);
-    background: var(--vscode-inputValidation-errorBackground);
-}
-
-.error-message {
-    font-size: 11px;
-    color: var(--vscode-inputValidation-errorForeground);
-    font-family: var(--vscode-font-family);
-    text-align: left;
-    margin-top: 2px;
-}
-
 .welcome-actions {
     display: flex;
     justify-content: center;

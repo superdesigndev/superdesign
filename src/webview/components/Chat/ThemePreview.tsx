@@ -555,7 +555,6 @@ Your branch is up to date</div>
     <div class="preview-form">
       <h3>Contact Form</h3>
       <input class="input" placeholder="Enter your name" />
-      <input class="input" placeholder="Email address" type="email" />
       <textarea class="input" placeholder="Your message..." rows="3"></textarea>
       <div class="card-actions">
         <button class="btn btn-primary">Submit</button>
