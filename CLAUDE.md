@@ -10,21 +10,21 @@ SuperDesign is an open-source VS Code extension that serves as an AI design agen
 
 ```bash
 # Development
-pnpm run compile          # Compile TypeScript and run checks
-pnpm run watch           # Watch mode for development
-pnpm run check-types     # TypeScript type checking
-pnpm run lint            # ESLint code linting
+npm run compile          # Compile TypeScript and run checks
+npm run watch           # Watch mode for development
+npm run check-types     # TypeScript type checking
+npm run lint            # ESLint code linting
 
 # Production
-pnpm run package         # Production build with checks and linting
-pnpm run vscode:prepublish  # Pre-publish build (runs package)
+npm run package         # Production build with checks and linting
+npm run vscode:prepublish  # Pre-publish build (runs package)
 
 # Testing
-pnpm run test           # Run VS Code extension tests
-pnpm run test:llm       # Test LLM service components
-pnpm run test:core      # Test core components
-pnpm run test:agent     # Test agent functionality
-pnpm run test:tools     # Test file operation tools
+npm run test           # Run VS Code extension tests
+npm run test:llm       # Test LLM service components
+npm run test:core      # Test core components
+npm run test:agent     # Test agent functionality
+npm run test:tools     # Test file operation tools
 ```
 
 ## Architecture Overview
