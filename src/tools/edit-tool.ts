@@ -135,10 +135,9 @@ function calculateEdit(
 export function createEditTool(context: ExecutionContext) {
   return tool({
     description: 'Replace text within a file using exact string matching. Accepts both relative and absolute file paths within the workspace.',
-    parameters: editParametersSchema,
-    execute: async (params): Promise<ToolResponse> => {
+    inputSchema: editParametersSchema,
+    execute: async ({ file_path, old_string, new_string, expected_replacements = 1 }): Promise<ToolResponse> => {
       try {
-        const { file_path, old_string, new_string, expected_replacements = 1 } = params;
 
         // Validate workspace path (handles both absolute and relative paths)
         const pathError = validateWorkspacePath(file_path, context);

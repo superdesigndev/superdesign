@@ -40,7 +40,7 @@ You can add more relevant ones based on use cases, but make sure to include all 
 export function createThemeTool(context: ExecutionContext) {
   return tool({
     description: themePrompt,
-    parameters: z.object({
+    inputSchema: z.object({
       theme_name: z.string().describe('The name of the theme'),
       reasoning_reference: z.string().describe('Think through the theme design to make it coherent and what reference you used'),
       cssSheet: z.string().describe(cssSheetDescription),

@@ -6,6 +6,7 @@
 - 🙈 **100% Private**: No email registration or data collection
 - 🖥️ **Local / Offline Models**: First class support for LM Studio, Ollama, etc.
 - ⛓️‍💥 **Fully OSS, no enterprise license**: SecureDesign will never use non-OSS code
+- ↗️ **Up-to-date dependencies**: Always uses the latest AI and other libraries
 
 ![SuperDesign Cover](cover.png)
 

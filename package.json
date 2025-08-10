@@ -229,6 +229,6 @@
     "react-zoom-pan-pinch": "^3.7.0",
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
-    "zod": "^3.25.67"
+    "zod": "^4.0.17"
   }
 }

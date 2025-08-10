@@ -86,7 +86,7 @@ function applySingleEdit(content: string, edit: SingleEdit): EditResult {
 export function createMultieditTool(context: ExecutionContext) {
   return tool({
     description: 'Perform multiple find-and-replace operations on a single file in sequence. Each edit is applied to the result of the previous edit. Accepts both relative and absolute file paths within the workspace.',
-    parameters: multieditParametersSchema,
+    inputSchema: multieditParametersSchema,
     execute: async (params): Promise<ToolResponse> => {
       try {
         const { file_path, edits, fail_fast = true } = params;

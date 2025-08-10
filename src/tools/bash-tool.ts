@@ -20,7 +20,7 @@ const bashParametersSchema = z.object({
   directory: z.string().optional().describe('Directory to run command in (relative to workspace root). Defaults to workspace root.'),
   timeout: z.number().optional().describe('Timeout in milliseconds (default: 30000ms = 30 seconds)'),
   capture_output: z.boolean().optional().describe('Whether to capture and return command output (default: true)'),
-  env: z.record(z.string()).optional().describe('Environment variables to set for the command execution')
+  env: z.record(z.string(), z.string()).optional().describe('Environment variables to set for the command execution')
 });
 
 interface CommandResult {
@@ -159,10 +159,9 @@ async function executeCommand(
 export function createBashTool(context: ExecutionContext) {
   return tool({
     description: 'Execute shell/bash commands within the SuperDesign workspace. Supports timeouts, output capture, and secure execution.',
-    parameters: bashParametersSchema,
-    execute: async (params): Promise<ToolResponse> => {
+    inputSchema: bashParametersSchema,
+    execute: async ({ command, description, directory, timeout = 30000, capture_output = true, env }): Promise<ToolResponse> => {
       try {
-        const { command, description, directory, timeout = 30000, capture_output = true, env } = params;
 
         // Security checks
         if (hasUnsafeCommand(command)) {
@@ -192,7 +191,7 @@ export function createBashTool(context: ExecutionContext) {
       // Prepare environment
       const processEnv = {
         ...process.env,
-        ...env
+        ...(env as Record<string, string> | undefined)
       };
 
       // Execute the command

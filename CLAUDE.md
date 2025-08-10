@@ -346,3 +346,8 @@ The project includes comprehensive Cursor rules in `.cursor/rules/`:
 - Include contribution guidelines
 - Document configuration options
 - Create user-facing documentation
+
+## Libraries
+
+- Use zod v4, you can read documentation at https://zod.dev/v4/changelog
+- Use Vercel AI SDK v5, you can read documentation at https://ai-sdk.dev/docs/reference/

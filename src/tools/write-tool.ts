@@ -30,7 +30,7 @@ export interface WriteToolResult {
 export function createWriteTool(context: ExecutionContext) {
   return tool({
     description: 'Write content to a file in the SuperDesign workspace. Creates parent directories if needed.',
-    parameters: z.object({
+    inputSchema: z.object({
       file_path: z.string().describe('Path to the file to write to (relative to workspace root, or absolute path within workspace)'),
       content: z.string().describe('Content to write to the file'),
       create_dirs: z.boolean().optional().default(true).describe('Whether to create parent directories if they don\'t exist (default: true)')

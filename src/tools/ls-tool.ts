@@ -97,7 +97,7 @@ function formatModifiedTime(date: Date): string {
 export function createLsTool(context: ExecutionContext) {
   return tool({
     description: 'List the contents of a directory in the SuperDesign workspace. Shows files and subdirectories with optional filtering.',
-    parameters: lsParametersSchema,
+    inputSchema: lsParametersSchema,
     execute: async (params): Promise<ToolResponse> => {
       try {
         const { path: targetPath = '.', show_hidden = false, ignore, detailed = false } = params;

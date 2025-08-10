@@ -212,7 +212,7 @@ function sortResults(results: GlobFileEntry[], sortByTime: boolean): GlobFileEnt
 export function createGlobTool(context: ExecutionContext) {
   return tool({
     description: 'Find files and directories matching glob patterns (e.g., "*.js", "src/**/*.ts"). Efficient for locating files by name or path structure.',
-    parameters: globParametersSchema,
+    inputSchema: globParametersSchema,
     execute: async (params): Promise<ToolResponse> => {
       try {
         const { 

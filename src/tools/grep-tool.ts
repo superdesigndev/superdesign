@@ -193,7 +193,7 @@ async function searchInFile(filePath: string, regex: RegExp, maxMatches: number)
 export function createGrepTool(context: ExecutionContext) {
   return tool({
     description: 'Search for text patterns within file contents using regular expressions. Can filter by file types and paths.',
-    parameters: grepParametersSchema,
+    inputSchema: grepParametersSchema,
     execute: async (params): Promise<ToolResponse> => {
       try {
         const { 
