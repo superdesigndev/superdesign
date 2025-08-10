@@ -1,4 +1,11 @@
-# 🧠 SuperDesign — AI Design Agent for Your IDE
+# 🧠 SecureDesign — AI Design Agent for Your IDE
+
+## How is SecureDesign different?
+
+- 🔒 **Security First**: Does not publicly leak your prompts and mocks
+- 🙈 **100% Private**: No email registration or data collection
+- 🖥️ **Local / Offline Models**: First class support for LM Studio, Ollama, etc.
+- ⛓️‍💥 **Fully OSS, no enterprise license**: SecureDesign will never use non-OSS code
 
 ![SuperDesign Cover](cover.png)
 
