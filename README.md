@@ -1,4 +1,6 @@
 # 🧠 SecureDesign — AI Design Agent for Your IDE
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hbmartin/secure-design)
+[![CI](https://github.com/hbmartin/secure-design/actions/workflows/ci.yml/badge.svg)](https://github.com/hbmartin/secure-design/actions/workflows/ci.yml)
 
 ## How is SecureDesign different?
 
