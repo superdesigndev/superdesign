@@ -1,4 +1,4 @@
-import { streamText, CoreMessage } from 'ai';
+import { streamText, ModelMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
@@ -556,7 +556,7 @@ I've created the html design, please reveiw and let me know if you need any chan
 
     async query(
         prompt?: string,
-        conversationHistory?: CoreMessage[],
+        conversationHistory?: ModelMessage[],
         options?: any, 
         abortController?: AbortController,
         onMessage?: (message: any) => void
@@ -661,11 +661,11 @@ I've created the html design, please reveiw and let me know if you need any chan
                 switch (chunk.type) {
                     case 'text-delta':
                         // Handle streaming text (assistant message chunks) - CoreMessage format
-                        messageBuffer += chunk.textDelta;
+                        messageBuffer += chunk.text;
                         
-                        const textMessage: CoreMessage = {
+                        const textMessage: ModelMessage = {
                             role: 'assistant',
-                            content: chunk.textDelta
+                            content: chunk.text
                         };
                         
                         onMessage?.(textMessage);
@@ -678,7 +678,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                         this.outputChannel.appendLine(`${JSON.stringify(chunk)}`);
                         this.outputChannel.appendLine(`========================================`);
                         
-                        const resultMessage: CoreMessage = {
+                        const resultMessage: ModelMessage = {
                             role: 'assistant',
                             content: chunk.finishReason === 'stop' ? 'Response completed successfully' : 'Response completed'
                         };
@@ -692,7 +692,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                         const errorMsg = (chunk as any).error?.message || 'Unknown error occurred';
                         this.outputChannel.appendLine(`Stream error: ${errorMsg}`);
                         
-                        const errorMessage: CoreMessage = {
+                        const errorMessage: ModelMessage = {
                             role: 'assistant',
                             content: `Error: ${errorMsg}`
                         };
@@ -701,26 +701,24 @@ I've created the html design, please reveiw and let me know if you need any chan
                         responseMessages.push(errorMessage);
                         break;
 
-                    case 'tool-call-streaming-start':
-                        // Tool call streaming started - CoreAssistantMessage format
-                        const streamStart = chunk as any;
+                    case 'tool-input-start':
                         currentToolCall = {
-                            toolCallId: streamStart.toolCallId,
-                            toolName: streamStart.toolName,
-                            args: {}
+                            toolCallId: chunk.id,
+                            toolName: chunk.toolName,
+                            input: {}
                         };
                         toolCallBuffer = '';
                         
-                        this.outputChannel.appendLine(`Tool call streaming started: ${streamStart.toolName} (ID: ${streamStart.toolCallId})`);
+                        this.outputChannel.appendLine(`Tool call streaming started: ${chunk.toolName} (ID: ${chunk.id})`);
                         
                         // Send initial tool call message in CoreAssistantMessage format
-                        const toolCallStartMessage: CoreMessage = {
+                        const toolCallStartMessage: ModelMessage = {
                             role: 'assistant',
                             content: [{
                                 type: 'tool-call',
-                                toolCallId: streamStart.toolCallId,
-                                toolName: streamStart.toolName,
-                                args: {} // Empty initially, will be updated with deltas
+                                toolCallId: chunk.id,
+                                toolName: chunk.toolName,
+                                input: {} // Empty initially, will be updated with deltas
                             }]
                         };
                         
@@ -728,24 +726,23 @@ I've created the html design, please reveiw and let me know if you need any chan
                         responseMessages.push(toolCallStartMessage);
                         break;
 
-                    case 'tool-call-delta':
+                    case 'tool-input-delta':
                         // Streaming tool call parameters - update existing message
-                        const delta = chunk as any;
-                        if (currentToolCall && delta.argsTextDelta) {
-                            toolCallBuffer += delta.argsTextDelta;
+                        if (currentToolCall && chunk.delta) {
+                            toolCallBuffer += chunk.delta;
                             
                             // Try to parse current buffer as JSON and send update
                             try {
                                 const parsedArgs = JSON.parse(toolCallBuffer);
                                 
                                 // Send UPDATE signal (not new message) with special marker
-                                const updateMessage: CoreMessage & { _isUpdate?: boolean, _updateToolId?: string } = {
+                                const updateMessage: ModelMessage & { _isUpdate?: boolean, _updateToolId?: string } = {
                                     role: 'assistant',
                                     content: [{
                                         type: 'tool-call',
                                         toolCallId: currentToolCall.toolCallId,
                                         toolName: currentToolCall.toolName,
-                                        args: parsedArgs
+                                        input: parsedArgs
                                     }],
                                     _isUpdate: true,
                                     _updateToolId: currentToolCall.toolCallId
@@ -764,48 +761,31 @@ I've created the html design, please reveiw and let me know if you need any chan
 
                     case 'tool-call':
                         // Handle final complete tool call - CoreAssistantMessage format
-                        const toolCall = chunk as any;
-                        this.outputChannel.appendLine(`=====Tool call complete: ${JSON.stringify(toolCall)}`);
+                        this.outputChannel.appendLine(`=====Tool call complete: ${JSON.stringify(chunk)}`);
                         this.outputChannel.appendLine(`========================================`);
                         
                         // Skip sending duplicate tool call message if we already sent streaming start
                         if (!currentToolCall) {
                             // Only send if we didn't already send a streaming start message
-                            const toolCallMessage: CoreMessage = {
+                            const toolCallMessage: ModelMessage = {
                                 role: 'assistant',
                                 content: [{
                                     type: 'tool-call',
-                                    toolCallId: toolCall.toolCallId,
-                                    toolName: toolCall.toolName,
-                                    args: toolCall.args
+                                    toolCallId: chunk.toolCallId,
+                                    toolName: chunk.toolName,
+                                    input: chunk.input
                                 }]
                             };
                             
                             onMessage?.(toolCallMessage);
                             responseMessages.push(toolCallMessage);
                         } else {
-                            this.outputChannel.appendLine(`Skipping duplicate tool call message - already sent streaming start for ID: ${toolCall.toolCallId}`);
+                            this.outputChannel.appendLine(`Skipping duplicate tool call message - already sent streaming start for ID: ${chunk.toolCallId}`);
                         }
                         
                         // Reset tool call streaming state
                         currentToolCall = null;
                         toolCallBuffer = '';
-                        break;
-
-                    case 'step-start':
-                        // Log step start with details
-                        const stepStart = chunk as any;
-                        this.outputChannel.appendLine(`====Step ${stepStart.step || 'unknown'} started: ${stepStart.stepType || 'reasoning'}`);
-                        this.outputChannel.appendLine(`${JSON.stringify(chunk)}`);
-                        this.outputChannel.appendLine(`========================================`);
-                        break;
-
-                    case 'step-finish':
-                        // Log step completion with details
-                        const stepFinish = chunk as any;
-                        this.outputChannel.appendLine(`====Step ${stepFinish.step || 'unknown'} finished: ${stepFinish.stepType || 'reasoning'} (${stepFinish.finishReason || 'completed'})`);
-                        this.outputChannel.appendLine(`${JSON.stringify(chunk)}`);
-                        this.outputChannel.appendLine(`========================================`);
                         break;
 
                     default:
@@ -815,19 +795,19 @@ I've created the html design, please reveiw and let me know if you need any chan
                             this.outputChannel.appendLine(`Tool result received for ID: ${toolResult.toolCallId}: ${JSON.stringify(toolResult.result).substring(0, 200)}...`);
                             
                             // Send tool result in CoreToolMessage format
-                            const toolResultMessage: CoreMessage = {
+                            const toolResultMessage: ModelMessage = {
                                 role: 'tool',
                                 content: [{
                                     type: 'tool-result',
                                     toolCallId: toolResult.toolCallId,
                                     toolName: toolResult.toolName,
-                                    result: toolResult.result,
-                                    isError: toolResult.isError || false
+                                    output: toolResult.result
                                 }]
                             };
                             
                             onMessage?.(toolResultMessage);
                             responseMessages.push(toolResultMessage);
+                            
                         } else {
                             this.outputChannel.appendLine(`Unknown chunk type: ${chunk.type}`);
                         }

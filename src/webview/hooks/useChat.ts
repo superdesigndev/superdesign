@@ -173,7 +173,7 @@ export function useChat(vscode: any): ChatHookResult {
                                 type: 'tool-call' as const,
                                 toolCallId: message.metadata?.tool_id || 'unknown',
                                 toolName: message.metadata?.tool_name || 'unknown',
-                                args: message.metadata?.tool_input || {}
+                                input: message.metadata?.tool_input || {}
                             };
                             
                             // Find the last assistant message and append tool call to it
@@ -229,8 +229,7 @@ export function useChat(vscode: any): ChatHookResult {
                                 type: 'tool-result' as const,
                                 toolCallId: message.metadata?.tool_id || 'unknown',
                                 toolName: message.metadata?.tool_name || 'unknown',
-                                result: message.content || '',
-                                isError: message.metadata?.is_error || false
+                                output: message.content || ''
                             };
                             
                             newHistory.push({

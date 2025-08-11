@@ -7,6 +7,7 @@
 - 🖥️ **Local / Offline Models**: First class support for LM Studio, Ollama, etc.
 - ⛓️‍💥 **Fully OSS, no enterprise license**: SecureDesign will never use non-OSS code
 - ↗️ **Up-to-date dependencies**: Always uses the latest AI and other libraries
+- 🧑‍🧑‍🧒‍🧒 **Community Driven**: No business pressures, quickly merged PRs
 
 ![SuperDesign Cover](cover.png)
 
@@ -17,12 +18,6 @@ Generate UI mockups, components, and wireframes directly from natural language p
 Works seamlessly with Cursor, Windsurf, Claude Code, and plain VS Code.
 
 > ✨ "Why design one option when you can explore ten?" — SuperDesign
-
-[Join discord](https://discord.gg/FYr49d6cQ9)
-
-[Upvote on Hackernews](https://news.ycombinator.com/item?id=44376003)
-
-[Install guide](https://www.superdesign.dev/)
 
 ---
 
@@ -39,12 +34,6 @@ Works seamlessly with Cursor, Windsurf, Claude Code, and plain VS Code.
 - 📝 **Wireframes**: Explore low-fidelity layouts for fast iteration
 - 🔁 **Fork & Iterate**: Duplicate and evolve designs easily
 - 📥 **Prompt-to-IDE**: Copy prompts into your favorite AI IDE (Cursor, Windsurf, Claude Code)
-
----
-
-## 🧠 Works Great With Cursor, Windsurf, Claude Code, VS Code
-
-👉 [Install here](https://www.superdesign.dev/)
 
 ---
 
@@ -83,18 +72,9 @@ Yes — use your own prompt templates, modify behaviors, or add commands.
 **Can SuperDesign update existing UI?**  
 Absolutely — select a component, describe the change, and let the agent do the rest.
 
-<img width="886" height="586" alt="image" src="https://github.com/user-attachments/assets/71b7cfcc-6123-40ea-aae5-05ea6cdcea96" />
-
-
-**How can I contribute?**  
-Pull requests are welcome. Star the repo and join us on [Discord](https://discord.gg/XYZ)!
-
 ---
 
-## 🔗 Links
+## 👯 Contributors
 
-- 🌐 Website: [https://superdesign.dev](https://superdesign.dev)
-- 📦 GitHub: [https://github.com/superdesigndev/superdesign](https://github.com/superdesigndev/superdesign)
-- 💬 Discord: [Join the Community](https://discord.gg/XYZ)
-- 🐦 Twitter / X: [@SuperDesignDev](https://x.com/SuperDesignDev)
+[![Profile images of all the contributors](https://contrib.rocks/image?repo=hbmartin/secure-design)](https://github.com/hbmartin/secure-design/graphs/contributors)
 
