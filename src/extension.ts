@@ -1581,6 +1581,7 @@ async function configureOpenAIUrl() {
       vscode.window.showWarningMessage('No Url was set');
     }
   }
+}
 
   async function configureGoogleApiKey() {
 	const config = vscode.workspace.getConfiguration('superdesign');
@@ -1971,4 +1972,3 @@ function getNonce() {
 export function deactivate() {
 	Logger.dispose();
 }
-

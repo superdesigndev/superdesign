@@ -1,9 +1,9 @@
 {
-  "name": "superdesign",
-  "displayName": "superdesign",
+  "name": "securedesign",
+  "displayName": "securedesign",
   "description": "The 1st Design Agent lives inside your IDE",
   "version": "0.0.11",
-  "publisher": "iganbold",
+  "publisher": "HaroldMartin",
   "icon": "icon.png",
   "repository": {
     "type": "git",
@@ -37,100 +37,100 @@
     "automation"
   ],
   "activationEvents": [
-    "onCommand:superdesign.helloWorld",
-    "onView:superdesign.chatView"
+    "onCommand:securedesign.helloWorld",
+    "onView:securedesign.chatView"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "superdesign.helloWorld",
+        "command": "securedesign.helloWorld",
         "title": "Hello World",
-        "category": "Superdesign"
+        "category": "Securedesign"
       },
       {
-        "command": "superdesign.configureApiKey",
+        "command": "securedesign.configureApiKey",
         "title": "Configure Anthropic API Key",
-        "category": "Superdesign"
+        "category": "Securedesign"
       },
       {
-        "command": "superdesign.configureOpenAIApiKey",
+        "command": "securedesign.configureOpenAIApiKey",
         "title": "Configure OpenAI API Key",
-        "category": "Superdesign"
+        "category": "Securedesign"
       },
       {
-        "command": "superdesign.configureOpenAIUrl",
+        "command": "securedesign.configureOpenAIUrl",
         "title": "Configure OpenAI url",
-        "category": "Superdesign"
+        "category": "Securedesign"
       },
       {
-        "command": "superdesign.configureOpenRouterApiKey",
+        "command": "securedesign.configureOpenRouterApiKey",
         "title": "Configure OpenRouter API Key",
-        "category": "Superdesign"
+        "category": "Securedesign"
       },
       {
-        "command": "superdesign.configureGoogleApiKey",
+        "command": "securedesign.configureGoogleApiKey",
         "title": "Configure Google API Key",
-        "category": "Superdesign"
+        "category": "Securedesign"
       },
       {
-        "command": "superdesign.showChatSidebar",
+        "command": "securedesign.showChatSidebar",
         "title": "Show Chat Sidebar",
-        "category": "Superdesign"
+        "category": "Securedesign"
       },
       {
-        "command": "superdesign.openCanvas",
+        "command": "securedesign.openCanvas",
         "title": "Open Canvas View",
-        "category": "Superdesign",
+        "category": "Securedesign",
         "icon": "$(window)"
       },
       {
-        "command": "superdesign.clearChat",
+        "command": "securedesign.clearChat",
         "title": "Clear Chat",
-        "category": "Superdesign",
+        "category": "Securedesign",
         "icon": "$(clear-all)"
       },
       {
-        "command": "superdesign.resetWelcome",
+        "command": "securedesign.resetWelcome",
         "title": "Reset Welcome Screen",
-        "category": "Superdesign"
+        "category": "Securedesign"
       },
       {
-        "command": "superdesign.initializeProject",
-        "title": "Initialize Superdesign",
-        "category": "Superdesign"
+        "command": "securedesign.initializeProject",
+        "title": "Initialize Securedesign",
+        "category": "Securedesign"
       },
       {
-        "command": "superdesign.openSettings",
+        "command": "securedesign.openSettings",
         "title": "Open Settings",
-        "category": "Superdesign",
+        "category": "Securedesign",
         "icon": "$(settings-gear)"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "superdesign.openCanvas",
-          "when": "view == superdesign.chatView",
+          "command": "securedesign.openCanvas",
+          "when": "view == securedesign.chatView",
           "group": "navigation"
         },
         {
-          "command": "superdesign.openSettings",
-          "when": "view == superdesign.chatView",
+          "command": "securedesign.openSettings",
+          "when": "view == securedesign.chatView",
           "group": "navigation"
         },
         {
-          "command": "superdesign.clearChat",
-          "when": "view == superdesign.chatView",
+          "command": "securedesign.clearChat",
+          "when": "view == securedesign.chatView",
           "group": "navigation"
         }
       ]
     },
     "views": {
-      "superdesign-sidebar": [
+      "securedesign-sidebar": [
         {
           "type": "webview",
-          "id": "superdesign.chatView",
+          "id": "securedesign.chatView",
           "name": "SUPER DESIGN",
           "when": "true"
         }
@@ -139,41 +139,41 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "superdesign-sidebar",
-          "title": "Superdesign",
+          "id": "securedesign-sidebar",
+          "title": "Securedesign",
           "icon": "icon.svg"
         }
       ]
     },
     "configuration": {
-      "title": "Superdesign",
+      "title": "Securedesign",
       "properties": {
-        "superdesign.anthropicApiKey": {
+        "securedesign.anthropicApiKey": {
           "type": "string",
           "description": "Anthropic API key for Claude Code integration",
           "scope": "application"
         },
-        "superdesign.openaiApiKey": {
+        "securedesign.openaiApiKey": {
           "type": "string",
           "description": "OpenAI API key for custom agent",
           "scope": "application"
         },
-        "superdesign.openaiUrl": {
+        "securedesign.openaiUrl": {
           "type": "string",
           "description": "OpenAI url for custom agent",
           "scope": "application"
         },
-        "superdesign.openrouterApiKey": {
+        "securedesign.openrouterApiKey": {
           "type": "string",
           "description": "OpenRouter API key for custom agent",
           "scope": "application"
         },
-        "superdesign.googleApiKey": {
+        "securedesign.googleApiKey": {
           "type": "string",
           "description": "Google API key for Gemini models.",
           "scope": "application"
         },
-        "superdesign.aiModelProvider": {
+        "securedesign.aiModelProvider": {
           "type": "string",
           "enum": [
             "openai",
@@ -185,7 +185,7 @@
           "description": "AI model provider for custom agent (OpenAI, Anthropic, OpenRouter, Google)",
           "scope": "application"
         },
-        "superdesign.aiModel": {
+        "securedesign.aiModel": {
           "type": "string",
           "description": "Specific AI model to use (e.g., gpt-4o, claude-3-5-sonnet-20241022)",
           "scope": "application"
