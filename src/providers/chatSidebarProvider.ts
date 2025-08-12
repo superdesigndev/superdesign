@@ -6,7 +6,7 @@ import { WebviewContext } from '../types/context';
 import { AgentService } from '../types/agent';
 
 export class ChatSidebarProvider implements vscode.WebviewViewProvider {
-    public static readonly VIEW_TYPE = 'superdesign.chatView';
+    public static readonly VIEW_TYPE = 'securedesign.chatView';
     private _view?: vscode.WebviewView;
     private messageHandler: ChatMessageService;
     private customMessageHandler?: (message: any) => void;
@@ -139,22 +139,22 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 // OpenRouter model (contains slash like "openai/gpt-4o")
                 provider = 'openrouter';
                 apiKeyKey = 'openrouterApiKey';
-                configureCommand = 'superdesign.configureOpenRouterApiKey';
+                configureCommand = 'securedesign.configureOpenRouterApiKey';
                 displayName = `OpenRouter (${this.getModelDisplayName(model)})`;
             } else if (model.startsWith('claude-')) {
                 provider = 'anthropic';
                 apiKeyKey = 'anthropicApiKey';
-                configureCommand = 'superdesign.configureApiKey';
+                configureCommand = 'securedesign.configureApiKey';
                 displayName = `Anthropic (${this.getModelDisplayName(model)})`;
             } else if (model.startsWith('gemini-')) {
                 provider = 'google';
                 apiKeyKey = 'googleApiKey';
-                configureCommand = 'superdesign.configureGoogleApiKey';
+                configureCommand = 'securedesign.configureGoogleApiKey';
                 displayName = `Google (${this.getModelDisplayName(model)})`;
             } else {
                 provider = 'openai';
                 apiKeyKey = 'openaiApiKey';
-                configureCommand = 'superdesign.configureOpenAIApiKey';
+                configureCommand = 'securedesign.configureOpenAIApiKey';
                 displayName = `OpenAI (${this.getModelDisplayName(model)})`;
             }
             

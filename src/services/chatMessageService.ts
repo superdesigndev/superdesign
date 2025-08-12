@@ -135,7 +135,7 @@ export class ChatMessageService {
                 // Determine provider from model name if specific model is set
                 let effectiveProvider = provider;
                 let providerName = 'AI';
-                let configureCommand = 'superdesign.configureApiKey';
+                let configureCommand = 'securedesign.configureApiKey';
                 
                 if (specificModel) {
                     if (specificModel.includes('/')) {
@@ -152,19 +152,19 @@ export class ChatMessageService {
                 switch (effectiveProvider) {
                     case 'openrouter':
                         providerName = 'OpenRouter';
-                        configureCommand = 'superdesign.configureOpenRouterApiKey';
+                        configureCommand = 'securedesign.configureOpenRouterApiKey';
                         break;
                     case 'anthropic':
                         providerName = 'Anthropic';
-                        configureCommand = 'superdesign.configureApiKey';
+                        configureCommand = 'securedesign.configureApiKey';
                         break;
                     case 'google':
                         providerName = 'Google';
-                        configureCommand = 'superdesign.configureGoogleApiKey';
+                        configureCommand = 'securedesign.configureGoogleApiKey';
                         break;
                     case 'openai':
                         providerName = 'OpenAI';
-                        configureCommand = 'superdesign.configureOpenAIApiKey';
+                        configureCommand = 'securedesign.configureOpenAIApiKey';
                         break;
                 }
                 

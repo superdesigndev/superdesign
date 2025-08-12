@@ -12,7 +12,7 @@
 ## 🚀 Links
 - 🪟 [VS Code Marketplace install](https://marketplace.visualstudio.com/items?itemName=HaroldMartin.securedesign)
 - 💞 [Open VSX Registry install](https://open-vsx.org/extension/HaroldMartin/securedesign)
-- ⚙ [DeepWiki architecture description / diagrams](https://deepwiki.com/hbmartin/secure-design)
+- ⚙️ [DeepWiki architecture description / diagrams](https://deepwiki.com/hbmartin/secure-design)
 
 ![SuperDesign Cover](media/cover.png)
 

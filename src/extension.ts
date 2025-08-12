@@ -1261,26 +1261,26 @@ export function activate(context: vscode.ExtensionContext) {
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
-	const helloWorldDisposable = vscode.commands.registerCommand('superdesign.helloWorld', () => {
+	const helloWorldDisposable = vscode.commands.registerCommand('securedesign.helloWorld', () => {
 		// The code you place here will be executed every time your command is executed
 		// Display a message box to the user
 		vscode.window.showInformationMessage('Hello World from superdesign!');
 	});
 
 	// Register API key configuration commands
-	const configureApiKeyDisposable = vscode.commands.registerCommand('superdesign.configureApiKey', async () => {
+	const configureApiKeyDisposable = vscode.commands.registerCommand('securedesign.configureApiKey', async () => {
 		await configureAnthropicApiKey();
 	});
 
-	const configureOpenAIApiKeyDisposable = vscode.commands.registerCommand('superdesign.configureOpenAIApiKey', async () => {
+	const configureOpenAIApiKeyDisposable = vscode.commands.registerCommand('securedesign.configureOpenAIApiKey', async () => {
 		await configureOpenAIApiKey();
 	});
 
-	const configureOpenRouterApiKeyDisposable = vscode.commands.registerCommand('superdesign.configureOpenRouterApiKey', async () => {
+	const configureOpenRouterApiKeyDisposable = vscode.commands.registerCommand('securedesign.configureOpenRouterApiKey', async () => {
 		await configureOpenRouterApiKey();
 	});
 
-  const configureOpenAIUrlDisposable = vscode.commands.registerCommand('superdesign.configureOpenAIUrl', async () => {
+  const configureOpenAIUrlDisposable = vscode.commands.registerCommand('securedesign.configureOpenAIUrl', async () => {
     await configureOpenAIUrl();
   });
 
@@ -1299,24 +1299,24 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	// Register command to show sidebar
-	const showSidebarDisposable = vscode.commands.registerCommand('superdesign.showChatSidebar', () => {
+	const showSidebarDisposable = vscode.commands.registerCommand('securedesign.showChatSidebar', () => {
 		vscode.commands.executeCommand('workbench.view.extension.superdesign-sidebar');
 	});
 
 	// Register canvas command
-	const openCanvasDisposable = vscode.commands.registerCommand('superdesign.openCanvas', () => {
+	const openCanvasDisposable = vscode.commands.registerCommand('securedesign.openCanvas', () => {
 		SuperdesignCanvasPanel.createOrShow(context.extensionUri, sidebarProvider);
 	});
 
 	// Register clear chat command
-	const clearChatDisposable = vscode.commands.registerCommand('superdesign.clearChat', () => {
+	const clearChatDisposable = vscode.commands.registerCommand('securedesign.clearChat', () => {
 		sidebarProvider.sendMessage({
 			command: 'clearChat'
 		});
 	});
 
 	// Register reset welcome command
-	const resetWelcomeDisposable = vscode.commands.registerCommand('superdesign.resetWelcome', () => {
+	const resetWelcomeDisposable = vscode.commands.registerCommand('securedesign.resetWelcome', () => {
 		sidebarProvider.sendMessage({
 			command: 'resetWelcome'
 		});
@@ -1324,17 +1324,17 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	// Register initialize project command
-	const initializeProjectDisposable = vscode.commands.registerCommand('superdesign.initializeProject', async () => {
+	const initializeProjectDisposable = vscode.commands.registerCommand('securedesign.initializeProject', async () => {
 		await initializeSuperdesignProject();
 	});
 
 	// Register open settings command
-	const openSettingsDisposable = vscode.commands.registerCommand('superdesign.openSettings', () => {
+	const openSettingsDisposable = vscode.commands.registerCommand('securedesign.openSettings', () => {
 		vscode.commands.executeCommand('workbench.action.openSettings', '@ext:iganbold.superdesign');
 	});
 
 	// Register configure API key command (alternative to the existing one)
-	const configureApiKeyQuickDisposable = vscode.commands.registerCommand('superdesign.configureApiKeyQuick', async () => {
+	const configureApiKeyQuickDisposable = vscode.commands.registerCommand('securedesign.configureApiKeyQuick', async () => {
 		await configureAnthropicApiKey();
 	});
 
@@ -1387,7 +1387,7 @@ export function activate(context: vscode.ExtensionContext) {
 			case 'initializeSuperdesign':
 				// Auto-trigger initialize Superdesign command
 				console.log('🚀 Received initializeSuperdesign command from webview');
-				vscode.commands.executeCommand('superdesign.initializeProject');
+				vscode.commands.executeCommand('securedesign.initializeProject');
 				break;
 		}
 	});
