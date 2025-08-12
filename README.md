@@ -1,7 +1,4 @@
 # 🧠 SecureDesign — AI Design Agent for Your IDE
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hbmartin/secure-design)
-[![CI](https://github.com/hbmartin/secure-design/actions/workflows/ci.yml/badge.svg)](https://github.com/hbmartin/secure-design/actions/workflows/ci.yml)
-
 ## How is SecureDesign different?
 
 - 🔒 **Security First**: Does not publicly leak your prompts and mocks
@@ -11,7 +8,7 @@
 - ↗️ **Up-to-date dependencies**: Always uses the latest AI and other libraries
 - 🧑‍🧑‍🧒‍🧒 **Community Driven**: No business pressures, quickly merged PRs
 
-![SuperDesign Cover](cover.png)
+![SuperDesign Cover](media/cover.png)
 
 ### **By:** [AI Jason](https://x.com/jasonzhou1993) & [JackJack](https://x.com/jackjack_eth)
 
@@ -53,9 +50,6 @@ Works seamlessly with Cursor, Windsurf, Claude Code, and plain VS Code.
 Yes, after you initialise superdesign extension, some cursor/claude code rules will be added, so you can prompt the agent to do design and preview in superdesign canva (cmd + shift + p -> superdesign: open canva)
 
 If using Cursor - I will highly suggest copy the prompt in 'design.mdc' and create a custom mode in cursor with that same system prompt; This should give you much better performance
-
-Instructions here (Click to play): 
-[![Instruction video](v0.0.11.png)](https://youtu.be/KChmJMCDOB0?si=pvU0kNRO4GRWjsec&t=122)
 
 ## How to run local OpenAI compatible servers?
 1. Select open ai on Ai Model Provider
