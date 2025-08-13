@@ -24,12 +24,9 @@ export interface WriteToolResult {
 
 // Path validation is now handled by validateWorkspacePath in tool-utils
 
-/**
- * Create SuperDesign write tool with execution context
- */
 export function createWriteTool(context: ExecutionContext) {
   return tool({
-    description: 'Write content to a file in the SuperDesign workspace. Creates parent directories if needed.',
+    description: 'Write content to a file in the workspace. Creates parent directories if needed.',
     inputSchema: z.object({
       file_path: z.string().describe('Path to the file to write to (relative to workspace root, or absolute path within workspace)'),
       content: z.string().describe('Content to write to the file'),

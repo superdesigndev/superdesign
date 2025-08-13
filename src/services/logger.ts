@@ -13,7 +13,7 @@ export class Logger {
 
     public static initialize() {
         if (!this.outputChannel) {
-            this.outputChannel = vscode.window.createOutputChannel('Superdesign');
+            this.outputChannel = vscode.window.createOutputChannel('Securedesign');
         }
     }
 

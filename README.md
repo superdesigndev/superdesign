@@ -14,7 +14,7 @@
 - 💞 [Open VSX Registry install](https://open-vsx.org/extension/HaroldMartin/securedesign)
 - ⚙️ [DeepWiki architecture description / diagrams](https://deepwiki.com/hbmartin/secure-design)
 
-![SuperDesign Cover](media/cover.png)
+![Cover](media/cover.png)
 
 ### **By:** [AI Jason](https://x.com/jasonzhou1993) & [JackJack](https://x.com/jackjack_eth)
 
@@ -28,7 +28,7 @@ Works seamlessly with Cursor, Windsurf, Claude Code, and plain VS Code.
 
 ## 🎬 Demo Video (Click to play)
 
-[![SuperDesign Demo](https://img.youtube.com/vi/INv6oZDhhUM/maxresdefault.jpg)](https://youtu.be/INv6oZDhhUM)
+[![Demo](https://img.youtube.com/vi/INv6oZDhhUM/maxresdefault.jpg)](https://youtu.be/INv6oZDhhUM)
 
 ---
 

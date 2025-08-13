@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const FIRST_TIME_USER_KEY = 'superdesign-first-time-user';
+const FIRST_TIME_USER_KEY = 'securedesign-first-time-user';
 
 export const useFirstTimeUser = () => {
     const [isFirstTime, setIsFirstTime] = useState<boolean>(true);

@@ -96,7 +96,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
     }
 
     private async handleGetCurrentProvider(webview: vscode.Webview) {
-        const config = vscode.workspace.getConfiguration('superdesign');
+        const config = vscode.workspace.getConfiguration('securedesign');
         const currentProvider = config.get<string>('aiModelProvider', 'anthropic');
         const currentModel = config.get<string>('aiModel');
         
@@ -127,7 +127,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
 
     private async handleChangeProvider(model: string, webview: vscode.Webview) {
         try {
-            const config = vscode.workspace.getConfiguration('superdesign');
+            const config = vscode.workspace.getConfiguration('securedesign');
             
             // Determine provider and API key based on model
             let provider: string;

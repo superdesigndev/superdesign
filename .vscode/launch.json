@@ -9,12 +9,18 @@
 			"name": "Run Extension",
 			"type": "extensionHost",
 			"request": "launch",
+			"preLaunchTask": "watch",
 			"args": [
+				"--profile", "Extension Dev",
 				"--extensionDevelopmentPath=${workspaceFolder}"
 			],
 			"outFiles": [
-				"${workspaceFolder}/dist/**/*.js"
-			]
+				"${workspaceFolder}/dist/**/*.js",
+				"${workspaceFolder}/out/**/*.js"
+			],
+			"env": {
+				"NODE_OPTIONS": "--enable-source-maps"
+			}
 		}
 	]
 }

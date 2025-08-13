@@ -189,12 +189,9 @@ async function processMediaFile(
     };
   }
 
-  /**
- * Create SuperDesign read tool with execution context
-   */
 export function createReadTool(context: ExecutionContext) {
   return tool({
-    description: 'Read the contents of a file within the SuperDesign workspace. Supports text files, images (PNG, JPG, SVG, etc.), and handles large files with line-range reading.',
+    description: 'Read the contents of a file within the workspace. Supports text files, images (PNG, JPG, SVG, etc.), and handles large files with line-range reading.',
     inputSchema: z.object({
       filePath: z.string().describe('Path to the file to read, relative to the workspace root or absolute path within workspace'),
       startLine: z.number().optional().describe('Optional: Starting line number to read from (1-based). Use with lineCount for large files.'),

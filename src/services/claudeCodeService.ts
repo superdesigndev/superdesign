@@ -41,7 +41,7 @@ export class ClaudeCodeService {
             await this.setupWorkingDirectory();
 
             // Check if API key is configured
-            const config = vscode.workspace.getConfiguration('superdesign');
+            const config = vscode.workspace.getConfiguration('securedesign');
             const apiKey = config.get<string>('anthropicApiKey');
             
             if (!apiKey) {
@@ -386,7 +386,7 @@ Your goal is to extract a generalized and reusable design system from the screen
     // Method to refresh API key from settings and reinitialize if needed
     async refreshApiKey(): Promise<boolean> {
         try {
-            const config = vscode.workspace.getConfiguration('superdesign');
+            const config = vscode.workspace.getConfiguration('securedesign');
             const apiKey = config.get<string>('anthropicApiKey');
             
             if (!apiKey) {
@@ -418,7 +418,7 @@ Your goal is to extract a generalized and reusable design system from the screen
 
     // Method to check if API key is configured
     hasApiKey(): boolean {
-        const config = vscode.workspace.getConfiguration('superdesign');
+        const config = vscode.workspace.getConfiguration('securedesign');
         const apiKey = config.get<string>('anthropicApiKey');
         return !!apiKey && apiKey.trim().length > 0;
     }

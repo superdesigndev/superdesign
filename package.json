@@ -2,7 +2,7 @@
   "name": "securedesign",
   "displayName": "securedesign",
   "description": "The 1st Design Agent lives inside your IDE",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "publisher": "HaroldMartin",
   "icon": "icon.png",
   "repository": {
@@ -233,7 +233,7 @@
     "@ai-sdk/anthropic": "^2.0.2",
     "@ai-sdk/google": "^2.0.5",
     "@ai-sdk/openai": "^2.0.11",
-    "@anthropic-ai/claude-code": "^1.0.74",
+    "@anthropic-ai/claude-code": "^1.0.77",
     "@openrouter/ai-sdk-provider": "^1.1.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",

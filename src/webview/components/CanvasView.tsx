@@ -599,7 +599,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
             <div className="canvas-empty">
                 <div className="empty-state">
                     <h3>No design files found in <code>.superdesign/design_iterations/</code></h3>
-                    <p>Prompt Superdesign OR Cursor/Windsurf/Claude Code to design UI like <kbd>Help me design a calculator UI</kbd> and preview the UI here</p>
+                    <p>Prompt Securedesign OR Cursor/Windsurf/Claude Code to design UI like <kbd>Help me design a calculator UI</kbd> and preview the UI here</p>
                 </div>
             </div>
         );

@@ -21,13 +21,21 @@
             "type": "npm",
             "script": "watch:esbuild",
             "group": "build",
-            "problemMatcher": [],
+            "problemMatcher": {
+                "owner": "esbuild",
+                "pattern": { "regexp": "^(.*)$" },               // dummy pattern, required
+                "background": {
+                "activeOnStart": true,
+                "beginsPattern": "\\[watch\\] build started",
+                "endsPattern": "\\[watch\\] build finished"
+                }
+            },
             "isBackground": true,
             "label": "npm: watch:esbuild",
             "presentation": {
                 "group": "watch",
                 "reveal": "never"
-            }
+            },
         },
 		{
             "type": "npm",

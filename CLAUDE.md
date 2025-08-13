@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SuperDesign is an open-source VS Code extension that serves as an AI design agent for creating UI mockups, components, and wireframes directly within IDEs. It integrates with multiple AI providers (Anthropic, OpenAI, OpenRouter) and provides both chat and canvas interfaces for design work.
+SecureDesign is an open-source VS Code extension that serves as an AI design agent for creating UI mockups, components, and wireframes directly within IDEs. It integrates with multiple AI providers (Anthropic, OpenAI, OpenRouter) and provides both chat and canvas interfaces for design work.
 
 ## Build Commands
 

@@ -79,7 +79,7 @@ export class CustomAgentService implements AgentService {
     }
 
     private getModel() {
-        const config = vscode.workspace.getConfiguration('superdesign');
+        const config = vscode.workspace.getConfiguration('securedesign');
         const specificModel = config.get<string>('aiModel');
         const provider = config.get<string>('aiModelProvider', 'anthropic');
         
@@ -176,7 +176,7 @@ export class CustomAgentService implements AgentService {
     }
 
     private getSystemPrompt(): string {
-        const config = vscode.workspace.getConfiguration('superdesign');
+        const config = vscode.workspace.getConfiguration('securedesign');
         const specificModel = config.get<string>('aiModel');
         const provider = config.get<string>('aiModelProvider', 'anthropic');
         
@@ -880,7 +880,7 @@ I've created the html design, please reveiw and let me know if you need any chan
     }
 
     hasApiKey(): boolean {
-        const config = vscode.workspace.getConfiguration('superdesign');
+        const config = vscode.workspace.getConfiguration('securedesign');
         const specificModel = config.get<string>('aiModel');
         const provider = config.get<string>('aiModelProvider', 'anthropic');
         

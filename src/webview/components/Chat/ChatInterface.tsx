@@ -376,11 +376,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         markAsReturningUser();
         console.log('👋 User clicked Get Started, welcome dismissed');
         
-        // Auto-trigger initialize Superdesign command
         vscode.postMessage({
-            command: 'initializeSuperdesign'
+            command: 'initializeSecuredesign'
         });
-        console.log('🚀 Auto-triggering Initialize Superdesign command');
+        console.log('🚀 Auto-triggering Initialize Securedesign command');
     };
 
     // Drag and drop handlers
@@ -1303,11 +1302,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             <div className="chat-placeholder__content">
                 <div className="empty-state-message">
                     <p>
-                        <strong>Cursor/Windsurf/Claude Code rules already added</strong>, prompt Cursor/Windsurf/Claude Code to design UI like <kbd>Help me design a calculator UI</kbd> and preview the UI in Superdesign canvas by <kbd>Cmd+Shift+P</kbd> <code>'Superdesign: Open canvas view'</code>
+                        <strong>Cursor/Windsurf/Claude Code rules already added</strong>, prompt Cursor/Windsurf/Claude Code to design UI like <kbd>Help me design a calculator UI</kbd> and preview the UI in Securedesign canvas by <kbd>Cmd+Shift+P</kbd> <code>'Securedesign: Open canvas view'</code>
                     </p>
                     <div className="empty-state-divider">OR</div>
                     <p>
-                        You can start with native superdesign agent chat below <em>(We have better UX)</em>
+                        Start now by prompting Securedesign.
                     </p>
                 </div>
             </div>

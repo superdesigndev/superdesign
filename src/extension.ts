@@ -224,8 +224,7 @@ async function claudeCommandExists(): Promise<boolean> {
 	}
 }
 
-// Function to initialize Superdesign project structure
-async function initializeSuperdesignProject() {
+async function initializeSecuredesignProject() {
 	const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
 	if (!workspaceFolder) {
 		vscode.window.showErrorMessage('No workspace folder found. Please open a workspace first.');
@@ -1188,7 +1187,7 @@ html.dark {
 			try {
 				const existingContent = await vscode.workspace.fs.readFile(designMdcPath);
 				const currentContent = Buffer.from(existingContent).toString('utf8');
-				if (!currentContent.includes('superdesign: Open Canvas View')) {
+				if (!currentContent.includes('securedesign: Open Canvas View')) {
 					const updatedContent = currentContent + '\n\n' + designRuleMdcContent;
 					await vscode.workspace.fs.writeFile(designMdcPath, Buffer.from(updatedContent, 'utf8'));
 					createdFiles.push('.cursor/rules/design.mdc');
@@ -1206,7 +1205,7 @@ html.dark {
 			try {
 				const existingContent = await vscode.workspace.fs.readFile(claudeMdPath);
 				const currentContent = Buffer.from(existingContent).toString('utf8');
-				if (!currentContent.includes('superdesign: Open Canvas View')) {
+				if (!currentContent.includes('securedesign: Open Canvas View')) {
 					const updatedContent = currentContent + '\n\n' + designRuleContent;
 					await vscode.workspace.fs.writeFile(claudeMdPath, Buffer.from(updatedContent, 'utf8'));
 					createdFiles.push('CLAUDE.md');
@@ -1224,7 +1223,7 @@ html.dark {
 			try {
 				const existingContent = await vscode.workspace.fs.readFile(windsurfRulesPath);
 				const currentContent = Buffer.from(existingContent).toString('utf8');
-				if (!currentContent.includes('superdesign: Open Canvas View')) {
+				if (!currentContent.includes('securedesign: Open Canvas View')) {
 					const updatedContent = currentContent + '\n\n' + designRuleContent;
 					await vscode.workspace.fs.writeFile(windsurfRulesPath, Buffer.from(updatedContent, 'utf8'));
 					createdFiles.push('.windsurfrules');
@@ -1240,18 +1239,18 @@ html.dark {
 			? `Created design rules: ${createdFiles.join(', ')}`
 			: 'No new design rule files needed for current environment';
 		
-		vscode.window.showInformationMessage(`✅ Superdesign project initialized successfully! Created .superdesign folder. ${filesMessage}`);
+		vscode.window.showInformationMessage(`✅ SecureDesign project initialized successfully! Created .superdesign folder. ${filesMessage}`);
 		
 	} catch (error) {
-		vscode.window.showErrorMessage(`Failed to initialize Superdesign project: ${error}`);
+		vscode.window.showErrorMessage(`Failed to initialize SecureDesign project: ${error}`);
 	}
 }
 
 export function activate(context: vscode.ExtensionContext) {
 	// Initialize the centralized logger
 	Logger.initialize();
-	Logger.info('Superdesign extension is now active!');
-	// Note: Users can manually open output via View → Output → Select "Superdesign" if needed
+	Logger.info('SecureDesign extension is now active!');
+	// Note: Users can manually open output via View → Output → Select "SecureDesign" if needed
 
 	// Initialize Custom Agent service
 	Logger.info('Creating CustomAgentService...');
@@ -1264,7 +1263,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const helloWorldDisposable = vscode.commands.registerCommand('securedesign.helloWorld', () => {
 		// The code you place here will be executed every time your command is executed
 		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from superdesign!');
+		vscode.window.showInformationMessage('Hello World from SecureDesign!');
 	});
 
 	// Register API key configuration commands
@@ -1300,7 +1299,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Register command to show sidebar
 	const showSidebarDisposable = vscode.commands.registerCommand('securedesign.showChatSidebar', () => {
-		vscode.commands.executeCommand('workbench.view.extension.superdesign-sidebar');
+		vscode.commands.executeCommand('workbench.view.extension.securedesign-sidebar');
 	});
 
 	// Register canvas command
@@ -1325,12 +1324,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Register initialize project command
 	const initializeProjectDisposable = vscode.commands.registerCommand('securedesign.initializeProject', async () => {
-		await initializeSuperdesignProject();
+		await initializeSecuredesignProject();
 	});
 
 	// Register open settings command
 	const openSettingsDisposable = vscode.commands.registerCommand('securedesign.openSettings', () => {
-		vscode.commands.executeCommand('workbench.action.openSettings', '@ext:iganbold.superdesign');
+		vscode.commands.executeCommand('workbench.action.openSettings', '@ext:HaroldMartin.securedesign');
 	});
 
 	// Register configure API key command (alternative to the existing one)
@@ -1384,9 +1383,9 @@ export function activate(context: vscode.ExtensionContext) {
 				break;
 
 
-			case 'initializeSuperdesign':
+			case 'initializeSecuredesign':
 				// Auto-trigger initialize Superdesign command
-				console.log('🚀 Received initializeSuperdesign command from webview');
+				console.log('🚀 Received initializeSecuredesign command from webview');
 				vscode.commands.executeCommand('securedesign.initializeProject');
 				break;
 		}
@@ -1411,7 +1410,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 // Function to configure Anthropic API key
 async function configureAnthropicApiKey() {
-	const currentKey = vscode.workspace.getConfiguration('superdesign').get<string>('anthropicApiKey');
+	const currentKey = vscode.workspace.getConfiguration('securedesign').get<string>('anthropicApiKey');
 
 	const input = await vscode.window.showInputBox({
 		title: 'Configure Anthropic API Key',
@@ -1437,7 +1436,7 @@ async function configureAnthropicApiKey() {
 		// Only update if user didn't just keep the masked value
 		if (input !== '••••••••••••••••') {
 			try {
-				await vscode.workspace.getConfiguration('superdesign').update(
+				await vscode.workspace.getConfiguration('securedesign').update(
 					'anthropicApiKey', 
 					input.trim(), 
 					vscode.ConfigurationTarget.Global
@@ -1456,7 +1455,7 @@ async function configureAnthropicApiKey() {
 
 // Function to configure OpenAI API key
 async function configureOpenAIApiKey() {
-	const currentKey = vscode.workspace.getConfiguration('superdesign').get<string>('openaiApiKey');
+	const currentKey = vscode.workspace.getConfiguration('securedesign').get<string>('openaiApiKey');
 
 	const input = await vscode.window.showInputBox({
 		title: 'Configure OpenAI API Key',
@@ -1482,7 +1481,7 @@ async function configureOpenAIApiKey() {
 		// Only update if user didn't just keep the masked value
 		if (input !== '••••••••••••••••') {
 			try {
-				await vscode.workspace.getConfiguration('superdesign').update(
+				await vscode.workspace.getConfiguration('securedesign').update(
 					'openaiApiKey', 
 					input.trim(), 
 					vscode.ConfigurationTarget.Global
@@ -1501,7 +1500,7 @@ async function configureOpenAIApiKey() {
 
 // Function to configure OpenRouter API key
 async function configureOpenRouterApiKey() {
-	const currentKey = vscode.workspace.getConfiguration('superdesign').get<string>('openrouterApiKey');
+	const currentKey = vscode.workspace.getConfiguration('securedesign').get<string>('openrouterApiKey');
 
 	const input = await vscode.window.showInputBox({
 		title: 'Configure OpenRouter API Key',
@@ -1527,7 +1526,7 @@ async function configureOpenRouterApiKey() {
 		// Only update if user didn't just keep the masked value
 		if (input !== '••••••••••••••••') {
 			try {
-				await vscode.workspace.getConfiguration('superdesign').update(
+				await vscode.workspace.getConfiguration('securedesign').update(
 					'openrouterApiKey', 
 					input.trim(), 
 					vscode.ConfigurationTarget.Global
@@ -1546,7 +1545,7 @@ async function configureOpenRouterApiKey() {
 
 // Function to configure OpenAI url
 async function configureOpenAIUrl() {
-  const currentKey = vscode.workspace.getConfiguration('superdesign').get<string>('openaiUrl');
+  const currentKey = vscode.workspace.getConfiguration('securedesign').get<string>('openaiUrl');
 
   const input = await vscode.window.showInputBox({
     title: 'Configure OpenAI url',
@@ -1569,7 +1568,7 @@ async function configureOpenAIUrl() {
     if (input !== '') {
       try {
         await vscode.workspace
-          .getConfiguration('superdesign')
+          .getConfiguration('securedesign')
           .update('openaiUrl', input.trim(), vscode.ConfigurationTarget.Global);
         vscode.window.showInformationMessage('✅ OpenAI url configured successfully!');
       } catch (error) {
@@ -1584,7 +1583,7 @@ async function configureOpenAIUrl() {
 }
 
   async function configureGoogleApiKey() {
-	const config = vscode.workspace.getConfiguration('superdesign');
+	const config = vscode.workspace.getConfiguration('securedesign');
 	const currentKey = config.get<string>('googleApiKey');
 
 	const input = await vscode.window.showInputBox({
@@ -1608,7 +1607,7 @@ async function configureOpenAIUrl() {
 		// Only update if user didn't just keep the masked value
 		if (input !== '••••••••••••••••') {
 			try {
-				await vscode.workspace.getConfiguration('superdesign').update(
+				await vscode.workspace.getConfiguration('securedesign').update(
 					'googleApiKey',
 					input.trim(),
 					vscode.ConfigurationTarget.Global
@@ -1645,7 +1644,7 @@ class SuperdesignCanvasPanel {
 
 		const panel = vscode.window.createWebviewPanel(
 			SuperdesignCanvasPanel.viewType,
-			'Superdesign Canvas',
+			'SecureDesign Canvas',
 			column || vscode.ViewColumn.One,
 			{
 				enableScripts: true,
@@ -1804,7 +1803,7 @@ class SuperdesignCanvasPanel {
 				<meta charset="UTF-8">
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} data: https: vscode-webview:; script-src 'nonce-${nonce}'; frame-src ${webview.cspSource};">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<title>Superdesign Canvas</title>
+				<title>SecureDesign Canvas</title>
 			</head>
 			<body>
 				<div id="root" data-view="canvas" data-nonce="${nonce}"></div>
