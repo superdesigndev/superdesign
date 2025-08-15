@@ -59,6 +59,11 @@
         "category": "Superdesign"
       },
       {
+        "command": "superdesign.configureOpenAIUrl",
+        "title": "Configure OpenAI url",
+        "category": "Superdesign"
+      },
+      {
         "command": "superdesign.configureOpenRouterApiKey",
         "title": "Configure OpenRouter API Key",
         "category": "Superdesign"
@@ -146,6 +151,11 @@
         "superdesign.openaiApiKey": {
           "type": "string",
           "description": "OpenAI API key for custom agent",
+          "scope": "application"
+        },
+        "superdesign.openaiUrl": {
+          "type": "string",
+          "description": "OpenAI url for custom agent",
           "scope": "application"
         },
         "superdesign.openrouterApiKey": {

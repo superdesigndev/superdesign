@@ -58,6 +58,11 @@ If using Cursor - I will highly suggest copy the prompt in 'design.mdc' and crea
 Instructions here (Click to play): 
 [![Instruction video](v0.0.11.png)](https://youtu.be/KChmJMCDOB0?si=pvU0kNRO4GRWjsec&t=122)
 
+## How to run local OpenAI compatible servers?
+1. Select open ai on Ai Model Provider
+2. Put anything in Openai Api Key input
+3. Add your OpenAi Url on the Openai Url input (example: http://127.0.0.1:1234/v1 for LM Studio)
+
 ## 📂 Where Are My Designs Stored?
 
 Your generated designs are saved locally inside `.superdesign/`.
