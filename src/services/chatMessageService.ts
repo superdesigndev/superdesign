@@ -131,13 +131,14 @@ export class ChatMessageService {
                 const config = vscode.workspace.getConfiguration('superdesign');
                 const specificModel = config.get<string>('aiModel');
                 const provider = config.get<string>('aiModelProvider', 'anthropic');
+                const openaiUrl = config.get<string>('openaiUrl');
                 
-                // Determine provider from model name if specific model is set
+                // Determine provider from model name if specific model is set, ignore if custom openai url is used
                 let effectiveProvider = provider;
                 let providerName = 'AI';
                 let configureCommand = 'superdesign.configureApiKey';
                 
-                if (specificModel) {
+                if (specificModel && !(!openaiUrl && provider === 'openai')) {
                     if (specificModel.includes('/')) {
                         effectiveProvider = 'openrouter';
                     } else if (specificModel.startsWith('claude-')) {
