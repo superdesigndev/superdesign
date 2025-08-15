@@ -1538,6 +1538,48 @@ async function configureOpenRouterApiKey() {
 	}
 }
 
+async function configureGoogleApiKey() {
+	const config = vscode.workspace.getConfiguration('superdesign');
+	const currentKey = config.get<string>('googleApiKey');
+
+	const input = await vscode.window.showInputBox({
+		title: 'Configure Google API Key',
+		prompt: 'Enter your Google API key',
+		value: currentKey ? '••••••••••••••••' : '',
+		password: true,
+		placeHolder: 'Enter your Google API Key',
+		validateInput: (value) => {
+			if (!value || value.trim().length === 0) {
+				return 'API key cannot be empty';
+			}
+			if (value === '••••••••••••••••') {
+				return null; // User didn't change the masked value, that's OK
+			}
+			return null;
+		}
+	});
+
+	if (input !== undefined) {
+		// Only update if user didn't just keep the masked value
+		if (input !== '••••••••••••••••') {
+			try {
+				await vscode.workspace.getConfiguration('superdesign').update(
+					'googleApiKey',
+					input.trim(),
+					vscode.ConfigurationTarget.Global
+				);
+				vscode.window.showInformationMessage('✅ Google API key configured successfully!');
+			} catch (error) {
+				vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
+			}
+		} else if (currentKey) {
+			vscode.window.showInformationMessage('API key unchanged (already configured)');
+		} else {
+			vscode.window.showWarningMessage('No API key was set');
+		}
+	}
+}
+
 class SuperdesignCanvasPanel {
 	public static currentPanel: SuperdesignCanvasPanel | undefined;
 	public static readonly viewType = 'superdesignCanvasPanel';
