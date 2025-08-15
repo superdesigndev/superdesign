@@ -90,6 +90,9 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                     case 'changeProvider':
                         await this.handleChangeProvider(message.model, webviewView.webview);
                         break;
+                    case 'showContextPicker':
+                        await this.handleShowContextPicker(webviewView.webview);
+                        break;
                 }
             }
         );
@@ -108,6 +111,9 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 break;
             case 'openrouter':
                 defaultModel = 'anthropic/claude-3-7-sonnet-20250219';
+                break;
+            case 'bedrock':
+                defaultModel = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
                 break;
             case 'anthropic':
             default:
@@ -143,6 +149,16 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 apiKeyKey = 'anthropicApiKey';
                 configureCommand = 'superdesign.configureApiKey';
                 displayName = `Anthropic (${this.getModelDisplayName(model)})`;
+            } else if (model.startsWith('anthropic.') || 
+                       model.startsWith('amazon.') ||
+                       model.startsWith('meta.') ||
+                       model.startsWith('ai21.') ||
+                       model.startsWith('cohere.') ||
+                       model.startsWith('mistral.')) {
+                provider = 'bedrock';
+                apiKeyKey = 'awsAccessKeyId'; // We'll check both AWS keys in the validation
+                configureCommand = 'superdesign.configureAWSBedrock';
+                displayName = `AWS Bedrock (${this.getModelDisplayName(model)})`;
             } else {
                 provider = 'openai';
                 apiKeyKey = 'openaiApiKey';
@@ -154,17 +170,25 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             await config.update('aiModelProvider', provider, vscode.ConfigurationTarget.Global);
             await config.update('aiModel', model, vscode.ConfigurationTarget.Global);
             
-            // Check if the API key is configured for the selected provider
-            const apiKey = config.get<string>(apiKeyKey);
+            // Check if the credentials are configured for the selected provider
+            let isConfigured = false;
+            if (provider === 'bedrock') {
+                const awsAccessKeyId = config.get<string>('awsAccessKeyId');
+                const awsSecretAccessKey = config.get<string>('awsSecretAccessKey');
+                isConfigured = !!(awsAccessKeyId && awsSecretAccessKey);
+            } else {
+                const apiKey = config.get<string>(apiKeyKey);
+                isConfigured = !!apiKey;
+            }
             
-            if (!apiKey) {
+            if (!isConfigured) {
                 const result = await vscode.window.showWarningMessage(
-                    `${displayName} selected, but API key is not configured. Would you like to configure it now?`,
-                    'Configure API Key',
+                    `${displayName} selected, but credentials are not configured. Would you like to configure them now?`,
+                    'Configure Credentials',
                     'Later'
                 );
                 
-                if (result === 'Configure API Key') {
+                if (result === 'Configure Credentials') {
                     await vscode.commands.executeCommand(configureCommand);
                 }
             }
@@ -179,6 +203,148 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to update AI model: ${error}`);
         }
+    }
+
+    private async handleShowContextPicker(webview: vscode.Webview) {
+        try {
+            // Show quick pick with context options
+            const options = [
+                {
+                    label: '📄 Select File',
+                    description: 'Choose a file from your workspace',
+                    action: 'selectFile'
+                },
+                {
+                    label: '📁 Select Folder',
+                    description: 'Choose a folder from your workspace',
+                    action: 'selectFolder'
+                },
+                {
+                    label: '🖼️ Select Images',
+                    description: 'Choose image files for analysis',
+                    action: 'selectImages'
+                },
+                {
+                    label: '📋 Canvas Content',
+                    description: 'Use current canvas as context',
+                    action: 'canvasContent'
+                }
+            ];
+
+            const selected = await vscode.window.showQuickPick(options, {
+                placeHolder: 'What would you like to add as context?',
+                matchOnDescription: true
+            });
+
+            if (!selected) {
+                return; // User cancelled
+            }
+
+            switch (selected.action) {
+                case 'selectFile':
+                    await this.handleSelectFile(webview);
+                    break;
+                case 'selectFolder':
+                    await this.handleSelectFolder(webview);
+                    break;
+                case 'selectImages':
+                    await this.handleSelectImages(webview);
+                    break;
+                case 'canvasContent':
+                    await this.handleCanvasContent(webview);
+                    break;
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to show context picker: ${error}`);
+        }
+    }
+
+    private async handleSelectFile(webview: vscode.Webview) {
+        const files = await vscode.window.showOpenDialog({
+            canSelectFiles: true,
+            canSelectFolders: false,
+            canSelectMany: false,
+            filters: {
+                'All Files': ['*'],
+                'Code Files': ['js', 'ts', 'jsx', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'go', 'rs', 'php'],
+                'Text Files': ['txt', 'md', 'json', 'xml', 'yaml', 'yml', 'toml'],
+                'Config Files': ['config', 'conf', 'env', 'ini']
+            }
+        });
+
+        if (files && files.length > 0) {
+            const filePath = files[0].fsPath;
+            webview.postMessage({
+                command: 'contextFromCanvas',
+                data: {
+                    fileName: filePath,
+                    type: 'file'
+                }
+            });
+        }
+    }
+
+    private async handleSelectFolder(webview: vscode.Webview) {
+        const folders = await vscode.window.showOpenDialog({
+            canSelectFiles: false,
+            canSelectFolders: true,
+            canSelectMany: false
+        });
+
+        if (folders && folders.length > 0) {
+            const folderPath = folders[0].fsPath;
+            webview.postMessage({
+                command: 'contextFromCanvas',
+                data: {
+                    fileName: folderPath,
+                    type: 'folder'
+                }
+            });
+        }
+    }
+
+    private async handleSelectImages(webview: vscode.Webview) {
+        const images = await vscode.window.showOpenDialog({
+            canSelectFiles: true,
+            canSelectFolders: false,
+            canSelectMany: true,
+            filters: {
+                'Images': ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg', 'webp']
+            }
+        });
+
+        if (images && images.length > 0) {
+            if (images.length === 1) {
+                webview.postMessage({
+                    command: 'contextFromCanvas',
+                    data: {
+                        fileName: images[0].fsPath,
+                        type: 'image'
+                    }
+                });
+            } else {
+                const imagePaths = images.map(img => img.fsPath).join(', ');
+                webview.postMessage({
+                    command: 'contextFromCanvas',
+                    data: {
+                        fileName: imagePaths,
+                        type: 'images'
+                    }
+                });
+            }
+        }
+    }
+
+    private async handleCanvasContent(webview: vscode.Webview) {
+        // Request canvas content from extension
+        webview.postMessage({
+            command: 'contextFromCanvas',
+            data: {
+                fileName: 'Canvas Content',
+                type: 'canvas'
+            }
+        });
+        vscode.window.showInformationMessage('Canvas content added as context');
     }
     
     private getModelDisplayName(model: string): string {
@@ -197,6 +363,35 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             'claude-3-opus-20240229': 'Claude 3 Opus',
             'claude-3-sonnet-20240229': 'Claude 3 Sonnet',
             'claude-3-haiku-20240307': 'Claude 3 Haiku',
+            // AWS Bedrock - Anthropic models
+            'anthropic.claude-3-5-sonnet-20241022-v2:0': 'Claude 3.5 Sonnet v2',
+            'anthropic.claude-3-5-sonnet-20240620-v1:0': 'Claude 3.5 Sonnet',
+            'anthropic.claude-3-opus-20240229-v1:0': 'Claude 3 Opus',
+            'anthropic.claude-3-sonnet-20240229-v1:0': 'Claude 3 Sonnet',
+            'anthropic.claude-3-haiku-20240307-v1:0': 'Claude 3 Haiku',
+            // AWS Bedrock - Amazon models
+            'amazon.nova-pro-v1:0': 'Amazon Nova Pro',
+            'amazon.nova-lite-v1:0': 'Amazon Nova Lite',
+            'amazon.nova-micro-v1:0': 'Amazon Nova Micro',
+            // AWS Bedrock - Meta models
+            'meta.llama3-2-90b-instruct-v1:0': 'Llama 3.2 90B Instruct',
+            'meta.llama3-2-11b-instruct-v1:0': 'Llama 3.2 11B Instruct',
+            'meta.llama3-2-3b-instruct-v1:0': 'Llama 3.2 3B Instruct',
+            'meta.llama3-2-1b-instruct-v1:0': 'Llama 3.2 1B Instruct',
+            'meta.llama3-1-405b-instruct-v1:0': 'Llama 3.1 405B Instruct',
+            'meta.llama3-1-70b-instruct-v1:0': 'Llama 3.1 70B Instruct',
+            'meta.llama3-1-8b-instruct-v1:0': 'Llama 3.1 8B Instruct',
+            // AWS Bedrock - Mistral models
+            'mistral.mistral-large-2407-v1:0': 'Mistral Large 2407',
+            'mistral.mistral-small-2402-v1:0': 'Mistral Small 2402',
+            'mistral.mistral-7b-instruct-v0:2': 'Mistral 7B Instruct',
+            'mistral.mixtral-8x7b-instruct-v0:1': 'Mixtral 8x7B Instruct',
+            // AWS Bedrock - AI21 models
+            'ai21.jamba-1-5-large-v1:0': 'AI21 Jamba 1.5 Large',
+            'ai21.jamba-1-5-mini-v1:0': 'AI21 Jamba 1.5 Mini',
+            // AWS Bedrock - Cohere models
+            'cohere.command-r-plus-v1:0': 'Cohere Command R+',
+            'cohere.command-r-v1:0': 'Cohere Command R',
             // OpenRouter - Google models
             'google/gemini-2.5-pro': 'Gemini 2.5 Pro',
             'google/gemini-2.5-flash': 'Gemini 2.5 Flash',
