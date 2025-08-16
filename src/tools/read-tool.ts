@@ -3,14 +3,16 @@ import * as path from 'path';
 import * as mime from 'mime-types';
 import { tool } from 'ai';
 import { z } from 'zod';
-import { ExecutionContext } from '../types/agent';
+import type { ExecutionContext } from '../types/agent';
+import type {
+  ToolResponse 
+} from './tool-utils';
 import { 
   handleToolError, 
   validateWorkspacePath, 
   resolveWorkspacePath, 
   createSuccessResponse,
-  validateFileExists,
-  ToolResponse 
+  validateFileExists 
 } from './tool-utils';
 
 /**
@@ -138,7 +140,7 @@ async function processTextFile(
     const processedLines = selectedLines.map(line => {
       if (line.length > MAX_LINE_LENGTH) {
         linesWereTruncated = true;
-        return line.substring(0, MAX_LINE_LENGTH) + '... [line truncated]';
+        return `${line.substring(0, MAX_LINE_LENGTH)  }... [line truncated]`;
       }
       return line;
     });
@@ -150,9 +152,9 @@ async function processTextFile(
     
     // Add truncation notice
     if (contentWasTruncated) {
-      processedContent = `[Content truncated: showing lines ${actualStartLine + 1}-${endLine} of ${originalLineCount} total lines]\n\n` + processedContent;
+      processedContent = `[Content truncated: showing lines ${actualStartLine + 1}-${endLine} of ${originalLineCount} total lines]\n\n${  processedContent}`;
     } else if (linesWereTruncated) {
-      processedContent = `[Some lines truncated due to length (max ${MAX_LINE_LENGTH} chars)]\n\n` + processedContent;
+      processedContent = `[Some lines truncated due to length (max ${MAX_LINE_LENGTH} chars)]\n\n${  processedContent}`;
     }
 
     return {

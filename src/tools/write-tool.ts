@@ -2,13 +2,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { tool } from 'ai';
 import { z } from 'zod';
-import { ExecutionContext } from '../types/agent';
+import type { ExecutionContext } from '../types/agent';
+import type {
+  ToolResponse 
+} from './tool-utils';
 import { 
   handleToolError, 
   validateWorkspacePath, 
   resolveWorkspacePath, 
-  createSuccessResponse,
-  ToolResponse 
+  createSuccessResponse 
 } from './tool-utils';
 
 /**

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ConnectionLine } from '../types/canvas.types';
+import type { ConnectionLine } from '../types/canvas.types';
 
 interface ConnectionLinesProps {
     connections: ConnectionLine[];

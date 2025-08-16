@@ -1,15 +1,15 @@
 import * as vscode from 'vscode';
 import { ClaudeCodeService } from './claudeCodeService';
-import { AgentService } from '../types/agent';
-import { CoreMessage } from 'ai';
+import type { AgentService } from '../types/agent';
+import type { CoreMessage } from 'ai';
 import { Logger } from './logger';
 
 export class ChatMessageService {
     private currentRequestController?: AbortController;
 
     constructor(
-        private agentService: AgentService,
-        private outputChannel: vscode.OutputChannel
+        private readonly agentService: AgentService,
+        private readonly outputChannel: vscode.OutputChannel
     ) {}
 
     async handleChatMessage(message: any, webview: vscode.Webview): Promise<void> {
@@ -55,7 +55,7 @@ export class ChatMessageService {
                 const content = typeof msg.content === 'string' ? msg.content : 
                     Array.isArray(msg.content) ? 
                         msg.content.map(part => 
-                            part.type === 'text' ? part.text?.substring(0, 50) + '...' :
+                            part.type === 'text' ? `${part.text?.substring(0, 50)  }...` :
                             part.type === 'tool-call' ? `[tool-call: ${part.toolName}]` :
                             part.type === 'tool-result' ? `[tool-result: ${part.toolName}]` :
                             `[${part.type}]`
@@ -392,7 +392,7 @@ export class ChatMessageService {
             this.currentRequestController.abort();
             
             // Send stopped message back to webview
-            webview.postMessage({
+            await webview.postMessage({
                 command: 'chatStopped'
             });
         } else {
@@ -402,8 +402,8 @@ export class ChatMessageService {
 
     private processClaudeResponse(response: any[]): string {
         let fullResponse = '';
-        let assistantMessages: string[] = [];
-        let toolResults: string[] = [];
+        const assistantMessages: string[] = [];
+        const toolResults: string[] = [];
         
         for (const msg of response) {
             const subtype = 'subtype' in msg ? msg.subtype : undefined;
@@ -448,7 +448,7 @@ export class ChatMessageService {
         
         if (toolResults.length > 0 && !fullResponse.includes(toolResults[0])) {
             if (fullResponse) {
-                fullResponse += '\n\n--- Tool Results ---\n' + toolResults.join('\n\n');
+                fullResponse += `\n\n--- Tool Results ---\n${  toolResults.join('\n\n')}`;
             } else {
                 fullResponse = toolResults.join('\n\n');
             }

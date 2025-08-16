@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { ExecutionContext } from '../types/agent';
+import type { ExecutionContext } from '../types/agent';
 
 /**
  * Standard error response structure for all tools

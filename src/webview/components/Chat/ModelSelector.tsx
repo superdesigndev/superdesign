@@ -79,7 +79,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
     const selectedModelName = models.find(m => m.id === selectedModel)?.name || selectedModel;
 
     const calculateDropdownPosition = () => {
-        if (!triggerRef.current) return;
+        if (!triggerRef.current) {return;}
 
         const triggerRect = triggerRef.current.getBoundingClientRect();
         const modalHeight = 190; // Reduced from 220 since we removed add models section

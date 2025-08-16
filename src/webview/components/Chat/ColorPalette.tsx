@@ -11,7 +11,7 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({ colors, isDarkMode }) => {
   };
 
   const renderColorGroup = (groupName: string, colorGroup: any) => {
-    if (!colorGroup || Object.keys(colorGroup).length === 0) return null;
+    if (!colorGroup || Object.keys(colorGroup).length === 0) {return null;}
 
     return (
       <div key={groupName} className="color-group">

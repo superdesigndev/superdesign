@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { WebviewContext } from '../types/context';
+import type { WebviewContext } from '../types/context';
 
 export function generateWebviewHtml(
     webview: vscode.Webview,

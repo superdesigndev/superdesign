@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ChatInterface from './components/Chat/ChatInterface';
 import CanvasView from './components/CanvasView';
-import { WebviewContext } from '../types/context';
+import type { WebviewContext } from '../types/context';
 
 // Import CSS as string for esbuild
 import styles from './App.css';

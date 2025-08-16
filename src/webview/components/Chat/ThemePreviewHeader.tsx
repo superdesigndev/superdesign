@@ -29,7 +29,7 @@ const ThemePreviewHeader: React.FC<ThemePreviewHeaderProps> = ({
         <span className="tool-icon">
           {isLoading ? (
             <div className="loading-icon-simple">
-              <div className="loading-ring"></div>
+              <div className="loading-ring" />
             </div>
           ) : (
             '⚙️'

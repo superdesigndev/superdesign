@@ -1,17 +1,20 @@
 import { z } from 'zod';
 import { tool } from 'ai';
-import { spawn, ChildProcess } from 'child_process';
+import type { ChildProcess } from 'child_process';
+import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { ExecutionContext } from '../types/agent';
+import type { ExecutionContext } from '../types/agent';
+import type {
+  ToolResponse 
+} from './tool-utils';
 import { 
   handleToolError, 
   validateWorkspacePath, 
   resolveWorkspacePath, 
   createSuccessResponse,
-  validateDirectoryExists,
-  ToolResponse 
+  validateDirectoryExists 
 } from './tool-utils';
 
 const bashParametersSchema = z.object({
@@ -191,7 +194,7 @@ export function createBashTool(context: ExecutionContext) {
       // Prepare environment
       const processEnv = {
         ...process.env,
-        ...(env as Record<string, string> | undefined)
+        ...(env)
       };
 
       // Execute the command

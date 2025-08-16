@@ -2,13 +2,13 @@ import * as vscode from 'vscode';
 import { ClaudeCodeService } from '../services/claudeCodeService';
 import { ChatMessageService } from '../services/chatMessageService';
 import { generateWebviewHtml } from '../templates/webviewTemplate';
-import { WebviewContext } from '../types/context';
-import { AgentService } from '../types/agent';
+import type { WebviewContext } from '../types/context';
+import type { AgentService } from '../types/agent';
 
 export class ChatSidebarProvider implements vscode.WebviewViewProvider {
     public static readonly VIEW_TYPE = 'securedesign.chatView';
     private _view?: vscode.WebviewView;
-    private messageHandler: ChatMessageService;
+    private readonly messageHandler: ChatMessageService;
     private customMessageHandler?: (message: any) => void;
 
     constructor(
@@ -123,7 +123,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 break;
         }
         
-        webview.postMessage({
+        await webview.postMessage({
             command: 'currentProviderResponse',
             provider: currentProvider,
             model: currentModel || defaultModel
@@ -201,7 +201,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             }
 
             // Notify webview of successful change
-            webview.postMessage({
+            await webview.postMessage({
                 command: 'providerChanged',
                 provider: provider,
                 model: model

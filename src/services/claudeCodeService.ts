@@ -19,7 +19,7 @@ export class ClaudeCodeService {
     private isInitialized = false;
     private initializationPromise: Promise<void> | null = null;
     private workingDirectory: string = '';
-    private outputChannel: vscode.OutputChannel;
+    private readonly outputChannel: vscode.OutputChannel;
     private currentSessionId: string | null = null;
     private claudeCodeQuery: QueryFunction | null = null;
 
@@ -38,7 +38,7 @@ export class ClaudeCodeService {
             Logger.info('Starting Claude Code initialization...');
             
             // Setup working directory first
-            await this.setupWorkingDirectory();
+            this.setupWorkingDirectory();
 
             // Check if API key is configured
             const config = vscode.workspace.getConfiguration('securedesign');
@@ -121,7 +121,7 @@ export class ClaudeCodeService {
         }
     }
 
-    private async setupWorkingDirectory(): Promise<void> {
+    private setupWorkingDirectory() {
         try {
             // Try to get workspace root first
             const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
@@ -323,7 +323,7 @@ Your goal is to extract a generalized and reusable design system from the screen
             }
 
             const queryParams = {
-                prompt: prompt!, // Non-null assertion since we checked above
+                prompt: prompt, // Non-null assertion since we checked above
                 abortController: abortController || new AbortController(),
                 options: finalOptions
             };
@@ -333,12 +333,12 @@ Your goal is to extract a generalized and reusable design system from the screen
             }
 
             for await (const message of this.claudeCodeQuery(queryParams)) {
-                messages.push(message as SDKMessage);
+                messages.push(message);
                 
                 // Call the streaming callback if provided
                 if (onMessage) {
                     try {
-                        onMessage(message as SDKMessage);
+                        onMessage(message);
                     } catch (callbackError) {
                         Logger.error(`Streaming callback error: ${callbackError}`);
                         // Don't break the loop if callback fails

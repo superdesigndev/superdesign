@@ -2,14 +2,16 @@ import { z } from 'zod';
 import { tool } from 'ai';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ExecutionContext } from '../types/agent';
+import type { ExecutionContext } from '../types/agent';
+import type {
+  ToolResponse 
+} from './tool-utils';
 import { 
   handleToolError, 
   validateWorkspacePath, 
   resolveWorkspacePath, 
   createSuccessResponse,
-  validateFileExists,
-  ToolResponse 
+  validateFileExists 
 } from './tool-utils';
 
 const singleEditSchema = z.object({

@@ -33,7 +33,7 @@ const ThemePreviewCard: React.FC<ThemePreviewCardProps> = ({
   // Pre-inject minimal CSS to avoid FOUC (Flash of Unstyled Content)
   useEffect(() => {
     const minimalCssId = 'theme-preview-minimal-css';
-    let existingStyle = document.getElementById(minimalCssId);
+    const existingStyle = document.getElementById(minimalCssId);
     
     if (!existingStyle) {
       const minimalStyle = document.createElement('style');
@@ -254,7 +254,7 @@ const ThemePreviewCard: React.FC<ThemePreviewCardProps> = ({
                       borderTop: '2px solid var(--vscode-progressBar-background)',
                       borderRadius: '50%',
                       animation: 'spin 1s linear infinite'
-                    }}></div>
+                    }} />
                   </div>
                   Loading theme CSS...
                 </div>

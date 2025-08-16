@@ -85,7 +85,7 @@ const extractFontsFromCSS = (cssSheet: string): string[] => {
 
 // Load Google Fonts dynamically
 const loadGoogleFonts = (fontNames: string[]): Promise<void> => {
-  if (fontNames.length === 0) return Promise.resolve();
+  if (fontNames.length === 0) {return Promise.resolve();}
   
   return new Promise((resolve) => {
     try {
@@ -150,7 +150,7 @@ const ThemePreview: React.FC<ThemePreviewProps> = ({ theme, isDarkMode, cssSheet
   const fontsLoadedRef = useRef<boolean>(false);
 
   useEffect(() => {
-    if (!cssSheet || !previewRef.current) return;
+    if (!cssSheet || !previewRef.current) {return;}
 
     const setupPreview = async () => {
       // Remove existing style element first

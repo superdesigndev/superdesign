@@ -1,5 +1,5 @@
-import * as vscode from 'vscode';
-import { CoreMessage } from 'ai';
+import type * as vscode from 'vscode';
+import type { CoreMessage } from 'ai';
 
 export interface AgentService {
     query(

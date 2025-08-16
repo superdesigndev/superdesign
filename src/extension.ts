@@ -1188,7 +1188,7 @@ html.dark {
 				const existingContent = await vscode.workspace.fs.readFile(designMdcPath);
 				const currentContent = Buffer.from(existingContent).toString('utf8');
 				if (!currentContent.includes('securedesign: Open Canvas View')) {
-					const updatedContent = currentContent + '\n\n' + designRuleMdcContent;
+					const updatedContent = `${currentContent  }\n\n${  designRuleMdcContent}`;
 					await vscode.workspace.fs.writeFile(designMdcPath, Buffer.from(updatedContent, 'utf8'));
 					createdFiles.push('.cursor/rules/design.mdc');
 				}
@@ -1206,7 +1206,7 @@ html.dark {
 				const existingContent = await vscode.workspace.fs.readFile(claudeMdPath);
 				const currentContent = Buffer.from(existingContent).toString('utf8');
 				if (!currentContent.includes('securedesign: Open Canvas View')) {
-					const updatedContent = currentContent + '\n\n' + designRuleContent;
+					const updatedContent = `${currentContent  }\n\n${  designRuleContent}`;
 					await vscode.workspace.fs.writeFile(claudeMdPath, Buffer.from(updatedContent, 'utf8'));
 					createdFiles.push('CLAUDE.md');
 				}
@@ -1224,7 +1224,7 @@ html.dark {
 				const existingContent = await vscode.workspace.fs.readFile(windsurfRulesPath);
 				const currentContent = Buffer.from(existingContent).toString('utf8');
 				if (!currentContent.includes('securedesign: Open Canvas View')) {
-					const updatedContent = currentContent + '\n\n' + designRuleContent;
+					const updatedContent = `${currentContent  }\n\n${  designRuleContent}`;
 					await vscode.workspace.fs.writeFile(windsurfRulesPath, Buffer.from(updatedContent, 'utf8'));
 					createdFiles.push('.windsurfrules');
 				}
@@ -1748,7 +1748,7 @@ class SuperdesignCanvasPanel {
 	private readonly _panel: vscode.WebviewPanel;
 	private readonly _extensionUri: vscode.Uri;
 	private readonly _sidebarProvider: ChatSidebarProvider;
-	private _disposables: vscode.Disposable[] = [];
+	private readonly _disposables: vscode.Disposable[] = [];
 	private _fileWatcher: vscode.FileSystemWatcher | undefined;
 
 	public static createOrShow(extensionUri: vscode.Uri, sidebarProvider: ChatSidebarProvider) {

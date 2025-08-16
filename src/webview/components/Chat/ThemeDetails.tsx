@@ -1,5 +1,5 @@
 import React from 'react';
-import { ParsedTheme } from '../../utils/themeParser';
+import type { ParsedTheme } from '../../utils/themeParser';
 
 interface ThemeDetailsProps {
   reasoning: string;

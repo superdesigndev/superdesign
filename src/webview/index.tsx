@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import ChatInterface from './components/Chat/ChatInterface';
-import { WebviewContext } from '../types/context';
+import type { WebviewContext } from '../types/context';
 
 // Import main App styles for panel layout
 import App from './App';

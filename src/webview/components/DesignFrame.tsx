@@ -1,5 +1,6 @@
 import React from 'react';
-import { DesignFile, GridPosition, FrameDimensions, ViewportMode, WebviewMessage } from '../types/canvas.types';
+import type { DesignFile, GridPosition, FrameDimensions, ViewportMode} from '../types/canvas.types';
+import { WebviewMessage } from '../types/canvas.types';
 import { MobileIcon, TabletIcon, DesktopIcon, GlobeIcon } from './Icons';
 
 // Import logo images
@@ -337,7 +338,7 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                 // HTML file handling (existing logic)
                 // Function to inject nonce into script tags
                 const injectNonce = (html: string, nonce: string | null) => {
-                    if (!nonce) return html;
+                    if (!nonce) {return html;}
                     return html.replace(/<script/g, `<script nonce="${nonce}"`);
                 };
 
@@ -653,7 +654,7 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                 {isLoading && renderMode === 'iframe' && (
                     <div className="frame-loading-overlay">
                         <div className="frame-loading-spinner">
-                            <div className="spinner-small"></div>
+                            <div className="spinner-small" />
                             <span>Loading...</span>
                         </div>
                     </div>

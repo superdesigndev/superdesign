@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { TransformWrapper, TransformComponent, ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
+import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import DesignFrame from './DesignFrame';
 import { calculateGridPosition, calculateFitToView, getGridMetrics, generateResponsiveConfig, buildHierarchyTree, calculateHierarchyPositions, getHierarchicalPosition, detectDesignRelationships } from '../utils/gridLayout';
-import { 
+import type { 
     DesignFile, 
-    CanvasState, 
     WebviewMessage, 
     ExtensionToWebviewMessage,
     CanvasConfig,
@@ -16,6 +16,9 @@ import {
     LayoutMode,
     HierarchyTree,
     ConnectionLine
+} from '../types/canvas.types';
+import { 
+    CanvasState
 } from '../types/canvas.types';
 import ConnectionLines from './ConnectionLines';
 import {
@@ -437,7 +440,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
     const handleDragStart = (fileName: string, startPos: GridPosition, mouseEvent: React.MouseEvent) => {
         // Get canvas grid element for proper coordinate calculation
         const canvasGrid = document.querySelector('.canvas-grid') as HTMLElement;
-        if (!canvasGrid) return;
+        if (!canvasGrid) {return;}
         
         const canvasRect = canvasGrid.getBoundingClientRect();
         const canvasMousePos = transformMouseToCanvasSpace(mouseEvent.clientX, mouseEvent.clientY, canvasRect);
@@ -460,7 +463,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
     };
 
     const handleDragMove = (mousePos: GridPosition) => {
-        if (!dragState.isDragging || !dragState.draggedFrame) return;
+        if (!dragState.isDragging || !dragState.draggedFrame) {return;}
         
         const newPosition = {
             x: mousePos.x - dragState.offset.x,
@@ -474,7 +477,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
     };
 
     const handleDragEnd = () => {
-        if (!dragState.isDragging || !dragState.draggedFrame) return;
+        if (!dragState.isDragging || !dragState.draggedFrame) {return;}
         
         // Snap to grid (optional - makes positioning cleaner)
         const gridSize = 25;
@@ -573,7 +576,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
         return (
             <div className="canvas-loading">
                 <div className="loading-spinner">
-                    <div className="spinner"></div>
+                    <div className="spinner" />
                     <p>Loading design files...</p>
                 </div>
             </div>
@@ -621,7 +624,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                         <button className="toolbar-btn zoom-btn" onClick={handleZoomIn} title="Zoom In (Cmd/Ctrl + +)">
                         <ZoomInIcon />
                     </button>
-                        <div className="toolbar-divider"></div>
+                        <div className="toolbar-divider" />
                         <button className="toolbar-btn" onClick={handleResetZoom} title="Reset Zoom (Cmd/Ctrl + 0)">
                             <HomeIcon />
                         </button>
@@ -711,7 +714,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                 maxScale={3}                    // Higher max scale for more zoom range
                 limitToBounds={false}
                 smooth={false}                  // Disable smooth for better performance
-                disablePadding={true}           // Disable padding to prevent position jumps
+                disablePadding           // Disable padding to prevent position jumps
                 doubleClick={{
                     disabled: false,
                     mode: "zoomIn",
@@ -732,7 +735,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                     disabled: false,            // Keep pinch zoom enabled
                     step: 1                     // Ultra-fine pinch steps
                 }}
-                centerOnInit={true}
+                centerOnInit
                 onTransformed={(ref) => handleTransformChange(ref)}
                 onZoom={(ref) => {
                     const state = ref.state;

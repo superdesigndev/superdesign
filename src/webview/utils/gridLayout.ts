@@ -1,4 +1,4 @@
-import { GridPosition, FrameDimensions, CanvasConfig, DesignFile, HierarchyTree, HierarchyNode, ConnectionLine } from '../types/canvas.types';
+import type { GridPosition, CanvasConfig, DesignFile, HierarchyTree, HierarchyNode, ConnectionLine } from '../types/canvas.types';
 
 /**
  * Calculate grid position for a frame based on its index
@@ -287,7 +287,7 @@ function calculateSubtreeHeight(
     
     const children = node.children
         .map(childName => nodes.get(childName))
-        .filter(child => child !== undefined) as HierarchyNode[];
+        .filter(child => child !== undefined);
     
     if (children.length === 0) {
         return frameHeight;
@@ -322,7 +322,7 @@ function positionChildrenImproved(
     
     const children = parentNode.children
         .map(childName => nodes.get(childName))
-        .filter(child => child !== undefined) as HierarchyNode[];
+        .filter(child => child !== undefined);
     
     if (children.length === 0) {return startY + frameHeight;}
     
@@ -453,7 +453,7 @@ export function detectDesignRelationships(designs: DesignFile[]): DesignFile[] {
         // Set branch index (order among siblings)
         if (design.parentDesign) {
             const parentDesign = designMap.get(getParentPath(design.name)!);
-            if (parentDesign && parentDesign.children) {
+            if (parentDesign?.children) {
                 design.branchIndex = parentDesign.children.indexOf(design.name);
             }
         } else {

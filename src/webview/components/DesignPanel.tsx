@@ -53,7 +53,7 @@ const DesignPanel: React.FC<DesignPanelProps> = ({ vscode }) => {
                                     <div 
                                         className="color-swatch"
                                         style={{ backgroundColor: color.value }}
-                                    ></div>
+                                     />
                                     <div className="color-info">
                                         <span className="color-name">{color.name}</span>
                                         <span className="color-value">{color.value}</span>

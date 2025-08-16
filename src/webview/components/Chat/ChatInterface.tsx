@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useChat, ChatMessage } from '../../hooks/useChat';
+import type { ChatMessage } from '../../hooks/useChat';
+import { useChat } from '../../hooks/useChat';
 import { useFirstTimeUser } from '../../hooks/useFirstTimeUser';
-import { WebviewLayout } from '../../../types/context';
+import type { WebviewLayout } from '../../../types/context';
 import MarkdownRenderer from '../MarkdownRenderer';
 import { TaskIcon, ClockIcon, CheckIcon, LightBulbIcon, GroupIcon, BrainIcon } from '../Icons';
 import Welcome from '../Welcome';
@@ -612,7 +613,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             e.stopPropagation();
             console.log('🎯 Global drop detected!', e.dataTransfer?.files.length, 'files');
 
-            if (!e.dataTransfer?.files) return;
+            if (!e.dataTransfer?.files) {return;}
 
             const files = Array.from(e.dataTransfer.files);
             console.log('🎯 Global files from drop:', files.map(f => `${f.name} (${f.type})`));
@@ -635,10 +636,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
 
         const handleGlobalPaste = async (e: ClipboardEvent) => {
             // Only handle paste if we're focused on the chat and not loading
-            if (isLoading || showWelcome) return;
+            if (isLoading || showWelcome) {return;}
 
             const clipboardItems = e.clipboardData?.items;
-            if (!clipboardItems) return;
+            if (!clipboardItems) {return;}
 
             console.log('📋 Paste detected, checking for images...');
 
@@ -1075,20 +1076,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             // Result truncation
             const resultNeedsTruncation = toolResult.length > MAX_PREVIEW;
             const displayResult = resultNeedsTruncation && !showFullResult 
-                ? toolResult.substring(0, MAX_PREVIEW) + '...'
+                ? `${toolResult.substring(0, MAX_PREVIEW)  }...`
                 : toolResult;
             
             // Input truncation
             const inputString = JSON.stringify(toolInput, null, 2);
             const inputNeedsTruncation = inputString.length > MAX_PREVIEW;
             const displayInput = inputNeedsTruncation && !showFullInput 
-                ? inputString.substring(0, MAX_PREVIEW) + '...'
+                ? `${inputString.substring(0, MAX_PREVIEW)  }...`
                 : inputString;
             
             // Prompt truncation
             const promptNeedsTruncation = prompt.length > MAX_PREVIEW;
             const displayPrompt = promptNeedsTruncation && !showFullPrompt 
-                ? prompt.substring(0, MAX_PREVIEW) + '...'
+                ? `${prompt.substring(0, MAX_PREVIEW)  }...`
                 : prompt;
             
             return (
@@ -1101,7 +1102,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                             <span className="tool-icon">
                                 {isLoading ? (
                                     <div className="loading-icon-simple">
-                                        <div className="loading-ring"></div>
+                                        <div className="loading-ring" />
                                     </div>
                                 ) : (
                                     <TaskIcon />
@@ -1399,7 +1400,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                                     <div key={index} className="uploading-item">
                                         <span className="upload-icon">📎</span>
                                         <span className="upload-text">Uploading {fileName}...</span>
-                                        <div className="upload-spinner"></div>
+                                        <div className="upload-spinner" />
                                     </div>
                                 ))}
                             </div>

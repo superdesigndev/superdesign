@@ -2,7 +2,6 @@ import React from 'react';
 
 interface WelcomeProps {
     onGetStarted: () => void;
-    vscode: any;
 }
 
 const Welcome: React.FC<WelcomeProps> = ({ onGetStarted }) => {

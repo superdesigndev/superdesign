@@ -1,4 +1,5 @@
-import { streamText, ModelMessage } from 'ai';
+import type { ModelMessage } from 'ai';
+import { streamText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
@@ -8,7 +9,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
-import { AgentService, ExecutionContext } from '../types/agent';
+import type { AgentService, ExecutionContext } from '../types/agent';
 import { createReadTool } from '../tools/read-tool';
 import { createWriteTool } from '../tools/write-tool';
 import { createBashTool } from '../tools/bash-tool';
@@ -21,7 +22,7 @@ import { createMultieditTool } from '../tools/multiedit-tool';
 
 export class CustomAgentService implements AgentService {
     private workingDirectory: string = '';
-    private outputChannel: vscode.OutputChannel;
+    private readonly outputChannel: vscode.OutputChannel;
     private isInitialized = false;
 
     constructor(outputChannel: vscode.OutputChannel) {
@@ -649,7 +650,7 @@ I've created the html design, please reveiw and let me know if you need any chan
         const usingConversationHistory = !!conversationHistory && conversationHistory.length > 0;
 
         if (usingConversationHistory) {
-            this.outputChannel.appendLine(`Query using conversation history: ${conversationHistory!.length} messages`);
+            this.outputChannel.appendLine(`Query using conversation history: ${conversationHistory.length} messages`);
         } else if (prompt) {
             this.outputChannel.appendLine(`Query prompt: ${prompt.substring(0, 200)}...`);
         } else {
@@ -708,11 +709,11 @@ I've created the html design, please reveiw and let me know if you need any chan
             if (usingConversationHistory) {
                 // Use conversation messages
                 streamTextConfig.messages = conversationHistory;
-                this.outputChannel.appendLine(`Using conversation history with ${conversationHistory!.length} messages`);
+                this.outputChannel.appendLine(`Using conversation history with ${conversationHistory.length} messages`);
 
                 // Debug: Log the actual messages being sent to AI SDK
                 this.outputChannel.appendLine('=== AI SDK MESSAGES DEBUG ===');
-                conversationHistory!.forEach((msg, index) => {
+                conversationHistory.forEach((msg, index) => {
                     const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
                     this.outputChannel.appendLine(`  [${index}] ${msg.role}: "${content.substring(0, 150)}..."`);
                 });
