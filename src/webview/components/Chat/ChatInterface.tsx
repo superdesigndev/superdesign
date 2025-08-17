@@ -96,6 +96,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         });
     };
 
+    const handleNewConversation = useCallback(() => {
+        clearHistory();
+        setInputMessage('');
+        setCurrentContext(null);
+        setUploadingImages([]);
+        setPendingImages([]);
+        setToolTimers({}); // Clear all tool timers
+
+        // Clear all timer intervals
+        Object.values(timerIntervals.current).forEach(timer => clearInterval(timer));
+        timerIntervals.current = {};
+
+        markAsReturningUser();
+    }, [clearHistory, markAsReturningUser]);
+
     useEffect(() => {
         // Inject ChatInterface CSS styles
         const styleId = 'chat-interface-styles';
@@ -391,20 +406,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         console.log('Add Context clicked');
     };
 
-    const handleNewConversation = useCallback(() => {
-        clearHistory();
-        setInputMessage('');
-        setCurrentContext(null);
-        setUploadingImages([]);
-        setPendingImages([]);
-        setToolTimers({}); // Clear all tool timers
-
-        // Clear all timer intervals
-        Object.values(timerIntervals.current).forEach(timer => clearInterval(timer));
-        timerIntervals.current = {};
-
-        markAsReturningUser();
-    }, [clearHistory, markAsReturningUser]);
 
     const handleWelcomeGetStarted = () => {
         setShowWelcome(false);
@@ -1547,7 +1548,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             <div className='chat-container'>
                 <div className='chat-history'>
                     {showWelcome ? (
-                        <Welcome onGetStarted={handleWelcomeGetStarted} vscode={vscode} />
+                        <Welcome onGetStarted={handleWelcomeGetStarted} />
                     ) : hasConversationMessages() ? (
                         <>
                             {chatHistory
