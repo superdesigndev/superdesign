@@ -344,7 +344,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
 
     private async handleCanvasContent(webview: vscode.Webview) {
         // Request canvas content from extension
-        webview.postMessage({
+        await webview.postMessage({
             command: 'contextFromCanvas',
             data: {
                 fileName: 'Canvas Content',

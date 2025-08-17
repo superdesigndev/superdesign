@@ -1,6 +1,5 @@
 import React from 'react';
-import type { DesignFile, GridPosition, FrameDimensions, ViewportMode} from '../types/canvas.types';
-import { WebviewMessage } from '../types/canvas.types';
+import type { DesignFile, GridPosition, FrameDimensions, ViewportMode, WebviewMessage } from '../types/canvas.types';
 import { MobileIcon, TabletIcon, DesktopIcon, GlobeIcon } from './Icons';
 
 // Import logo images
@@ -735,7 +734,7 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                             <div className="copy-dropdown-menu">
                                 <button
                                     className="copy-dropdown-item"
-                                    onClick={(e) => handleCopyPrompt(e, 'cursor')}
+                                    onClick={(e) => void handleCopyPrompt(e, 'cursor')}
                                 >
                                     <img 
                                         src={(window as any).__WEBVIEW_CONTEXT__?.logoUris?.cursor} 
@@ -751,7 +750,7 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                                 </button>
                                 <button
                                     className="copy-dropdown-item"
-                                    onClick={(e) => handleCopyPrompt(e, 'windsurf')}
+                                    onClick={(e) => void handleCopyPrompt(e, 'windsurf')}
                                 >
                                     <img 
                                         src={(window as any).__WEBVIEW_CONTEXT__?.logoUris?.windsurf} 
@@ -767,7 +766,7 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                                 </button>
                                 <button
                                     className="copy-dropdown-item"
-                                    onClick={(e) => handleCopyPrompt(e, 'claude-code')}
+                                    onClick={(e) => void handleCopyPrompt(e, 'claude-code')}
                                 >
                                     <img 
                                         src={(window as any).__WEBVIEW_CONTEXT__?.logoUris?.claudeCode} 
@@ -783,7 +782,7 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                                 </button>
                                 <button
                                     className="copy-dropdown-item"
-                                    onClick={(e) => handleCopyPrompt(e, 'lovable')}
+                                    onClick={(e) => void handleCopyPrompt(e, 'lovable')}
                                 >
                                     <img 
                                         src={(window as any).__WEBVIEW_CONTEXT__?.logoUris?.lovable} 
@@ -799,7 +798,7 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                                 </button>
                                 <button
                                     className="copy-dropdown-item"
-                                    onClick={(e) => handleCopyPrompt(e, 'bolt')}
+                                    onClick={(e) => void handleCopyPrompt(e, 'bolt')}
                                 >
                                     <img 
                                         src={(window as any).__WEBVIEW_CONTEXT__?.logoUris?.bolt} 
@@ -820,7 +819,7 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                     {/* Copy Design Path Button */}
                     <button
                         className={`floating-action-btn copy-path-btn ${copyPathButtonState.isSuccess ? 'success' : ''}`}
-                        onClick={handleCopyDesignPath}
+                        onClick={(e) => void handleCopyDesignPath(e)}
                         title="Copy absolute path of design file"
                     >
                         <svg className="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

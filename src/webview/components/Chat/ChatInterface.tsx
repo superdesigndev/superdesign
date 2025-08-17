@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import type { ChatMessage } from '../../hooks/useChat';
-import { useChat } from '../../hooks/useChat';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useChat, type ChatMessage } from '../../hooks/useChat';
 import { useFirstTimeUser } from '../../hooks/useFirstTimeUser';
 import type { WebviewLayout } from '../../../types/context';
 import MarkdownRenderer from '../MarkdownRenderer';
@@ -33,13 +32,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
     const timerIntervals = useRef<Record<string, NodeJS.Timeout>>({});
 
     // Helper function to check if we have meaningful conversation messages
-    const hasConversationMessages = () => {
+    const hasConversationMessages = useCallback(() => {
         return chatHistory.some(msg => 
             msg.role === 'user' || 
             (msg.role === 'assistant' && typeof msg.content === 'string' && msg.content.trim().length > 0) ||
             (msg.role === 'assistant' && Array.isArray(msg.content) && msg.content.some(part => part.type === 'text' && (part as any).text?.trim().length > 0))
         );
-    };
+    }, [chatHistory]);
 
     // Request current provider on mount
     useEffect(() => {
@@ -71,7 +70,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, []);
+    }, [vscode]);
 
     const handleModelChange = (model: string) => {
         // Send model change request to extension
@@ -185,7 +184,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                 document.head.removeChild(existingWelcomeStyle);
             }
         };
-    }, [vscode]);
+    }, [vscode, currentContext, handleNewConversation, resetFirstTimeUser]);
 
     // Handle first-time user welcome display
     useEffect(() => {
@@ -193,7 +192,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             setShowWelcome(true);
             console.log('👋 Showing welcome for first-time user');
         }
-    }, [isCheckingFirstTime, isFirstTime, chatHistory]);
+    }, [isCheckingFirstTime, isFirstTime, chatHistory, hasConversationMessages]);
 
     // Auto-collapse tools when new messages arrive
     useEffect(() => {
@@ -323,7 +322,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            handleSendMessage();
+            void handleSendMessage();
         }
     };
 
@@ -357,7 +356,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         console.log('Add Context clicked');
     };
 
-    const handleNewConversation = () => {
+    const handleNewConversation = useCallback(() => {
         clearHistory();
         setInputMessage('');
         setCurrentContext(null);
@@ -370,7 +369,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         timerIntervals.current = {};
         
         markAsReturningUser();
-    };
+    }, [clearHistory, markAsReturningUser]);
 
     const handleWelcomeGetStarted = () => {
         setShowWelcome(false);
@@ -435,12 +434,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         }
     };
 
-    const handleImageUpload = async (file: File): Promise<void> => {
+    const handleImageUpload = useCallback(async (file: File): Promise<void> => {
         const maxSize = 10 * 1024 * 1024; // 10MB limit
         if (file.size > maxSize) {
             const displayName = file.name || 'clipboard image';
             console.error('Image too large:', displayName);
-            vscode.postMessage({
+            await vscode.postMessage({
                 command: 'showError',
                 data: `Image "${displayName}" is too large. Maximum size is 10MB.`
             });
@@ -487,7 +486,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         };
 
         reader.readAsDataURL(file);
-    };
+    }, [vscode, setUploadingImages]);
 
     // Auto-set context when images finish uploading
     useEffect(() => {
@@ -509,10 +508,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             // Clear pending images after setting context
             setPendingImages([]);
         }
-    }, [uploadingImages.length, pendingImages.length]);
+    }, [uploadingImages.length, pendingImages.length, pendingImages]);
 
     // Helper function to check if tool is loading
-    const isToolLoading = (toolCallPart: any, msgIndex: number) => {
+    const isToolLoading = useCallback((toolCallPart: any, msgIndex: number) => {
         const toolCallId = toolCallPart.toolCallId;
         const hasResult = chatHistory.slice(msgIndex + 1).some(laterMsg => 
             laterMsg.role === 'tool' && 
@@ -523,7 +522,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             )
         );
         return !hasResult || toolCallPart.metadata?.is_loading || false;
-    };
+    }, [chatHistory]);
 
     // Manage countdown timers for tool calls
     useEffect(() => {
@@ -596,14 +595,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         return () => {
             Object.values(timerIntervals.current).forEach(timer => clearInterval(timer));
         };
-    }, [chatHistory]);
+    }, [chatHistory, isToolLoading]);
 
     // Global drag & drop fallback for VS Code webview
     useEffect(() => {
         const handleGlobalDragOver = (e: DragEvent) => {
             e.preventDefault();
             e.stopPropagation();
-            if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
+            if (e.dataTransfer?.types.includes('Files')) {
                 e.dataTransfer.dropEffect = 'copy';
             }
         };
@@ -670,17 +669,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             }
         };
 
+        // Create wrapper functions to handle async properly
+        const dropWrapper = (e: DragEvent) => void handleGlobalDrop(e);
+        const pasteWrapper = (e: ClipboardEvent) => void handleGlobalPaste(e);
+
         // Add global listeners
         document.addEventListener('dragover', handleGlobalDragOver);
-        document.addEventListener('drop', handleGlobalDrop);
-        document.addEventListener('paste', handleGlobalPaste);
+        document.addEventListener('drop', dropWrapper);
+        document.addEventListener('paste', pasteWrapper);
 
         return () => {
             document.removeEventListener('dragover', handleGlobalDragOver);
-            document.removeEventListener('drop', handleGlobalDrop);
-            document.removeEventListener('paste', handleGlobalPaste);
+            document.removeEventListener('drop', dropWrapper);
+            document.removeEventListener('paste', pasteWrapper);
         };
-    }, [isLoading, handleImageUpload, showWelcome]);
+    }, [isLoading, handleImageUpload, showWelcome, vscode]);
 
     const renderChatMessage = (msg: ChatMessage, index: number) => {
         // Helper function to extract text content from CoreMessage
@@ -1303,7 +1306,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             <div className="chat-placeholder__content">
                 <div className="empty-state-message">
                     <p>
-                        <strong>Cursor/Windsurf/Claude Code rules already added</strong>, prompt Cursor/Windsurf/Claude Code to design UI like <kbd>Help me design a calculator UI</kbd> and preview the UI in Securedesign canvas by <kbd>Cmd+Shift+P</kbd> <code>'Securedesign: Open canvas view'</code>
+                        <strong>Cursor/Windsurf/Claude Code rules already added</strong>, prompt Cursor/Windsurf/Claude Code to design UI like <kbd>Help me design a calculator UI</kbd> and preview the UI in Securedesign canvas by <kbd>Cmd+Shift+P</kbd> <code>&apos;Securedesign: Open canvas view&apos;</code>
                     </p>
                     <div className="empty-state-divider">OR</div>
                     <p>
@@ -1320,7 +1323,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDragOver={handleDragOver}
-            onDrop={handleDrop}
+            onDrop={(e) => void handleDrop(e)}
         >
 
             {layout === 'panel' && (
@@ -1458,17 +1461,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                                         fileInput.type = 'file';
                                         fileInput.accept = 'image/*';
                                         fileInput.multiple = true;
-                                        fileInput.onchange = async (e) => {
-                                            const files = (e.target as HTMLInputElement).files;
-                                            if (files) {
-                                                for (const file of Array.from(files)) {
-                                                    try {
-                                                        await handleImageUpload(file);
-                                                    } catch (error) {
-                                                        console.error('Error uploading image:', error);
+                                        fileInput.onchange = (e) => {
+                                            void (async () => {
+                                                const files = (e.target as HTMLInputElement).files;
+                                                if (files) {
+                                                    for (const file of Array.from(files)) {
+                                                        try {
+                                                            await handleImageUpload(file);
+                                                        } catch (error) {
+                                                            console.error('Error uploading image:', error);
+                                                        }
                                                     }
                                                 }
-                                            }
+                                            })();
                                         };
                                         fileInput.click();
                                     }}
@@ -1495,7 +1500,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                                     </button>
                                 ) : (
                         <button 
-                            onClick={handleSendMessage}
+                            onClick={() => void handleSendMessage()}
                                         disabled={!inputMessage.trim() || showWelcome}
                             className="send-btn"
                                         title="Send message"

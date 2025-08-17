@@ -4,15 +4,13 @@ import * as mime from 'mime-types';
 import { tool } from 'ai';
 import { z } from 'zod';
 import type { ExecutionContext } from '../types/agent';
-import type {
-  ToolResponse 
-} from './tool-utils';
 import { 
   handleToolError, 
   validateWorkspacePath, 
   resolveWorkspacePath, 
   createSuccessResponse,
-  validateFileExists 
+  validateFileExists,
+  type ToolResponse 
 } from './tool-utils';
 
 /**

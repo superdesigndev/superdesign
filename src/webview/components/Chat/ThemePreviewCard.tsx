@@ -120,7 +120,7 @@ const ThemePreviewCard: React.FC<ThemePreviewCardProps> = ({
       }
     };
 
-    loadCssFromFile();
+    void loadCssFromFile();
   }, [cssFilePath, cssSheet, vscode]);
 
   // Parse CSS when content is available
@@ -138,7 +138,7 @@ const ThemePreviewCard: React.FC<ThemePreviewCardProps> = ({
 
   const handleCopyCSS = () => {
     if (currentCssContent) {
-      navigator.clipboard.writeText(currentCssContent);
+      void navigator.clipboard.writeText(currentCssContent);
     }
   };
 

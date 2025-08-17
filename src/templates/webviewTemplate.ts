@@ -24,8 +24,8 @@ export function generateWebviewHtml(
     console.log('Generated logo URIs:', logoUris);
     
     // Check if files exist
-    const fs = require('fs');
-    const path = require('path');
+    const fs = await import('fs');
+    const path = await import('path');
     Object.entries(logoUris).forEach(([name, uri]) => {
         const filePath = path.join(extensionUri.fsPath, 'src', 'assets', name === 'bolt' ? 'bolt_logo.jpg' : `${name === 'claudeCode' ? 'claude_code' : name}_logo.png`);
         const exists = fs.existsSync(filePath);

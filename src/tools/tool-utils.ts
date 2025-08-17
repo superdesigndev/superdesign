@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as fs from 'fs';
 import type { ExecutionContext } from '../types/agent';
 
 /**
@@ -134,7 +135,6 @@ export function validateRequiredString(value: any, paramName: string): ToolError
  * Validation helper for file existence
  */
 export function validateFileExists(absolutePath: string, filePath: string): ToolErrorResponse | null {
-  const fs = require('fs');
   
   try {
     if (!fs.existsSync(absolutePath)) {
@@ -154,7 +154,6 @@ export function validateFileExists(absolutePath: string, filePath: string): Tool
  * Validation helper for directory existence
  */
 export function validateDirectoryExists(absolutePath: string, dirPath: string): ToolErrorResponse | null {
-  const fs = require('fs');
   
   try {
     if (!fs.existsSync(absolutePath)) {

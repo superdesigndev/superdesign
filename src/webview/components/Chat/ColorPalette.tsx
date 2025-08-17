@@ -7,7 +7,7 @@ interface ColorPaletteProps {
 
 const ColorPalette: React.FC<ColorPaletteProps> = ({ colors, isDarkMode }) => {
   const handleColorCopy = (color: string) => {
-    navigator.clipboard.writeText(color);
+    void navigator.clipboard.writeText(color);
   };
 
   const renderColorGroup = (groupName: string, colorGroup: any) => {

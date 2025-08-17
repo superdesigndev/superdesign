@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
-import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
 import DesignFrame from './DesignFrame';
 import { calculateGridPosition, calculateFitToView, getGridMetrics, generateResponsiveConfig, buildHierarchyTree, calculateHierarchyPositions, getHierarchicalPosition, detectDesignRelationships } from '../utils/gridLayout';
 import type { 
@@ -15,9 +14,7 @@ import type {
     GridPosition,
     LayoutMode,
     HierarchyTree,
-    ConnectionLine
-} from '../types/canvas.types';
-import { 
+    ConnectionLine,
     CanvasState
 } from '../types/canvas.types';
 import ConnectionLines from './ConnectionLines';
@@ -268,6 +265,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
 
         window.addEventListener('message', messageHandler);
         return () => window.removeEventListener('message', messageHandler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [vscode]); // Removed currentConfig dependency to prevent constant re-renders
 
     const handleFrameSelect = (fileName: string) => {

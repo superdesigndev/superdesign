@@ -3,15 +3,13 @@ import { tool } from 'ai';
 import * as fs from 'fs';
 import * as path from 'path';
 import type { ExecutionContext } from '../types/agent';
-import type {
-  ToolResponse 
-} from './tool-utils';
 import { 
   handleToolError, 
   validateWorkspacePath, 
   resolveWorkspacePath, 
   createSuccessResponse,
-  validateDirectoryExists 
+  validateDirectoryExists,
+  type ToolResponse 
 } from './tool-utils';
 
 const grepParametersSchema = z.object({

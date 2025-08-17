@@ -1,20 +1,17 @@
 import { z } from 'zod';
 import { tool } from 'ai';
-import type { ChildProcess } from 'child_process';
-import { spawn } from 'child_process';
+import { spawn, type ChildProcess } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import type { ExecutionContext } from '../types/agent';
-import type {
-  ToolResponse 
-} from './tool-utils';
 import { 
   handleToolError, 
   validateWorkspacePath, 
   resolveWorkspacePath, 
   createSuccessResponse,
-  validateDirectoryExists 
+  validateDirectoryExists,
+  type ToolResponse 
 } from './tool-utils';
 
 const bashParametersSchema = z.object({

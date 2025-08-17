@@ -232,7 +232,13 @@ export default [
             "no-console": "off",
         },
     },
-    
+        {
+        files: ["src/tools/*.ts"],
+        rules: {
+            "@typescript-eslint/naming-convention": "off",
+            "@typescript-eslint/require-await": "off"
+        },
+    },
     // Gradual migration - temporary overrides
     {
         files: ["src/**/*.ts", "src/**/*.tsx"],

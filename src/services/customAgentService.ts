@@ -1,5 +1,4 @@
-import type { ModelMessage } from 'ai';
-import { streamText } from 'ai';
+import { streamText, type ModelMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
@@ -31,7 +30,7 @@ export class CustomAgentService implements AgentService {
         this.setupWorkingDirectory();
     }
 
-    private async setupWorkingDirectory(): Promise<void> {
+    private setupWorkingDirectory() {
         try {
             // Try to get workspace root first
             const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
@@ -661,7 +660,7 @@ I've created the html design, please reveiw and let me know if you need any chan
         this.outputChannel.appendLine(`Streaming enabled: ${!!onMessage}`);
 
         if (!this.isInitialized) {
-            await this.setupWorkingDirectory();
+            this.setupWorkingDirectory();
         }
 
         const responseMessages: any[] = [];
@@ -927,9 +926,9 @@ I've created the html design, please reveiw and let me know if you need any chan
         return this.isInitialized;
     }
 
-    async waitForInitialization(): Promise<boolean> {
+    waitForInitialization(): boolean {
         if (!this.isInitialized) {
-            await this.setupWorkingDirectory();
+            this.setupWorkingDirectory();
         }
         return this.isInitialized;
     }

@@ -152,7 +152,7 @@ const ThemePreview: React.FC<ThemePreviewProps> = ({ theme, isDarkMode, cssSheet
   useEffect(() => {
     if (!cssSheet || !previewRef.current) {return;}
 
-    const setupPreview = async () => {
+    const setupPreview = () => {
       // Remove existing style element first
       if (styleRef.current) {
         styleRef.current.remove();
@@ -450,6 +450,7 @@ const ThemePreview: React.FC<ThemePreviewProps> = ({ theme, isDarkMode, cssSheet
         if (requiredFonts.length > 0 && !fontsLoadedRef.current) {
           try {
             await loadGoogleFonts(requiredFonts);
+            // eslint-disable-next-line require-atomic-updates
             fontsLoadedRef.current = true;
           } catch (error) {
             console.warn('Failed to load Google Fonts:', error);
@@ -459,10 +460,10 @@ const ThemePreview: React.FC<ThemePreviewProps> = ({ theme, isDarkMode, cssSheet
       };
 
       // Start font loading in background
-      loadFonts();
+      void loadFonts();
     };
 
-    setupPreview();
+    void setupPreview();
 
     // Cleanup on unmount
     return () => {

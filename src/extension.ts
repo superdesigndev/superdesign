@@ -190,7 +190,7 @@ function detectCurrentIDE(): { isCursor: boolean; isWindsurf: boolean } {
 // Function to check if Claude command exists
 async function claudeCommandExists(): Promise<boolean> {
 	try {
-		const { exec } = require('child_process');
+		const { exec } = await import('child_process');
 		
 		// Check on Windows host first
 		const checkHost = new Promise<boolean>((resolve) => {
@@ -1370,17 +1370,17 @@ export function activate(context: vscode.ExtensionContext) {
 
 			case 'saveImageToMoodboard':
 				// Save uploaded image to moodboard directory
-				saveImageToMoodboard(message.data, sidebarProvider);
+				void saveImageToMoodboard(message.data, sidebarProvider);
 				break;
 
 			case 'getBase64Image':
 				// Convert saved image to base64 for AI SDK
-				getBase64Image(message.filePath, sidebarProvider);
+				void getBase64Image(message.filePath, sidebarProvider);
 				break;
 
 			case 'getCssFileContent':
 				// Read CSS file content for theme preview
-				getCssFileContent(message.filePath, sidebarProvider);
+				void getCssFileContent(message.filePath, sidebarProvider);
 				break;
 
 			case 'showError':
@@ -1789,7 +1789,7 @@ class SuperdesignCanvasPanel {
 			message => {
 				switch (message.command) {
 					case 'loadDesignFiles':
-						this._loadDesignFiles();
+						void this._loadDesignFiles();
 						break;
 					case 'selectFrame':
 						Logger.debug(`Frame selected: ${message.data?.fileName}`);

@@ -1,5 +1,4 @@
-import type React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type React } from 'react';
 import type { CoreMessage } from 'ai';
 
 // Additional metadata for UI state
