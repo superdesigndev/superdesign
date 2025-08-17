@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import type { WebviewContext } from '../types/context';
 
-export function generateWebviewHtml(
+export async function generateWebviewHtml(
     webview: vscode.Webview,
     extensionUri: vscode.Uri,
     context: WebviewContext
-): string {
+): Promise<string> {
     const scriptUri = webview.asWebviewUri(
         vscode.Uri.joinPath(extensionUri, 'dist', 'webview.js')
     );

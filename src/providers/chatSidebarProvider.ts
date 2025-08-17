@@ -29,7 +29,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
         }
     }
 
-    public resolveWebviewView(
+    public async resolveWebviewView(
         webviewView: vscode.WebviewView,
         _context: vscode.WebviewViewResolveContext,
         _token: vscode.CancellationToken
@@ -49,11 +49,13 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             extensionUri: this._extensionUri.toString(),
         };
 
-        webviewView.webview.html = generateWebviewHtml(
+        const html = await generateWebviewHtml(
             webviewView.webview,
             this._extensionUri,
             webviewContext
         );
+        // eslint-disable-next-line require-atomic-updates
+        webviewView.webview.html = html;
 
         // Handle messages from the webview
         webviewView.webview.onDidReceiveMessage(async message => {
