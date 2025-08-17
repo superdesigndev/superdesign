@@ -9,7 +9,7 @@ export interface AgentService {
         abortController?: AbortController,
         onMessage?: (message: any) => void
     ): Promise<any[]>;
-    
+
     hasApiKey(): boolean;
     isApiKeyAuthError(errorMessage: string): boolean;
 }
@@ -19,4 +19,4 @@ export interface ExecutionContext {
     sessionId: string;
     outputChannel: vscode.OutputChannel;
     abortController?: AbortController;
-} 
+}

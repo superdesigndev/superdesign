@@ -298,13 +298,26 @@
 }
 
 @keyframes typing {
-    0%, 80%, 100% { opacity: 0.3; }
-    40% { opacity: 1; }
+    0%,
+    80%,
+    100% {
+        opacity: 0.3;
+    }
+    40% {
+        opacity: 1;
+    }
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 0.4; transform: scale(0.8); }
-    50% { opacity: 1; transform: scale(1.1); }
+    0%,
+    100% {
+        opacity: 0.4;
+        transform: scale(0.8);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
 }
 
 /* Generating content layout */
@@ -337,15 +350,32 @@
 }
 
 @keyframes generating-pulse {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
 }
 
 @keyframes generating-dots {
-    0%, 20% { content: ''; }
-    25%, 45% { content: '.'; }
-    50%, 70% { content: '..'; }
-    75%, 100% { content: '...'; }
+    0%,
+    20% {
+        content: '';
+    }
+    25%,
+    45% {
+        content: '.';
+    }
+    50%,
+    70% {
+        content: '..';
+    }
+    75%,
+    100% {
+        content: '...';
+    }
 }
 
 .generating-stop-btn {
@@ -375,8 +405,6 @@
     padding-left: 0;
     padding-right: 0;
 }
-
-
 
 /* Chat placeholder */
 .chat-placeholder {
@@ -530,15 +558,15 @@
         max-width: 90%;
         margin-top: 16px;
     }
-    
+
     .empty-state-message {
         gap: 12px;
     }
-    
+
     .empty-state-message p {
         font-size: 13px;
     }
-    
+
     .empty-state-divider::before,
     .empty-state-divider::after {
         width: 20px;
@@ -828,13 +856,13 @@
         padding: 4px 6px;
         gap: 4px;
     }
-    
+
     .selectors-group {
         gap: 2px;
         flex-shrink: 1;
         min-width: 0;
     }
-    
+
     .agent-selector {
         min-width: 80px;
         font-size: 10px;
@@ -843,30 +871,30 @@
         background-position: right 4px center;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 12 4-4 4 4'/%3E%3C/svg%3E");
     }
-    
+
     /* Selector icon responsive styles removed - handled by ModelSelector component */
-    
+
     .attach-btn,
     .send-btn {
         width: 20px;
         height: 20px;
         flex-shrink: 0;
     }
-    
+
     .attach-btn svg {
         width: 10px;
         height: 10px;
     }
-    
+
     .send-btn svg {
         width: 12px;
         height: 12px;
     }
-    
+
     .chat-input {
         padding: 6px 8px 4px 8px;
     }
-    
+
     .message-input {
         font-size: 13px;
     }
@@ -881,8 +909,14 @@
 }
 
 @keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0.3; }
+    0%,
+    50% {
+        opacity: 1;
+    }
+    51%,
+    100% {
+        opacity: 0.3;
+    }
 }
 
 /* Tool message styles - compact */
@@ -1310,8 +1344,12 @@
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Tool group styles - compact */
@@ -1482,8 +1520,12 @@
 }
 
 @keyframes spin-simple {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .tool-group__children {
@@ -1603,8 +1645,12 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Loading Tips */
@@ -1640,8 +1686,14 @@
 }
 
 @keyframes tipFadeIn {
-    0% { opacity: 0; transform: translateY(5px); }
-    100% { opacity: 1; transform: translateY(0); }
+    0% {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Enhanced tool message states */
@@ -1663,13 +1715,22 @@
 }
 
 @keyframes rotate {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 @keyframes pulse-loading {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 1;
+    }
 }
 
 /* Responsive adjustments for mobile */
@@ -1677,11 +1738,11 @@
     .tip-text {
         font-size: 11px;
     }
-    
+
     .tool-group-info {
         gap: 1px;
     }
-    
+
     .tool-time-remaining {
         font-size: 10px;
     }
@@ -1790,7 +1851,7 @@
 .clear-chat-icon-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-} 
+}
 
 .chat-interface {
 }
@@ -2212,7 +2273,7 @@
     .theme-tool-message--panel {
         margin-bottom: 16px;
     }
-    
+
     .theme-tool-message--sidebar {
         margin-bottom: 10px;
     }
@@ -2280,6 +2341,3 @@
     background: var(--vscode-list-hoverBackground) !important;
     color: var(--vscode-foreground) !important;
 }
-
-
- 

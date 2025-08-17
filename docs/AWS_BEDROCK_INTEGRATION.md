@@ -24,19 +24,20 @@ AWS Bedrock integration allows SuperDesign to use various AI models available th
 ### Setup Instructions
 
 1. **Configure AWS Credentials**:
-   - Open Command Palette (Ctrl/Cmd + Shift + P)
-   - Run "Superdesign: Configure AWS Bedrock"
-   - Enter your AWS Access Key ID (starts with AKIA)
-   - Enter your AWS Secret Access Key
-   - Specify your preferred AWS region (default: us-east-1)
+    - Open Command Palette (Ctrl/Cmd + Shift + P)
+    - Run "Superdesign: Configure AWS Bedrock"
+    - Enter your AWS Access Key ID (starts with AKIA)
+    - Enter your AWS Secret Access Key
+    - Specify your preferred AWS region (default: us-east-1)
 
 2. **Select Bedrock Model**:
-   - Access model selection through SuperDesign interface
-   - Choose from available Bedrock models (prefixed with provider name, e.g., `anthropic.claude-3-5-sonnet-20241022-v2:0`)
+    - Access model selection through SuperDesign interface
+    - Choose from available Bedrock models (prefixed with provider name, e.g., `anthropic.claude-3-5-sonnet-20241022-v2:0`)
 
 ## Supported Models
 
 ### Anthropic Claude on Bedrock
+
 - `anthropic.claude-3-5-sonnet-20241022-v2:0` (default)
 - `anthropic.claude-3-5-sonnet-20240620-v1:0`
 - `anthropic.claude-3-opus-20240229-v1:0`
@@ -44,11 +45,13 @@ AWS Bedrock integration allows SuperDesign to use various AI models available th
 - `anthropic.claude-3-haiku-20240307-v1:0`
 
 ### Amazon Nova Models
+
 - `amazon.nova-pro-v1:0`
 - `amazon.nova-lite-v1:0`
 - `amazon.nova-micro-v1:0`
 
 ### Meta Llama Models
+
 - `meta.llama3-2-90b-instruct-v1:0`
 - `meta.llama3-2-11b-instruct-v1:0`
 - `meta.llama3-2-3b-instruct-v1:0`
@@ -58,16 +61,19 @@ AWS Bedrock integration allows SuperDesign to use various AI models available th
 - `meta.llama3-1-8b-instruct-v1:0`
 
 ### Mistral Models
+
 - `mistral.mistral-large-2407-v1:0`
 - `mistral.mistral-small-2402-v1:0`
 - `mistral.mistral-7b-instruct-v0:2`
 - `mistral.mixtral-8x7b-instruct-v0:1`
 
 ### AI21 Labs Models
+
 - `ai21.jamba-1-5-large-v1:0`
 - `ai21.jamba-1-5-mini-v1:0`
 
 ### Cohere Models
+
 - `cohere.command-r-plus-v1:0`
 - `cohere.command-r-v1:0`
 
@@ -117,6 +123,7 @@ AWS Bedrock integration allows SuperDesign to use various AI models available th
 ## Next Steps
 
 Consider implementing:
+
 - IAM role-based authentication for enhanced security
 - Model usage monitoring and cost tracking
 - Support for additional Bedrock models as they become available

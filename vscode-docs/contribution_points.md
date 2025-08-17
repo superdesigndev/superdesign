@@ -2,7 +2,7 @@ Try [MCP servers](https://code.visualstudio.com/mcp) to extend agent mode in VS 
 
 Dismiss this update
 
-[Edit](https://vscode.dev/github/microsoft/vscode-docs/blob/main/api/references/contribution-points.md "Edit this document in vscode.dev")
+[Edit](https://vscode.dev/github/microsoft/vscode-docs/blob/main/api/references/contribution-points.md 'Edit this document in vscode.dev')
 
 # Contribution Points
 
@@ -41,7 +41,7 @@ Dismiss this update
 - [`viewsWelcome`](https://code.visualstudio.com/api/references/contribution-points#contributes.viewsWelcome)
 - [`walkthroughs`](https://code.visualstudio.com/api/references/contribution-points#contributes.walkthroughs)
 
-## [contributes.authentication](https://code.visualstudio.com/api/references/contribution-points\#contributes.authentication)
+## [contributes.authentication](https://code.visualstudio.com/api/references/contribution-points#contributes.authentication)
 
 Contributes an authentication provider. This will set up an activation event for your provider and display it in your extension's features.
 
@@ -59,7 +59,7 @@ Contributes an authentication provider. This will set up an activation event for
 Copy
 ```
 
-## [contributes.breakpoints](https://code.visualstudio.com/api/references/contribution-points\#contributes.breakpoints)
+## [contributes.breakpoints](https://code.visualstudio.com/api/references/contribution-points#contributes.breakpoints)
 
 Usually a debugger extension will also have a `contributes.breakpoints` entry where the extension lists the language file types for which setting breakpoints will be enabled.
 
@@ -79,7 +79,7 @@ Usually a debugger extension will also have a `contributes.breakpoints` entry wh
 Copy
 ```
 
-## [contributes.colors](https://code.visualstudio.com/api/references/contribution-points\#contributes.colors)
+## [contributes.colors](https://code.visualstudio.com/api/references/contribution-points#contributes.colors)
 
 Contributes new themable colors. These colors can be used by the extension in editor decorators and in the status bar. Once defined, users can customize the color in the `workspace.colorCustomization` setting and user themes can set the color value.
 
@@ -112,7 +112,7 @@ const errorColor = new vscode.ThemeColor('superstatus.error');
 Copy
 ```
 
-## [contributes.commands](https://code.visualstudio.com/api/references/contribution-points\#contributes.commands)
+## [contributes.commands](https://code.visualstudio.com/api/references/contribution-points#contributes.commands)
 
 Contribute the UI for a command consisting of a title and (optionally) an icon, category, and enabled state. Enablement is expressed with [when clauses](https://code.visualstudio.com/api/references/when-clause-contexts). By default, commands show in the **Command Palette** (Ctrl+Shift+P) but they can also show in other [menus](https://code.visualstudio.com/api/references/contribution-points#contributes.menus).
 
@@ -126,7 +126,7 @@ hand, shows disabled items but doesn't show the category label.
 > **Note:** When using icons from [product icons](https://code.visualstudio.com/api/references/icons-in-labels#icon-listing), setting `light` and `dark` will disable the icon.
 > The correct syntax is `"icon": "$(book)"`
 
-### [command example](https://code.visualstudio.com/api/references/contribution-points\#command-example)
+### [command example](https://code.visualstudio.com/api/references/contribution-points#command-example)
 
 ```
 {
@@ -151,7 +151,7 @@ See the [Commands Extension Guide](https://code.visualstudio.com/api/extension-g
 
 ![commands extension point example](https://code.visualstudio.com/assets/api/references/contribution-points/commands.png)
 
-### [Command icon specifications](https://code.visualstudio.com/api/references/contribution-points\#Command-icon-specifications)
+### [Command icon specifications](https://code.visualstudio.com/api/references/contribution-points#Command-icon-specifications)
 
 - `Size:` Icons should be 16x16 with a 1 pixel padding (image is 14x14) and centered.
 - `Color:` Icons should use a single color.
@@ -159,13 +159,13 @@ See the [Commands Extension Guide](https://code.visualstudio.com/api/extension-g
 
 ![command icons](https://code.visualstudio.com/assets/api/references/contribution-points/command-icons.png)
 
-## [contributes.configuration](https://code.visualstudio.com/api/references/contribution-points\#contributes.configuration)
+## [contributes.configuration](https://code.visualstudio.com/api/references/contribution-points#contributes.configuration)
 
 Contribute settings that will be exposed to the user. The user will be able to set these configuration options in the Settings editor or by editing a settings.json file directly.
 
 This section can either be a single object, representing a single category of settings, or an array of objects, representing multiple categories of settings. If there are multiple categories of settings, the Settings editor will show a submenu in the table of contents for that extension, and the title keys will be used for the submenu entry names.
 
-### [Configuration example](https://code.visualstudio.com/api/references/contribution-points\#Configuration-example)
+### [Configuration example](https://code.visualstudio.com/api/references/contribution-points#Configuration-example)
 
 ```
 {
@@ -195,7 +195,7 @@ Copy
 
 You can read these values from your extension using `vscode.workspace.getConfiguration('myExtension')`.
 
-### [Configuration schema](https://code.visualstudio.com/api/references/contribution-points\#Configuration-schema)
+### [Configuration schema](https://code.visualstudio.com/api/references/contribution-points#Configuration-schema)
 
 Your configuration entry is used both to provide intellisense when editing your settings in the JSON editor, and to define the way they appear in the settings UI.
 
@@ -229,7 +229,7 @@ The `properties` 2️⃣ in your `configuration` object will form a dictionary w
 
 Properties without an explicit `order` field will appear in lexicographical order in the settings UI ( **not** the order in which they're listed in the manifest).
 
-### [Setting titles](https://code.visualstudio.com/api/references/contribution-points\#Setting-titles)
+### [Setting titles](https://code.visualstudio.com/api/references/contribution-points#Setting-titles)
 
 In the settings UI, multiple fields will be used to construct a display title for each setting. Capital letters in your key are used to indicate word breaks.
 
@@ -245,7 +245,7 @@ If the configuration has multiple categories of settings, and the category does 
 
 As an example, for settings ID `css.completion.completePropertyWithSemicolon` and category ID `css`, because the prefix of the settings ID matches with the suffix of the category ID, the `css` part of the settings ID will be removed in the settings UI, and the generated title for the setting will be "Completion: **Complete Property With Semicolon**".
 
-### [Configuration property schema](https://code.visualstudio.com/api/references/contribution-points\#Configuration-property-schema)
+### [Configuration property schema](https://code.visualstudio.com/api/references/contribution-points#Configuration-property-schema)
 
 Configuration keys are defined using a superset of [JSON\\
 Schema](https://json-schema.org/overview/what-is-jsonschema).
@@ -379,7 +379,7 @@ You can use any of the validation JSON Schema properties to describe other const
 - `pattern` for restricting strings to a given regular expression
 - `patternErrorMessage` for giving a tailored error message when a pattern does not match.
 - `format` for restricting strings to well-known formats, such as `date`, `time`, `ipv4`, `email`,
-and `uri`
+  and `uri`
 - `maxItems`, `minItems` for restricting array length
 - `editPresentation` for controlling whether a single-line inputbox or multi-line textarea is rendered for the string setting in the Settings editor
 
@@ -487,7 +487,7 @@ In the settings UI, this is rendered as:
 
 ![setting link example](https://code.visualstudio.com/assets/api/references/contribution-points/setting-link.png)
 
-## [contributes.configurationDefaults](https://code.visualstudio.com/api/references/contribution-points\#contributes.configurationDefaults)
+## [contributes.configurationDefaults](https://code.visualstudio.com/api/references/contribution-points#contributes.configurationDefaults)
 
 Contribute default values for other registered configurations and override their defaults.
 
@@ -520,7 +520,7 @@ You can also contribute default editor configurations for the provided language.
 Copy
 ```
 
-## [contributes.customEditors](https://code.visualstudio.com/api/references/contribution-points\#contributes.customEditors)
+## [contributes.customEditors](https://code.visualstudio.com/api/references/contribution-points#contributes.customEditors)
 
 The `customEditors` contribution point is how your extension tells VS Code about the custom editors that it provides. For example, VS Code needs to know what types of files your custom editor works with as well as how to identify your custom editor in any UI.
 
@@ -548,27 +548,27 @@ Copy
 
 - `viewType` \- Unique identifier for your custom editor.
 
-  This is how VS Code ties a custom editor contribution in the `package.json` to your custom editor implementation in code. This must be unique across all extensions, so instead of a generic `viewType` such as `"preview"` make sure to use one that is unique to your extension, for example `"viewType": "myAmazingExtension.svgPreview"`.
+    This is how VS Code ties a custom editor contribution in the `package.json` to your custom editor implementation in code. This must be unique across all extensions, so instead of a generic `viewType` such as `"preview"` make sure to use one that is unique to your extension, for example `"viewType": "myAmazingExtension.svgPreview"`.
 
 - `displayName` \- Name that identifies the custom editor in VS Code's UI.
 
-  The display name is shown to the user in VS Code UI such as the **View: Reopen with** dropdown.
+    The display name is shown to the user in VS Code UI such as the **View: Reopen with** dropdown.
 
 - `selector` \- Specifies which files a custom editor is active for.
 
-  The `selector` is an array of one or more [glob patterns](https://code.visualstudio.com/docs/editor/glob-patterns). These glob patterns are matched against file names to determine if the custom editor can be used for them. A `filenamePattern` such as `*.png` will enable the custom editor for all PNG files.
+    The `selector` is an array of one or more [glob patterns](https://code.visualstudio.com/docs/editor/glob-patterns). These glob patterns are matched against file names to determine if the custom editor can be used for them. A `filenamePattern` such as `*.png` will enable the custom editor for all PNG files.
 
-  You can also create more specific patterns that match on file or directory names, for example `**/translations/*.json`.
+    You can also create more specific patterns that match on file or directory names, for example `**/translations/*.json`.
 
 - `priority` - (optional) Specifies when the custom editor is used.
 
-  `priority` controls when a custom editor is used when a resource is open. Possible values are:
-  - `"default"` - Try to use the custom editor for every file that matches the custom editor's `selector`. If there are multiple custom editors for a given file, the user will have to select which custom editor they want to use.
-  - `"option"` - Do not use the custom editor by default but allow users to switch to it or configure it as their default.
+    `priority` controls when a custom editor is used when a resource is open. Possible values are:
+    - `"default"` - Try to use the custom editor for every file that matches the custom editor's `selector`. If there are multiple custom editors for a given file, the user will have to select which custom editor they want to use.
+    - `"option"` - Do not use the custom editor by default but allow users to switch to it or configure it as their default.
 
 You can learn more in the [Custom Editors](https://code.visualstudio.com/api/extension-guides/custom-editors) extension guide.
 
-## [contributes.debuggers](https://code.visualstudio.com/api/references/contribution-points\#contributes.debuggers)
+## [contributes.debuggers](https://code.visualstudio.com/api/references/contribution-points#contributes.debuggers)
 
 Contribute a debugger to VS Code. A debugger contribution has the following properties:
 
@@ -582,7 +582,7 @@ Contribute a debugger to VS Code. A debugger contribution has the following prop
 - `variables` introduces substitution variables and binds them to commands implemented by the debugger extension.
 - `languages` those languages for which the debug extension could be considered the "default debugger".
 
-### [debugger example](https://code.visualstudio.com/api/references/contribution-points\#debugger-example)
+### [debugger example](https://code.visualstudio.com/api/references/contribution-points#debugger-example)
 
 ```
 {
@@ -643,13 +643,13 @@ Copy
 
 For a full walkthrough on how to integrate a `debugger`, go to [Debugger Extension](https://code.visualstudio.com/api/extension-guides/debugger-extension).
 
-## [contributes.grammars](https://code.visualstudio.com/api/references/contribution-points\#contributes.grammars)
+## [contributes.grammars](https://code.visualstudio.com/api/references/contribution-points#contributes.grammars)
 
 Contribute a TextMate grammar to a language. You must provide the `language` this grammar applies to, the TextMate `scopeName` for the grammar and the file path.
 
 > **Note:** The file containing the grammar can be in JSON (filenames ending in .json) or in XML plist format (all other files).
 
-### [grammar example](https://code.visualstudio.com/api/references/contribution-points\#grammar-example)
+### [grammar example](https://code.visualstudio.com/api/references/contribution-points#grammar-example)
 
 ```
 {
@@ -673,7 +673,7 @@ See the [Syntax Highlight Guide](https://code.visualstudio.com/api/language-exte
 
 ![grammars extension point example](https://code.visualstudio.com/assets/api/references/contribution-points/grammars.png)
 
-## [contributes.icons](https://code.visualstudio.com/api/references/contribution-points\#contributes.icons)
+## [contributes.icons](https://code.visualstudio.com/api/references/contribution-points#contributes.icons)
 
 Contribute a new icon by ID, along with a default icon. The icon ID can then be used by the extension (or any other extensions that depend on the extension) anywhere a `ThemeIcon` can be used `new ThemeIcon("iconId")`, in [Markdown strings](https://code.visualstudio.com/api/references/icons-in-labels#icon-in-labels) ( `$(iconId)`), and as icons in certain contribution points.
 
@@ -701,13 +701,13 @@ Contribute a new icon by ID, along with a default icon. The icon ID can then be 
 Copy
 ```
 
-## [contributes.iconThemes](https://code.visualstudio.com/api/references/contribution-points\#contributes.iconThemes)
+## [contributes.iconThemes](https://code.visualstudio.com/api/references/contribution-points#contributes.iconThemes)
 
 Contribute a file icon theme to VS Code. File icons are shown next to file names, indicating the file type.
 
 You must specify an id (used in the settings), a label and the path to the file icon definition file.
 
-### [file icon theme example](https://code.visualstudio.com/api/references/contribution-points\#file-icon-theme-example)
+### [file icon theme example](https://code.visualstudio.com/api/references/contribution-points#file-icon-theme-example)
 
 ```
 {
@@ -728,7 +728,7 @@ Copy
 
 See the [File Icon Theme Guide](https://code.visualstudio.com/api/extension-guides/file-icon-theme) on how to create a File Icon Theme.
 
-## [contributes.jsonValidation](https://code.visualstudio.com/api/references/contribution-points\#contributes.jsonValidation)
+## [contributes.jsonValidation](https://code.visualstudio.com/api/references/contribution-points#contributes.jsonValidation)
 
 Contribute a validation schema for a specific type of `json` file. The `url` value can be either a local path to a schema file included in the extension or a remote server URL such as a [json schema store](https://www.schemastore.org/json).
 
@@ -746,7 +746,7 @@ Contribute a validation schema for a specific type of `json` file. The `url` val
 Copy
 ```
 
-## [contributes.keybindings](https://code.visualstudio.com/api/references/contribution-points\#contributes.keybindings)
+## [contributes.keybindings](https://code.visualstudio.com/api/references/contribution-points#contributes.keybindings)
 
 Contribute a key binding rule defining what command should be invoked when the user presses a key combination. See the [Key Bindings](https://code.visualstudio.com/docs/getstarted/keybindings) topic where key bindings are explained in detail.
 
@@ -756,7 +756,7 @@ Contributing a key binding will cause the Default Keyboard Shortcuts to display 
 
 > **Note:** When a command is invoked (from a key binding or from the Command Palette), VS Code will emit an activationEvent `onCommand:${command}`.
 
-### [keybinding example](https://code.visualstudio.com/api/references/contribution-points\#keybinding-example)
+### [keybinding example](https://code.visualstudio.com/api/references/contribution-points#keybinding-example)
 
 Defining that Ctrl+F1 under Windows and Linux and Cmd+F1 under macOS trigger the `"extension.sayHello"` command:
 
@@ -778,20 +778,20 @@ Copy
 
 ![keybindings extension point example](https://code.visualstudio.com/assets/api/references/contribution-points/keybindings.png)
 
-## [contributes.languages](https://code.visualstudio.com/api/references/contribution-points\#contributes.languages)
+## [contributes.languages](https://code.visualstudio.com/api/references/contribution-points#contributes.languages)
 
 Contribute definition of a programming language. This will introduce a new language or enrich the knowledge VS Code has about a language.
 
 The main effects of `contributes.languages` are:
 
 - Define a `languageId` that can be reused in other parts of VS Code API, such as `vscode.TextDocument.languageId` and the `onLanguage` Activation Events.
+    - You can contribute a human-readable using the `aliases` field. The first item in the list will be used as the human-readable label.
 
-  - You can contribute a human-readable using the `aliases` field. The first item in the list will be used as the human-readable label.
 - Associate file name extensions ( `extensions`), file names ( `filenames`), file name [glob patterns](https://code.visualstudio.com/docs/editor/glob-patterns) ( `filenamePatterns`), files that begin with a specific line (such as hashbang) ( `firstLine`), and `mimetypes` to that `languageId`.
 - Contribute a set of [Declarative Language Features](https://code.visualstudio.com/api/language-extensions/overview#declarative-language-features) for the contributed language. Learn more about the configurable editing features in the [Language Configuration Guide](https://code.visualstudio.com/api/language-extensions/language-configuration-guide).
 - Contribute an icon which can be used as in file icon themes if theme does not contain an icon for the language
 
-### [language example](https://code.visualstudio.com/api/references/contribution-points\#language-example)
+### [language example](https://code.visualstudio.com/api/references/contribution-points#language-example)
 
 ```
 {
@@ -815,7 +815,7 @@ The main effects of `contributes.languages` are:
 Copy
 ```
 
-## [contributes.menus](https://code.visualstudio.com/api/references/contribution-points\#contributes.menus)
+## [contributes.menus](https://code.visualstudio.com/api/references/contribution-points#contributes.menus)
 
 Contribute a menu item for a command to the editor or Explorer. The menu item definition contains the command that should be invoked when selected and the condition under which the item should show. The latter is defined with the `when` clause, which uses the key bindings [when clause contexts](https://code.visualstudio.com/api/references/when-clause-contexts).
 
@@ -875,7 +875,7 @@ Currently extension writers can contribute to:
 
 In addition to a title, a contributed command can specify the icon which VS Code will show when the invoking menu item is represented as a button, for example on a title menu bar.
 
-### [menu example](https://code.visualstudio.com/api/references/contribution-points\#menu-example)
+### [menu example](https://code.visualstudio.com/api/references/contribution-points#menu-example)
 
 Here's a command menu item:
 
@@ -941,7 +941,7 @@ Copy
 
 ![menus extension point example (submenu)](https://code.visualstudio.com/assets/api/references/contribution-points/submenu.png)
 
-### [Context specific visibility of Command Palette menu items](https://code.visualstudio.com/api/references/contribution-points\#Context-specific-visibility-of-Command-Palette-menu-items)
+### [Context specific visibility of Command Palette menu items](https://code.visualstudio.com/api/references/contribution-points#Context-specific-visibility-of-Command-Palette-menu-items)
 
 When registering commands in `package.json`, they will automatically be shown in the **Command Palette** (Ctrl+Shift+P). To allow more control over command visibility, there is the `commandPalette` menu item. It allows you to define a `when` condition to control if a command should be visible in the **Command Palette** or not.
 
@@ -967,7 +967,7 @@ The snippet below makes the 'Hello World' command only visible in the **Command 
 Copy
 ```
 
-### [Sorting of groups](https://code.visualstudio.com/api/references/contribution-points\#Sorting-of-groups)
+### [Sorting of groups](https://code.visualstudio.com/api/references/contribution-points#Sorting-of-groups)
 
 Menu items can be sorted into groups. They are sorted in lexicographical order with the following defaults/rules.
 You can add menu items to these groups or add new groups of menu items in between, below, or above.
@@ -1032,7 +1032,7 @@ The **Extensions view context menu** has these default groups:
 - `1_copy` \- Commands related to copying extension information.
 - `2_configure` \- Commands related to configuring an extension.
 
-### [Sorting inside groups](https://code.visualstudio.com/api/references/contribution-points\#Sorting-inside-groups)
+### [Sorting inside groups](https://code.visualstudio.com/api/references/contribution-points#Sorting-inside-groups)
 
 The order inside a group depends on the title or an order-attribute. The group-local order of a menu item is specified by appending `@<number>` to the group identifier as shown below:
 
@@ -1049,7 +1049,7 @@ The order inside a group depends on the title or an order-attribute. The group-l
 Copy
 ```
 
-## [contributes.problemMatchers](https://code.visualstudio.com/api/references/contribution-points\#contributes.problemMatchers)
+## [contributes.problemMatchers](https://code.visualstudio.com/api/references/contribution-points#contributes.problemMatchers)
 
 Contribute problem matcher patterns. These contributions work in both the output panel runner and in the terminal runner. Below is an example to contribute a problem matcher for the gcc compiler in an extension:
 
@@ -1095,17 +1095,17 @@ Copy
 
 Also see: [Defining a Problem Matcher](https://code.visualstudio.com/docs/debugtest/tasks#_defining-a-problem-matcher)
 
-## [contributes.problemPatterns](https://code.visualstudio.com/api/references/contribution-points\#contributes.problemPatterns)
+## [contributes.problemPatterns](https://code.visualstudio.com/api/references/contribution-points#contributes.problemPatterns)
 
 Contributes named problem patterns that can be used in problem matchers (see above).
 
-## [contributes.productIconThemes](https://code.visualstudio.com/api/references/contribution-points\#contributes.productIconThemes)
+## [contributes.productIconThemes](https://code.visualstudio.com/api/references/contribution-points#contributes.productIconThemes)
 
 Contribute a product icon theme to VS Code. Product icons are all icons used in VS Code except file icons and icons contributed from extensions.
 
 You must specify an id (used in the settings), a label and the path to the icon definition file.
 
-### [product icon theme example](https://code.visualstudio.com/api/references/contribution-points\#product-icon-theme-example)
+### [product icon theme example](https://code.visualstudio.com/api/references/contribution-points#product-icon-theme-example)
 
 ```
 {
@@ -1126,7 +1126,7 @@ Copy
 
 See the [Product Icon Theme Guide](https://code.visualstudio.com/api/extension-guides/product-icon-theme) on how to create a Product Icon Theme.
 
-## [contributes.resourceLabelFormatters](https://code.visualstudio.com/api/references/contribution-points\#contributes.resourceLabelFormatters)
+## [contributes.resourceLabelFormatters](https://code.visualstudio.com/api/references/contribution-points#contributes.resourceLabelFormatters)
 
 Contributes resource label formatters that specify how to display URIs everywhere in the workbench. For example here's how an extension could contribute a formatter for URIs with scheme `remotehub`:
 
@@ -1150,7 +1150,7 @@ Copy
 
 This means that all URIs that have a scheme `remotehub` will get rendered by showing only the `path` segment of the URI and the separator will be `/`. Workspaces which have the `remotehub` URI will have the GitHub suffix in their label.
 
-## [contributes.semanticTokenModifiers](https://code.visualstudio.com/api/references/contribution-points\#contributes.semanticTokenModifiers)
+## [contributes.semanticTokenModifiers](https://code.visualstudio.com/api/references/contribution-points#contributes.semanticTokenModifiers)
 
 Contributes new semantic token modifiers that can be highlighted via theme rules.
 
@@ -1170,7 +1170,7 @@ Copy
 
 See the [Semantic Highlighting Guide](https://code.visualstudio.com/api/language-extensions/semantic-highlight-guide) to read more about semantic highlighting.
 
-## [contributes.semanticTokenScopes](https://code.visualstudio.com/api/references/contribution-points\#contributes.semanticTokenScopes)
+## [contributes.semanticTokenScopes](https://code.visualstudio.com/api/references/contribution-points#contributes.semanticTokenScopes)
 
 Contributes mapping between semantic token types & modifiers and scopes either as a fallback or to support language-specific themes.
 
@@ -1192,7 +1192,7 @@ Copy
 
 See the [Semantic Highlighting Guide](https://code.visualstudio.com/api/language-extensions/semantic-highlight-guide) to read more about semantic highlighting.
 
-## [contributes.semanticTokenTypes](https://code.visualstudio.com/api/references/contribution-points\#contributes.semanticTokenTypes)
+## [contributes.semanticTokenTypes](https://code.visualstudio.com/api/references/contribution-points#contributes.semanticTokenTypes)
 
 Contributes new semantic token types that can be highlighted via theme rules.
 
@@ -1213,7 +1213,7 @@ Copy
 
 See the [Semantic Highlighting Guide](https://code.visualstudio.com/api/language-extensions/semantic-highlight-guide) to read more about semantic highlighting.
 
-## [contributes.snippets](https://code.visualstudio.com/api/references/contribution-points\#contributes.snippets)
+## [contributes.snippets](https://code.visualstudio.com/api/references/contribution-points#contributes.snippets)
 
 Contribute snippets for a specific language. The `language` attribute is the [language identifier](https://code.visualstudio.com/docs/languages/identifiers) and the `path` is the relative path to the snippet file, which defines snippets in the [VS Code snippet format](https://code.visualstudio.com/docs/editing/userdefinedsnippets#_snippet-syntax).
 
@@ -1233,13 +1233,13 @@ The example below shows adding snippets for the Go language.
 Copy
 ```
 
-## [contributes.submenus](https://code.visualstudio.com/api/references/contribution-points\#contributes.submenus)
+## [contributes.submenus](https://code.visualstudio.com/api/references/contribution-points#contributes.submenus)
 
 Contribute a submenu as a placeholder onto which menu items can be contributed. A submenu requires a `label` to be shown in the parent menu.
 
 In addition to a title, commands can also define icons that VS Code will show in the editor title menu bar.
 
-### [submenu example](https://code.visualstudio.com/api/references/contribution-points\#submenu-example)
+### [submenu example](https://code.visualstudio.com/api/references/contribution-points#submenu-example)
 
 ```
 {
@@ -1257,7 +1257,7 @@ Copy
 
 ![submenus extension point example](https://code.visualstudio.com/assets/api/references/contribution-points/submenucontrib.png)
 
-## [contributes.taskDefinitions](https://code.visualstudio.com/api/references/contribution-points\#contributes.taskDefinitions)
+## [contributes.taskDefinitions](https://code.visualstudio.com/api/references/contribution-points#contributes.taskDefinitions)
 
 Contributes and defines an object literal structure that allows to uniquely identify a contributed task in the system. A task definition has at minimum a `type` property but it usually defines additional properties. For example a task definition for a task representing a script in a package.json file looks like this:
 
@@ -1296,7 +1296,7 @@ let task = new vscode.Task({ type: 'npm', script: 'test' }, ....);
 Copy
 ```
 
-## [contributes.terminal](https://code.visualstudio.com/api/references/contribution-points\#contributes.terminal)
+## [contributes.terminal](https://code.visualstudio.com/api/references/contribution-points#contributes.terminal)
 
 Contribute a terminal profile to VS Code, allowing extensions to handle the creation of the profiles. When defined, the profile should appear when creating the terminal profile
 
@@ -1330,13 +1330,13 @@ provideTerminalProfile(
 Copy
 ```
 
-## [contributes.themes](https://code.visualstudio.com/api/references/contribution-points\#contributes.themes)
+## [contributes.themes](https://code.visualstudio.com/api/references/contribution-points#contributes.themes)
 
 Contribute a color theme to VS Code, defining workbench colors and styles for syntax tokens in the editor.
 
 You must specify a label, whether the theme is a dark theme or a light theme (such that the rest of VS Code changes to match your theme) and the path to the file (JSON format).
 
-### [theme example](https://code.visualstudio.com/api/references/contribution-points\#theme-example)
+### [theme example](https://code.visualstudio.com/api/references/contribution-points#theme-example)
 
 ```
 {
@@ -1357,7 +1357,7 @@ Copy
 
 See the [Color Theme Guide](https://code.visualstudio.com/api/extension-guides/color-theme) on how to create a Color Theme.
 
-## [contributes.typescriptServerPlugins](https://code.visualstudio.com/api/references/contribution-points\#contributes.typescriptServerPlugins)
+## [contributes.typescriptServerPlugins](https://code.visualstudio.com/api/references/contribution-points#contributes.typescriptServerPlugins)
 
 Contributes [TypeScript server plugins](https://github.com/microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin) that augment VS Code's JavaScript and TypeScript support:
 
@@ -1401,7 +1401,7 @@ TypeScript server plugins are loaded for all JavaScript and TypeScript files whe
 Copy
 ```
 
-### [Plugin configuration](https://code.visualstudio.com/api/references/contribution-points\#Plugin-configuration)
+### [Plugin configuration](https://code.visualstudio.com/api/references/contribution-points#Plugin-configuration)
 
 Extensions can send configuration data to contributed TypeScript plugins through an API provided by VS Code's built-in TypeScript extension:
 
@@ -1457,7 +1457,7 @@ Copy
 
 This API allows VS Code extensions to synchronize VS Code settings with a TypeScript server plugin, or dynamically change the behavior of a plugin. Take a look at the [TypeScript TSLint plugin](https://github.com/microsoft/vscode-typescript-tslint-plugin/blob/main/src/index.ts) and [lit-html](https://github.com/mjbvz/vscode-lit-html/blob/master/src/index.ts) extensions to see how this API is used in practice.
 
-## [contributes.views](https://code.visualstudio.com/api/references/contribution-points\#contributes.views)
+## [contributes.views](https://code.visualstudio.com/api/references/contribution-points#contributes.views)
 
 Contribute a view to VS Code. You must specify an identifier and name for the view. You can contribute to following view containers:
 
@@ -1495,7 +1495,7 @@ The content of a view can be populated in two ways:
 - With a [TreeView](https://code.visualstudio.com/api/references/vscode-api#TreeView) by providing a [data provider](https://code.visualstudio.com/api/references/vscode-api#TreeDataProvider) through `createTreeView` API or register the [data provider](https://code.visualstudio.com/api/references/vscode-api#TreeDataProvider) directly through `registerTreeDataProvider` API to populate data. TreeViews are ideal for showing hierarchical data and lists. Refer to the [tree-view-sample](https://github.com/microsoft/vscode-extension-samples/tree/main/tree-view-sample).
 - With a [WebviewView](https://code.visualstudio.com/api/references/vscode-api#WebviewView) by registering a [provider](https://code.visualstudio.com/api/references/vscode-api#WebviewViewProvider) with `registerWebviewViewProvider`. Webview views allow rendering arbitrary HTML in the view. See the [webview view sample extension](https://github.com/microsoft/vscode-extension-samples/tree/main/webview-view-sample) for more details.
 
-## [contributes.viewsContainers](https://code.visualstudio.com/api/references/contribution-points\#contributes.viewsContainers)
+## [contributes.viewsContainers](https://code.visualstudio.com/api/references/contribution-points#contributes.viewsContainers)
 
 Contribute a view container into which [Custom views](https://code.visualstudio.com/api/references/contribution-points#contributes.views) can be contributed. You must specify an identifier, title, and an icon for the view container. At present, you can contribute them to the Activity Bar ( `activitybar`) and Panel ( `panel`). Below example shows how the `Package Explorer` view container is contributed to the Activity Bar and how views are contributed to it.
 
@@ -1530,7 +1530,7 @@ Copy
 
 ![Custom views container](https://code.visualstudio.com/assets/api/references/contribution-points/custom-views-container.png)
 
-### [Icon specifications](https://code.visualstudio.com/api/references/contribution-points\#Icon-specifications)
+### [Icon specifications](https://code.visualstudio.com/api/references/contribution-points#Icon-specifications)
 
 - `Size:` Icons should be 24x24 and centered.
 
@@ -1540,21 +1540,15 @@ Copy
 
 - `States:` All icons inherit the following state styles:
 
+    Expand table
 
-   Expand table
+    | State   | Opacity |
+    | ------- | ------- |
+    | Default | 60%     |
+    | Hover   | 100%    |
+    | Active  | 100%    |
 
-
-
-
-
-  | State | Opacity |
-  | --- | --- |
-  | Default | 60% |
-  | Hover | 100% |
-  | Active | 100% |
-
-
-## [contributes.viewsWelcome](https://code.visualstudio.com/api/references/contribution-points\#contributes.viewsWelcome)
+## [contributes.viewsWelcome](https://code.visualstudio.com/api/references/contribution-points#contributes.viewsWelcome)
 
 Contribute welcome content to [Custom views](https://code.visualstudio.com/api/references/contribution-points#contributes.views). Welcome content only applies to empty tree views. A view is considered empty if the tree has no children and no `TreeView.message`. By convention, any command links that are on a line by themselves are displayed as a button. You can specify the view that the welcome content should apply to with the `view` property. Visibility of the welcome content can be controlled with the `when` context value. The text to be displayed as the welcome content is set with the `contents` property.
 
@@ -1577,7 +1571,7 @@ Copy
 
 Multiple welcome content items can be contributed to one view. When this happens, the content that come from VS Code core comes first, followed by content from built-in extensions, followed by content from all other extensions.
 
-## [contributes.walkthroughs](https://code.visualstudio.com/api/references/contribution-points\#contributes.walkthroughs)
+## [contributes.walkthroughs](https://code.visualstudio.com/api/references/contribution-points#contributes.walkthroughs)
 
 [Sample extension](https://github.com/microsoft/vscode-extension-samples/tree/main/getting-started-sample)
 
@@ -1585,7 +1579,7 @@ Contribute walkthroughs to appear on the Getting Started page. Walkthroughs are 
 
 Walkthroughs consist of a title, description, id, and a series of steps. Additionally, a `when` condition can be set to hide or show the walkthrough based on context keys. For example, a walkthrough to explain setup on a Linux platform could be given `when: "isLinux"` to only appear on Linux machines.
 
-Each step in a walkthrough has a title, description, id, and media element (either an image or Markdown content), along with an optional set of events that will cause the step to be checked (shown in the example below). Step descriptions are Markdown content, and support `**bold**`, `__underlined__`, and ``` ``code`` ``` rendering, as well as links. Similar to walkthroughs, steps can be given when conditions to hide or show them based on context keys.
+Each step in a walkthrough has a title, description, id, and media element (either an image or Markdown content), along with an optional set of events that will cause the step to be checked (shown in the example below). Step descriptions are Markdown content, and support `**bold**`, `__underlined__`, and ` ``code`` ` rendering, as well as links. Similar to walkthroughs, steps can be given when conditions to hide or show them based on context keys.
 
 SVGs are recommended for images given their ability to scale and their support for VS Code's theme colors. Use the [Visual Studio Code Color Mapper](https://www.figma.com/community/plugin/1218260433851630449) Figma plugin to easily reference theme colors in the SVGs.
 
@@ -1622,7 +1616,7 @@ Copy
 
 ![Walkthrough example](https://code.visualstudio.com/assets/api/references/contribution-points/walkthroughs.png)
 
-### [Completion events](https://code.visualstudio.com/api/references/contribution-points\#Completion-events)
+### [Completion events](https://code.visualstudio.com/api/references/contribution-points#Completion-events)
 
 By default, if no `completionEvents` events are provided, the step will be checked off when any of it's buttons are clicked, or if the step has no buttons, when it is opened. If finer control is required, a list of `completionEvents` can be provided.
 

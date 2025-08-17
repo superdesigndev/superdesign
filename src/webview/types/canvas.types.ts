@@ -6,13 +6,13 @@ export interface DesignFile {
     content: string;
     size: number;
     modified: Date;
-    fileType: 'html' | 'svg';  // File type for proper rendering
+    fileType: 'html' | 'svg'; // File type for proper rendering
     // New hierarchy properties
-    version?: string;          // e.g., "v1", "v2", "v3"
-    parentDesign?: string;     // Reference to parent design file name
-    children?: string[];       // Array of child design file names
-    generation?: number;       // 0 for root designs, 1 for first children, etc.
-    branchIndex?: number;      // Index within the same generation/branch
+    version?: string; // e.g., "v1", "v2", "v3"
+    parentDesign?: string; // Reference to parent design file name
+    children?: string[]; // Array of child design file names
+    generation?: number; // 0 for root designs, 1 for first children, etc.
+    branchIndex?: number; // Index within the same generation/branch
 }
 
 export interface CanvasState {
@@ -78,16 +78,13 @@ export interface FileWatchMessage extends ExtensionMessage {
     };
 }
 
-export type WebviewMessage = 
-    | LoadDesignFilesMessage 
+export type WebviewMessage =
+    | LoadDesignFilesMessage
     | SelectFrameMessage
     | SetContextFromCanvasMessage
     | SetChatPromptMessage;
 
-export type ExtensionToWebviewMessage = 
-    | DesignFilesLoadedMessage 
-    | ErrorMessage 
-    | FileWatchMessage;
+export type ExtensionToWebviewMessage = DesignFilesLoadedMessage | ErrorMessage | FileWatchMessage;
 
 // Canvas grid layout types
 export interface GridPosition {
@@ -141,11 +138,11 @@ export interface CanvasConfig {
     viewports: ViewportConfig;
     // New hierarchy settings
     hierarchy: {
-        horizontalSpacing: number;     // Space between generations (horizontal)
-        verticalSpacing: number;       // Space between siblings (vertical)
-        connectionLineWidth: number;   // Width of connection lines
-        connectionLineColor: string;   // Color of connection lines
-        showConnections: boolean;      // Toggle connection visibility
+        horizontalSpacing: number; // Space between generations (horizontal)
+        verticalSpacing: number; // Space between siblings (vertical)
+        connectionLineWidth: number; // Width of connection lines
+        connectionLineColor: string; // Color of connection lines
+        showConnections: boolean; // Toggle connection visibility
     };
 }
 
@@ -176,4 +173,4 @@ export interface HierarchyTree {
     nodes: Map<string, HierarchyNode>;
     connections: ConnectionLine[];
     bounds: { width: number; height: number };
-} 
+}

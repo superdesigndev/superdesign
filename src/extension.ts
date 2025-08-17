@@ -10,235 +10,241 @@ import * as path from 'path';
 // Your extension is activated the very first time the command is executed
 
 // Function to save uploaded images to moodboard directory
-async function saveImageToMoodboard(data: {
-	fileName: string;
-	originalName: string;
-	base64Data: string;
-	mimeType: string;
-	size: number;
-}, sidebarProvider: ChatSidebarProvider) {
-	const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-	if (!workspaceFolder) {
-		Logger.error('No workspace folder found for saving image');
-		return;
-	}
+async function saveImageToMoodboard(
+    data: {
+        fileName: string;
+        originalName: string;
+        base64Data: string;
+        mimeType: string;
+        size: number;
+    },
+    sidebarProvider: ChatSidebarProvider
+) {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (!workspaceFolder) {
+        Logger.error('No workspace folder found for saving image');
+        return;
+    }
 
-	try {
-		// Create .superdesign/moodboard directory if it doesn't exist
-		const moodboardDir = vscode.Uri.joinPath(workspaceFolder.uri, '.superdesign', 'moodboard');
+    try {
+        // Create .superdesign/moodboard directory if it doesn't exist
+        const moodboardDir = vscode.Uri.joinPath(workspaceFolder.uri, '.superdesign', 'moodboard');
 
-		try {
-			await vscode.workspace.fs.stat(moodboardDir);
-		} catch {
-			// Directory doesn't exist, create it
-			await vscode.workspace.fs.createDirectory(moodboardDir);
-			Logger.info('Created .superdesign/moodboard directory');
-		}
+        try {
+            await vscode.workspace.fs.stat(moodboardDir);
+        } catch {
+            // Directory doesn't exist, create it
+            await vscode.workspace.fs.createDirectory(moodboardDir);
+            Logger.info('Created .superdesign/moodboard directory');
+        }
 
-		// Convert base64 to buffer and save file
-		const base64Content = data.base64Data.split(',')[1]; // Remove data:image/jpeg;base64, prefix
-		const buffer = Buffer.from(base64Content, 'base64');
-		const filePath = vscode.Uri.joinPath(moodboardDir, data.fileName);
+        // Convert base64 to buffer and save file
+        const base64Content = data.base64Data.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+        const buffer = Buffer.from(base64Content, 'base64');
+        const filePath = vscode.Uri.joinPath(moodboardDir, data.fileName);
 
-		await vscode.workspace.fs.writeFile(filePath, buffer);
+        await vscode.workspace.fs.writeFile(filePath, buffer);
 
-		Logger.info(`Image saved to moodboard: ${data.fileName} (${(data.size / 1024).toFixed(1)} KB)`);
+        Logger.info(
+            `Image saved to moodboard: ${data.fileName} (${(data.size / 1024).toFixed(1)} KB)`
+        );
 
-		// Send back the full absolute path to the webview
-		sidebarProvider.sendMessage({
-			command: 'imageSavedToMoodboard',
-			data: {
-				fileName: data.fileName,
-				originalName: data.originalName,
-				fullPath: filePath.fsPath
-			}
-		});
+        // Send back the full absolute path to the webview
+        sidebarProvider.sendMessage({
+            command: 'imageSavedToMoodboard',
+            data: {
+                fileName: data.fileName,
+                originalName: data.originalName,
+                fullPath: filePath.fsPath,
+            },
+        });
+    } catch (error) {
+        Logger.error(`Error saving image to moodboard: ${error}`);
+        vscode.window.showErrorMessage(`Failed to save image: ${error}`);
 
-	} catch (error) {
-		Logger.error(`Error saving image to moodboard: ${error}`);
-		vscode.window.showErrorMessage(`Failed to save image: ${error}`);
-
-		// Send error back to webview
-		sidebarProvider.sendMessage({
-			command: 'imageSaveError',
-			data: {
-				fileName: data.fileName,
-				originalName: data.originalName,
-				error: error instanceof Error ? error.message : String(error)
-			}
-		});
-	}
+        // Send error back to webview
+        sidebarProvider.sendMessage({
+            command: 'imageSaveError',
+            data: {
+                fileName: data.fileName,
+                originalName: data.originalName,
+                error: error instanceof Error ? error.message : String(error),
+            },
+        });
+    }
 }
 
 // Function to convert image files to base64 for AI SDK
 async function getBase64Image(filePath: string, sidebarProvider: ChatSidebarProvider) {
-	try {
-		// Read the image file
-		const fileUri = vscode.Uri.file(filePath);
-		const fileData = await vscode.workspace.fs.readFile(fileUri);
+    try {
+        // Read the image file
+        const fileUri = vscode.Uri.file(filePath);
+        const fileData = await vscode.workspace.fs.readFile(fileUri);
 
-		// Determine MIME type from file extension
-		const extension = filePath.toLowerCase().split('.').pop();
-		let mimeType: string;
-		switch (extension) {
-			case 'jpg':
-			case 'jpeg':
-				mimeType = 'image/jpeg';
-				break;
-			case 'png':
-				mimeType = 'image/png';
-				break;
-			case 'gif':
-				mimeType = 'image/gif';
-				break;
-			case 'webp':
-				mimeType = 'image/webp';
-				break;
-			case 'bmp':
-				mimeType = 'image/bmp';
-				break;
-			default:
-				mimeType = 'image/png'; // Default fallback
-		}
+        // Determine MIME type from file extension
+        const extension = filePath.toLowerCase().split('.').pop();
+        let mimeType: string;
+        switch (extension) {
+            case 'jpg':
+            case 'jpeg':
+                mimeType = 'image/jpeg';
+                break;
+            case 'png':
+                mimeType = 'image/png';
+                break;
+            case 'gif':
+                mimeType = 'image/gif';
+                break;
+            case 'webp':
+                mimeType = 'image/webp';
+                break;
+            case 'bmp':
+                mimeType = 'image/bmp';
+                break;
+            default:
+                mimeType = 'image/png'; // Default fallback
+        }
 
-		// Convert to base64
-		const base64Content = Buffer.from(fileData).toString('base64');
-		const base64DataUri = `data:${mimeType};base64,${base64Content}`;
+        // Convert to base64
+        const base64Content = Buffer.from(fileData).toString('base64');
+        const base64DataUri = `data:${mimeType};base64,${base64Content}`;
 
-		console.log(`Converted image to base64: ${filePath} (${(fileData.length / 1024).toFixed(1)} KB)`);
+        console.log(
+            `Converted image to base64: ${filePath} (${(fileData.length / 1024).toFixed(1)} KB)`
+        );
 
-		// Send back the base64 data to webview
-		sidebarProvider.sendMessage({
-			command: 'base64ImageResponse',
-			filePath: filePath,
-			base64Data: base64DataUri,
-			mimeType: mimeType,
-			size: fileData.length
-		});
+        // Send back the base64 data to webview
+        sidebarProvider.sendMessage({
+            command: 'base64ImageResponse',
+            filePath: filePath,
+            base64Data: base64DataUri,
+            mimeType: mimeType,
+            size: fileData.length,
+        });
+    } catch (error) {
+        console.error('Error converting image to base64:', error);
 
-	} catch (error) {
-		console.error('Error converting image to base64:', error);
-
-		// Send error back to webview
-		sidebarProvider.sendMessage({
-			command: 'base64ImageResponse',
-			filePath: filePath,
-			error: error instanceof Error ? error.message : String(error)
-		});
-	}
+        // Send error back to webview
+        sidebarProvider.sendMessage({
+            command: 'base64ImageResponse',
+            filePath: filePath,
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
 }
 
 // Function to read CSS file content for theme preview
 async function getCssFileContent(filePath: string, sidebarProvider: ChatSidebarProvider) {
-	try {
-		// Handle relative paths - resolve them to workspace root
-		let resolvedPath = filePath;
+    try {
+        // Handle relative paths - resolve them to workspace root
+        let resolvedPath = filePath;
 
-		if (!path.isAbsolute(filePath)) {
-			const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-			if (!workspaceFolder) {
-				throw new Error('No workspace folder found');
-			}
+        if (!path.isAbsolute(filePath)) {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                throw new Error('No workspace folder found');
+            }
 
-			// If path doesn't start with .superdesign, add it
-			if (!filePath.startsWith('.superdesign/') && filePath.startsWith('design_iterations/')) {
-				resolvedPath = `.superdesign/${filePath}`;
-			}
+            // If path doesn't start with .superdesign, add it
+            if (
+                !filePath.startsWith('.superdesign/') &&
+                filePath.startsWith('design_iterations/')
+            ) {
+                resolvedPath = `.superdesign/${filePath}`;
+            }
 
-			resolvedPath = path.join(workspaceFolder.uri.fsPath, resolvedPath);
-		}
+            resolvedPath = path.join(workspaceFolder.uri.fsPath, resolvedPath);
+        }
 
-		// Read the CSS file
-		const fileUri = vscode.Uri.file(resolvedPath);
-		const fileData = await vscode.workspace.fs.readFile(fileUri);
+        // Read the CSS file
+        const fileUri = vscode.Uri.file(resolvedPath);
+        const fileData = await vscode.workspace.fs.readFile(fileUri);
 
-		// Convert to string
-		const cssContent = Buffer.from(fileData).toString('utf8');
+        // Convert to string
+        const cssContent = Buffer.from(fileData).toString('utf8');
 
-		console.log(`Read CSS file: ${resolvedPath} (${(fileData.length / 1024).toFixed(1)} KB)`);
+        console.log(`Read CSS file: ${resolvedPath} (${(fileData.length / 1024).toFixed(1)} KB)`);
 
-		// Send back the CSS content to webview
-		sidebarProvider.sendMessage({
-			command: 'cssFileContentResponse',
-			filePath: filePath,
-			content: cssContent,
-			size: fileData.length
-		});
+        // Send back the CSS content to webview
+        sidebarProvider.sendMessage({
+            command: 'cssFileContentResponse',
+            filePath: filePath,
+            content: cssContent,
+            size: fileData.length,
+        });
+    } catch (error) {
+        console.error('Error reading CSS file:', error);
 
-	} catch (error) {
-		console.error('Error reading CSS file:', error);
-
-		// Send error back to webview
-		sidebarProvider.sendMessage({
-			command: 'cssFileContentResponse',
-			filePath: filePath,
-			error: error instanceof Error ? error.message : String(error)
-		});
-	}
+        // Send error back to webview
+        sidebarProvider.sendMessage({
+            command: 'cssFileContentResponse',
+            filePath: filePath,
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
 }
-
 
 // Function to detect current IDE
 function detectCurrentIDE(): { isCursor: boolean; isWindsurf: boolean } {
-	const appName = vscode.env.appName.toLowerCase();
-	return {
-		isCursor: appName.includes('cursor'),
-		isWindsurf: appName.includes('windsurf')
-	};
+    const appName = vscode.env.appName.toLowerCase();
+    return {
+        isCursor: appName.includes('cursor'),
+        isWindsurf: appName.includes('windsurf'),
+    };
 }
 
 // Function to check if Claude command exists
 async function claudeCommandExists(): Promise<boolean> {
-	try {
-		const { exec } = await import('child_process');
-		
-		// Check on Windows host first
-		const checkHost = new Promise<boolean>((resolve) => {
-			exec('where claude', (error: any) => {
-				resolve(!error);
-			});
-		});
-		
-		// If on Windows, also check WSL
-		const isWindows = process.platform === 'win32';
-		if (isWindows) {
-			const checkWSL = new Promise<boolean>((resolve) => {
-				exec('wsl which claude', (error: any) => {
-					resolve(!error);
-				});
-			});
-			
-			// Return true if found in either location
-			const [hostResult, wslResult] = await Promise.all([checkHost, checkWSL]);
-			return hostResult || wslResult;
-		}
-		
-		// On non-Windows, just check normally
-		return new Promise<boolean>((resolve) => {
-			exec('which claude', (error: any) => {
-				resolve(!error);
-			});
-		});
-	} catch {
-		return false;
-	}
+    try {
+        const { exec } = await import('child_process');
+
+        // Check on Windows host first
+        const checkHost = new Promise<boolean>(resolve => {
+            exec('where claude', (error: any) => {
+                resolve(!error);
+            });
+        });
+
+        // If on Windows, also check WSL
+        const isWindows = process.platform === 'win32';
+        if (isWindows) {
+            const checkWSL = new Promise<boolean>(resolve => {
+                exec('wsl which claude', (error: any) => {
+                    resolve(!error);
+                });
+            });
+
+            // Return true if found in either location
+            const [hostResult, wslResult] = await Promise.all([checkHost, checkWSL]);
+            return hostResult || wslResult;
+        }
+
+        // On non-Windows, just check normally
+        return new Promise<boolean>(resolve => {
+            exec('which claude', (error: any) => {
+                resolve(!error);
+            });
+        });
+    } catch {
+        return false;
+    }
 }
 
 async function initializeSecuredesignProject() {
-	const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-	if (!workspaceFolder) {
-		vscode.window.showErrorMessage('No workspace folder found. Please open a workspace first.');
-		return;
-	}
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (!workspaceFolder) {
+        vscode.window.showErrorMessage('No workspace folder found. Please open a workspace first.');
+        return;
+    }
 
-	const workspaceRoot = workspaceFolder.uri;
-	const superdesignFolder = vscode.Uri.joinPath(workspaceRoot, '.superdesign');
+    const workspaceRoot = workspaceFolder.uri;
+    const superdesignFolder = vscode.Uri.joinPath(workspaceRoot, '.superdesign');
 
-	// Detect OS for correct keyboard shortcut
-	const isWindows = process.platform === 'win32';
-	const shortcut = isWindows ? 'Ctrl+Shift+P' : 'Command+Shift+P';
+    // Detect OS for correct keyboard shortcut
+    const isWindows = process.platform === 'win32';
+    const shortcut = isWindows ? 'Ctrl+Shift+P' : 'Command+Shift+P';
 
-	const designRuleContent = `When asked to design UI & frontend interface
+    const designRuleContent = `When asked to design UI & frontend interface
 When asked to design UI & frontend interface
 # Role
 You are superdesign, a senior frontend designer integrated into VS Code as part of the Super Design extension.
@@ -622,14 +628,14 @@ IMPORTANT RULES:
 
 When calling tools, you MUST use the actual tool call, do NOT just output text like 'Called tool: write with arguments: ...' or <tool-call>...</tool-call>, this won't actually call the tool. (This is very important to my life, please follow)`;
 
-	const designRuleMdcContent = `---
+    const designRuleMdcContent = `---
 description: Use this rule when asked to do any frontend or UI design
 globs: 
 alwaysApply: false
 ---
 ${designRuleContent}`;
 
-	const defaultCssContent = `/* ========================================
+    const defaultCssContent = `/* ========================================
    Dark Mode UI Framework
    A beautiful dark mode design system
    ======================================== */
@@ -1151,770 +1157,882 @@ html.dark {
     }
 }`;
 
-	try {
-		// Create .superdesign/design_iterations directory
-		const designIterationsFolder = vscode.Uri.joinPath(superdesignFolder, 'design_iterations');
-		await vscode.workspace.fs.createDirectory(designIterationsFolder);
+    try {
+        // Create .superdesign/design_iterations directory
+        const designIterationsFolder = vscode.Uri.joinPath(superdesignFolder, 'design_iterations');
+        await vscode.workspace.fs.createDirectory(designIterationsFolder);
 
-		// Create default_ui_darkmode.css file
-		const defaultCssPath = vscode.Uri.joinPath(designIterationsFolder, 'default_ui_darkmode.css');
-		try {
-			// Check if file already exists
-			await vscode.workspace.fs.stat(defaultCssPath);
-			Logger.debug('default_ui_darkmode.css already exists, skipping creation');
-		} catch {
-			// File doesn't exist, create it
-			await vscode.workspace.fs.writeFile(defaultCssPath, Buffer.from(defaultCssContent, 'utf8'));
-			Logger.info('Created default_ui_darkmode.css file');
-		}
+        // Create default_ui_darkmode.css file
+        const defaultCssPath = vscode.Uri.joinPath(
+            designIterationsFolder,
+            'default_ui_darkmode.css'
+        );
+        try {
+            // Check if file already exists
+            await vscode.workspace.fs.stat(defaultCssPath);
+            Logger.debug('default_ui_darkmode.css already exists, skipping creation');
+        } catch {
+            // File doesn't exist, create it
+            await vscode.workspace.fs.writeFile(
+                defaultCssPath,
+                Buffer.from(defaultCssContent, 'utf8')
+            );
+            Logger.info('Created default_ui_darkmode.css file');
+        }
 
-		// Detect current IDE and Claude command availability
-		const { isCursor, isWindsurf } = detectCurrentIDE();
-		const hasClaudeCommand = await claudeCommandExists();
-		
-		const createdFiles: string[] = [];
+        // Detect current IDE and Claude command availability
+        const { isCursor, isWindsurf } = detectCurrentIDE();
+        const hasClaudeCommand = await claudeCommandExists();
 
-		// Create .cursor/rules/design.mdc only if running in Cursor
-		if (isCursor) {
-			const cursorRulesFolder = vscode.Uri.joinPath(workspaceRoot, '.cursor', 'rules');
-			try {
-				await vscode.workspace.fs.stat(cursorRulesFolder);
-			} catch {
-				await vscode.workspace.fs.createDirectory(cursorRulesFolder);
-			}
+        const createdFiles: string[] = [];
 
-			const designMdcPath = vscode.Uri.joinPath(cursorRulesFolder, 'design.mdc');
-			try {
-				const existingContent = await vscode.workspace.fs.readFile(designMdcPath);
-				const currentContent = Buffer.from(existingContent).toString('utf8');
-				if (!currentContent.includes('securedesign: Open Canvas View')) {
-					const updatedContent = `${currentContent  }\n\n${  designRuleMdcContent}`;
-					await vscode.workspace.fs.writeFile(designMdcPath, Buffer.from(updatedContent, 'utf8'));
-					createdFiles.push('.cursor/rules/design.mdc');
-				}
-			} catch {
-				// File doesn't exist, create it
-				await vscode.workspace.fs.writeFile(designMdcPath, Buffer.from(designRuleMdcContent, 'utf8'));
-				createdFiles.push('.cursor/rules/design.mdc');
-			}
-		}
+        // Create .cursor/rules/design.mdc only if running in Cursor
+        if (isCursor) {
+            const cursorRulesFolder = vscode.Uri.joinPath(workspaceRoot, '.cursor', 'rules');
+            try {
+                await vscode.workspace.fs.stat(cursorRulesFolder);
+            } catch {
+                await vscode.workspace.fs.createDirectory(cursorRulesFolder);
+            }
 
-		// Create CLAUDE.md only if Claude command exists
-		if (hasClaudeCommand) {
-			const claudeMdPath = vscode.Uri.joinPath(workspaceRoot, 'CLAUDE.md');
-			try {
-				const existingContent = await vscode.workspace.fs.readFile(claudeMdPath);
-				const currentContent = Buffer.from(existingContent).toString('utf8');
-				if (!currentContent.includes('securedesign: Open Canvas View')) {
-					const updatedContent = `${currentContent  }\n\n${  designRuleContent}`;
-					await vscode.workspace.fs.writeFile(claudeMdPath, Buffer.from(updatedContent, 'utf8'));
-					createdFiles.push('CLAUDE.md');
-				}
-			} catch {
-				// File doesn't exist, create it
-				await vscode.workspace.fs.writeFile(claudeMdPath, Buffer.from(designRuleContent, 'utf8'));
-				createdFiles.push('CLAUDE.md');
-			}
-		}
+            const designMdcPath = vscode.Uri.joinPath(cursorRulesFolder, 'design.mdc');
+            try {
+                const existingContent = await vscode.workspace.fs.readFile(designMdcPath);
+                const currentContent = Buffer.from(existingContent).toString('utf8');
+                if (!currentContent.includes('securedesign: Open Canvas View')) {
+                    const updatedContent = `${currentContent}\n\n${designRuleMdcContent}`;
+                    await vscode.workspace.fs.writeFile(
+                        designMdcPath,
+                        Buffer.from(updatedContent, 'utf8')
+                    );
+                    createdFiles.push('.cursor/rules/design.mdc');
+                }
+            } catch {
+                // File doesn't exist, create it
+                await vscode.workspace.fs.writeFile(
+                    designMdcPath,
+                    Buffer.from(designRuleMdcContent, 'utf8')
+                );
+                createdFiles.push('.cursor/rules/design.mdc');
+            }
+        }
 
-		// Create .windsurfrules only if running in Windsurf
-		if (isWindsurf) {
-			const windsurfRulesPath = vscode.Uri.joinPath(workspaceRoot, '.windsurfrules');
-			try {
-				const existingContent = await vscode.workspace.fs.readFile(windsurfRulesPath);
-				const currentContent = Buffer.from(existingContent).toString('utf8');
-				if (!currentContent.includes('securedesign: Open Canvas View')) {
-					const updatedContent = `${currentContent  }\n\n${  designRuleContent}`;
-					await vscode.workspace.fs.writeFile(windsurfRulesPath, Buffer.from(updatedContent, 'utf8'));
-					createdFiles.push('.windsurfrules');
-				}
-			} catch {
-				// File doesn't exist, create it
-				await vscode.workspace.fs.writeFile(windsurfRulesPath, Buffer.from(designRuleContent, 'utf8'));
-				createdFiles.push('.windsurfrules');
-			}
-		}
+        // Create CLAUDE.md only if Claude command exists
+        if (hasClaudeCommand) {
+            const claudeMdPath = vscode.Uri.joinPath(workspaceRoot, 'CLAUDE.md');
+            try {
+                const existingContent = await vscode.workspace.fs.readFile(claudeMdPath);
+                const currentContent = Buffer.from(existingContent).toString('utf8');
+                if (!currentContent.includes('securedesign: Open Canvas View')) {
+                    const updatedContent = `${currentContent}\n\n${designRuleContent}`;
+                    await vscode.workspace.fs.writeFile(
+                        claudeMdPath,
+                        Buffer.from(updatedContent, 'utf8')
+                    );
+                    createdFiles.push('CLAUDE.md');
+                }
+            } catch {
+                // File doesn't exist, create it
+                await vscode.workspace.fs.writeFile(
+                    claudeMdPath,
+                    Buffer.from(designRuleContent, 'utf8')
+                );
+                createdFiles.push('CLAUDE.md');
+            }
+        }
 
-		const filesMessage = createdFiles.length > 0 
-			? `Created design rules: ${createdFiles.join(', ')}`
-			: 'No new design rule files needed for current environment';
-		
-		vscode.window.showInformationMessage(`✅ SecureDesign project initialized successfully! Created .superdesign folder. ${filesMessage}`);
-	} catch (error) {
-		vscode.window.showErrorMessage(`Failed to initialize SecureDesign project: ${error}`);
-	}
+        // Create .windsurfrules only if running in Windsurf
+        if (isWindsurf) {
+            const windsurfRulesPath = vscode.Uri.joinPath(workspaceRoot, '.windsurfrules');
+            try {
+                const existingContent = await vscode.workspace.fs.readFile(windsurfRulesPath);
+                const currentContent = Buffer.from(existingContent).toString('utf8');
+                if (!currentContent.includes('securedesign: Open Canvas View')) {
+                    const updatedContent = `${currentContent}\n\n${designRuleContent}`;
+                    await vscode.workspace.fs.writeFile(
+                        windsurfRulesPath,
+                        Buffer.from(updatedContent, 'utf8')
+                    );
+                    createdFiles.push('.windsurfrules');
+                }
+            } catch {
+                // File doesn't exist, create it
+                await vscode.workspace.fs.writeFile(
+                    windsurfRulesPath,
+                    Buffer.from(designRuleContent, 'utf8')
+                );
+                createdFiles.push('.windsurfrules');
+            }
+        }
+
+        const filesMessage =
+            createdFiles.length > 0
+                ? `Created design rules: ${createdFiles.join(', ')}`
+                : 'No new design rule files needed for current environment';
+
+        vscode.window.showInformationMessage(
+            `✅ SecureDesign project initialized successfully! Created .superdesign folder. ${filesMessage}`
+        );
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to initialize SecureDesign project: ${error}`);
+    }
 }
 
 export function activate(context: vscode.ExtensionContext) {
-	// Initialize the centralized logger
-	Logger.initialize();
-	Logger.info('SecureDesign extension is now active!');
-	// Note: Users can manually open output via View → Output → Select "SecureDesign" if needed
+    // Initialize the centralized logger
+    Logger.initialize();
+    Logger.info('SecureDesign extension is now active!');
+    // Note: Users can manually open output via View → Output → Select "SecureDesign" if needed
 
-	// Initialize Custom Agent service
-	Logger.info('Creating CustomAgentService...');
-	const customAgent = new CustomAgentService(Logger.getOutputChannel());
-	Logger.info('CustomAgentService created');
+    // Initialize Custom Agent service
+    Logger.info('Creating CustomAgentService...');
+    const customAgent = new CustomAgentService(Logger.getOutputChannel());
+    Logger.info('CustomAgentService created');
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const helloWorldDisposable = vscode.commands.registerCommand('securedesign.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from SecureDesign!');
-	});
+    // The command has been defined in the package.json file
+    // Now provide the implementation of the command with registerCommand
+    // The commandId parameter must match the command field in package.json
+    const helloWorldDisposable = vscode.commands.registerCommand('securedesign.helloWorld', () => {
+        // The code you place here will be executed every time your command is executed
+        // Display a message box to the user
+        vscode.window.showInformationMessage('Hello World from SecureDesign!');
+    });
 
-	// Register API key configuration commands
-	const configureApiKeyDisposable = vscode.commands.registerCommand('securedesign.configureApiKey', async () => {
-		await configureAnthropicApiKey();
-	});
+    // Register API key configuration commands
+    const configureApiKeyDisposable = vscode.commands.registerCommand(
+        'securedesign.configureApiKey',
+        async () => {
+            await configureAnthropicApiKey();
+        }
+    );
 
-	const configureOpenAIApiKeyDisposable = vscode.commands.registerCommand('securedesign.configureOpenAIApiKey', async () => {
-		await configureOpenAIApiKey();
-	});
+    const configureOpenAIApiKeyDisposable = vscode.commands.registerCommand(
+        'securedesign.configureOpenAIApiKey',
+        async () => {
+            await configureOpenAIApiKey();
+        }
+    );
 
-	const configureOpenRouterApiKeyDisposable = vscode.commands.registerCommand('securedesign.configureOpenRouterApiKey', async () => {
-		await configureOpenRouterApiKey();
-	});
+    const configureOpenRouterApiKeyDisposable = vscode.commands.registerCommand(
+        'securedesign.configureOpenRouterApiKey',
+        async () => {
+            await configureOpenRouterApiKey();
+        }
+    );
 
-  const configureOpenAIUrlDisposable = vscode.commands.registerCommand('securedesign.configureOpenAIUrl', async () => {
-    await configureOpenAIUrl();
-  });
+    const configureOpenAIUrlDisposable = vscode.commands.registerCommand(
+        'securedesign.configureOpenAIUrl',
+        async () => {
+            await configureOpenAIUrl();
+        }
+    );
 
-  const configureAWSBedrockDisposable = vscode.commands.registerCommand('superdesign.configureAWSBedrock', async () => {
-		await configureAWSBedrock();
-	});
-	const configureMoonshotApiKeyDisposable = vscode.commands.registerCommand('superdesign.configureMoonshotApiKey', async () => {
-		await configureMoonshotApiKey();
-	});
+    const configureAWSBedrockDisposable = vscode.commands.registerCommand(
+        'superdesign.configureAWSBedrock',
+        async () => {
+            await configureAWSBedrock();
+        }
+    );
+    const configureMoonshotApiKeyDisposable = vscode.commands.registerCommand(
+        'superdesign.configureMoonshotApiKey',
+        async () => {
+            await configureMoonshotApiKey();
+        }
+    );
 
-	// Create the chat sidebar provider
-	const sidebarProvider = new ChatSidebarProvider(context.extensionUri, customAgent, Logger.getOutputChannel());
+    // Create the chat sidebar provider
+    const sidebarProvider = new ChatSidebarProvider(
+        context.extensionUri,
+        customAgent,
+        Logger.getOutputChannel()
+    );
 
-	// Register the webview view provider for sidebar
-	const sidebarDisposable = vscode.window.registerWebviewViewProvider(
-		ChatSidebarProvider.VIEW_TYPE,
-		sidebarProvider,
-		{
-			webviewOptions: {
-				retainContextWhenHidden: true
-			}
-		}
-	);
+    // Register the webview view provider for sidebar
+    const sidebarDisposable = vscode.window.registerWebviewViewProvider(
+        ChatSidebarProvider.VIEW_TYPE,
+        sidebarProvider,
+        {
+            webviewOptions: {
+                retainContextWhenHidden: true,
+            },
+        }
+    );
 
-	// Register command to show sidebar
-	const showSidebarDisposable = vscode.commands.registerCommand('securedesign.showChatSidebar', () => {
-		vscode.commands.executeCommand('workbench.view.extension.securedesign-sidebar');
-	});
+    // Register command to show sidebar
+    const showSidebarDisposable = vscode.commands.registerCommand(
+        'securedesign.showChatSidebar',
+        () => {
+            vscode.commands.executeCommand('workbench.view.extension.securedesign-sidebar');
+        }
+    );
 
-	// Register canvas command
-	const openCanvasDisposable = vscode.commands.registerCommand('securedesign.openCanvas', () => {
-		SuperdesignCanvasPanel.createOrShow(context.extensionUri, sidebarProvider);
-	});
+    // Register canvas command
+    const openCanvasDisposable = vscode.commands.registerCommand('securedesign.openCanvas', () => {
+        SuperdesignCanvasPanel.createOrShow(context.extensionUri, sidebarProvider);
+    });
 
-	// Register clear chat command
-	const clearChatDisposable = vscode.commands.registerCommand('securedesign.clearChat', () => {
-		sidebarProvider.sendMessage({
-			command: 'clearChat'
-		});
-	});
+    // Register clear chat command
+    const clearChatDisposable = vscode.commands.registerCommand('securedesign.clearChat', () => {
+        sidebarProvider.sendMessage({
+            command: 'clearChat',
+        });
+    });
 
-	// Register reset welcome command
-	const resetWelcomeDisposable = vscode.commands.registerCommand('securedesign.resetWelcome', () => {
-		sidebarProvider.sendMessage({
-			command: 'resetWelcome'
-		});
-		vscode.window.showInformationMessage('Welcome screen has been reset. Refresh the sidebar to see the welcome screen again.');
-	});
+    // Register reset welcome command
+    const resetWelcomeDisposable = vscode.commands.registerCommand(
+        'securedesign.resetWelcome',
+        () => {
+            sidebarProvider.sendMessage({
+                command: 'resetWelcome',
+            });
+            vscode.window.showInformationMessage(
+                'Welcome screen has been reset. Refresh the sidebar to see the welcome screen again.'
+            );
+        }
+    );
 
-	// Register initialize project command
-	const initializeProjectDisposable = vscode.commands.registerCommand('securedesign.initializeProject', async () => {
-		await initializeSecuredesignProject();
-	});
+    // Register initialize project command
+    const initializeProjectDisposable = vscode.commands.registerCommand(
+        'securedesign.initializeProject',
+        async () => {
+            await initializeSecuredesignProject();
+        }
+    );
 
-	// Register open settings command
-	const openSettingsDisposable = vscode.commands.registerCommand('securedesign.openSettings', () => {
-		vscode.commands.executeCommand('workbench.action.openSettings', '@ext:HaroldMartin.securedesign');
-	});
+    // Register open settings command
+    const openSettingsDisposable = vscode.commands.registerCommand(
+        'securedesign.openSettings',
+        () => {
+            vscode.commands.executeCommand(
+                'workbench.action.openSettings',
+                '@ext:HaroldMartin.securedesign'
+            );
+        }
+    );
 
-	// Register configure API key command (alternative to the existing one)
-	const configureApiKeyQuickDisposable = vscode.commands.registerCommand('securedesign.configureApiKeyQuick', async () => {
-		await configureAnthropicApiKey();
-	});
+    // Register configure API key command (alternative to the existing one)
+    const configureApiKeyQuickDisposable = vscode.commands.registerCommand(
+        'securedesign.configureApiKeyQuick',
+        async () => {
+            await configureAnthropicApiKey();
+        }
+    );
 
-	// Set up message handler for auto-canvas functionality
-	sidebarProvider.setMessageHandler((message) => {
-		switch (message.command) {
-			case 'checkCanvasStatus':
-				// Check if canvas panel is currently open
-				const isCanvasOpen = SuperdesignCanvasPanel.currentPanel !== undefined;
-				sidebarProvider.sendMessage({
-					command: 'canvasStatusResponse',
-					isOpen: isCanvasOpen
-				});
-				break;
+    // Set up message handler for auto-canvas functionality
+    sidebarProvider.setMessageHandler(message => {
+        switch (message.command) {
+            case 'checkCanvasStatus':
+                // Check if canvas panel is currently open
+                const isCanvasOpen = SuperdesignCanvasPanel.currentPanel !== undefined;
+                sidebarProvider.sendMessage({
+                    command: 'canvasStatusResponse',
+                    isOpen: isCanvasOpen,
+                });
+                break;
 
-			case 'autoOpenCanvas':
-				// Auto-open canvas if not already open
-				SuperdesignCanvasPanel.createOrShow(context.extensionUri, sidebarProvider);
-				break;
+            case 'autoOpenCanvas':
+                // Auto-open canvas if not already open
+                SuperdesignCanvasPanel.createOrShow(context.extensionUri, sidebarProvider);
+                break;
 
-			case 'setContextFromCanvas':
-				// Forward context from canvas to chat sidebar
-				sidebarProvider.sendMessage({
-					command: 'contextFromCanvas',
-					data: message.data
-				});
-				break;
+            case 'setContextFromCanvas':
+                // Forward context from canvas to chat sidebar
+                sidebarProvider.sendMessage({
+                    command: 'contextFromCanvas',
+                    data: message.data,
+                });
+                break;
 
-			case 'saveImageToMoodboard':
-				// Save uploaded image to moodboard directory
-				void saveImageToMoodboard(message.data, sidebarProvider);
-				break;
+            case 'saveImageToMoodboard':
+                // Save uploaded image to moodboard directory
+                void saveImageToMoodboard(message.data, sidebarProvider);
+                break;
 
-			case 'getBase64Image':
-				// Convert saved image to base64 for AI SDK
-				void getBase64Image(message.filePath, sidebarProvider);
-				break;
+            case 'getBase64Image':
+                // Convert saved image to base64 for AI SDK
+                void getBase64Image(message.filePath, sidebarProvider);
+                break;
 
-			case 'getCssFileContent':
-				// Read CSS file content for theme preview
-				void getCssFileContent(message.filePath, sidebarProvider);
-				break;
+            case 'getCssFileContent':
+                // Read CSS file content for theme preview
+                void getCssFileContent(message.filePath, sidebarProvider);
+                break;
 
-			case 'showError':
-				// Show error message to user
-				vscode.window.showErrorMessage(message.data);
-				break;
+            case 'showError':
+                // Show error message to user
+                vscode.window.showErrorMessage(message.data);
+                break;
 
+            case 'initializeSecuredesign':
+                // Auto-trigger initialize Superdesign command
+                console.log('🚀 Received initializeSecuredesign command from webview');
+                vscode.commands.executeCommand('securedesign.initializeProject');
+                break;
+        }
+    });
 
-			case 'initializeSecuredesign':
-				// Auto-trigger initialize Superdesign command
-				console.log('🚀 Received initializeSecuredesign command from webview');
-				vscode.commands.executeCommand('securedesign.initializeProject');
-				break;
-		}
-	});
-
-	context.subscriptions.push(
-		helloWorldDisposable,
-		configureApiKeyDisposable,
-		configureOpenAIApiKeyDisposable,
-		configureOpenRouterApiKeyDisposable,
-    	configureOpenAIUrlDisposable,
-		configureAWSBedrockDisposable,
-		sidebarDisposable,
-		showSidebarDisposable,
-		openCanvasDisposable,
-		clearChatDisposable,
-		resetWelcomeDisposable,
-		initializeProjectDisposable,
-		openSettingsDisposable,
-		configureApiKeyQuickDisposable
-	);
+    context.subscriptions.push(
+        helloWorldDisposable,
+        configureApiKeyDisposable,
+        configureOpenAIApiKeyDisposable,
+        configureOpenRouterApiKeyDisposable,
+        configureOpenAIUrlDisposable,
+        configureAWSBedrockDisposable,
+        sidebarDisposable,
+        showSidebarDisposable,
+        openCanvasDisposable,
+        clearChatDisposable,
+        resetWelcomeDisposable,
+        initializeProjectDisposable,
+        openSettingsDisposable,
+        configureApiKeyQuickDisposable
+    );
 }
 
 // Function to configure Anthropic API key
 async function configureAnthropicApiKey() {
-	const currentKey = vscode.workspace.getConfiguration('securedesign').get<string>('anthropicApiKey');
+    const currentKey = vscode.workspace
+        .getConfiguration('securedesign')
+        .get<string>('anthropicApiKey');
 
-	const input = await vscode.window.showInputBox({
-		title: 'Configure Anthropic API Key',
-		prompt: 'Enter your Anthropic API key (get one from https://console.anthropic.com/)',
-		value: currentKey ? '••••••••••••••••' : '',
-		password: true,
-		placeHolder: 'sk-ant-...',
-		validateInput: (value) => {
-			if (!value || value.trim().length === 0) {
-				return 'API key cannot be empty';
-			}
-			if (value === '••••••••••••••••') {
-				return null; // User didn't change the masked value, that's OK
-			}
-			if (!value.startsWith('sk-ant-')) {
-				return 'Anthropic API keys should start with "sk-ant-"';
-			}
-			return null;
-		}
-	});
+    const input = await vscode.window.showInputBox({
+        title: 'Configure Anthropic API Key',
+        prompt: 'Enter your Anthropic API key (get one from https://console.anthropic.com/)',
+        value: currentKey ? '••••••••••••••••' : '',
+        password: true,
+        placeHolder: 'sk-ant-...',
+        validateInput: value => {
+            if (!value || value.trim().length === 0) {
+                return 'API key cannot be empty';
+            }
+            if (value === '••••••••••••••••') {
+                return null; // User didn't change the masked value, that's OK
+            }
+            if (!value.startsWith('sk-ant-')) {
+                return 'Anthropic API keys should start with "sk-ant-"';
+            }
+            return null;
+        },
+    });
 
-	if (input !== undefined) {
-		// Only update if user didn't just keep the masked value
-		if (input !== '••••••••••••••••') {
-			try {
-				await vscode.workspace.getConfiguration('securedesign').update(
-					'anthropicApiKey', 
-					input.trim(),
-					vscode.ConfigurationTarget.Global
-				);
-				vscode.window.showInformationMessage('✅ Anthropic API key configured successfully!');
-			} catch (error) {
-				vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
-			}
-		} else if (currentKey) {
-			vscode.window.showInformationMessage('API key unchanged (already configured)');
-		} else {
-			vscode.window.showWarningMessage('No API key was set');
-		}
-	}
+    if (input !== undefined) {
+        // Only update if user didn't just keep the masked value
+        if (input !== '••••••••••••••••') {
+            try {
+                await vscode.workspace
+                    .getConfiguration('securedesign')
+                    .update('anthropicApiKey', input.trim(), vscode.ConfigurationTarget.Global);
+                vscode.window.showInformationMessage(
+                    '✅ Anthropic API key configured successfully!'
+                );
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
+            }
+        } else if (currentKey) {
+            vscode.window.showInformationMessage('API key unchanged (already configured)');
+        } else {
+            vscode.window.showWarningMessage('No API key was set');
+        }
+    }
 }
 
 // Function to configure OpenAI API key
 async function configureOpenAIApiKey() {
-	const currentKey = vscode.workspace.getConfiguration('securedesign').get<string>('openaiApiKey');
+    const currentKey = vscode.workspace
+        .getConfiguration('securedesign')
+        .get<string>('openaiApiKey');
 
-	const input = await vscode.window.showInputBox({
-		title: 'Configure OpenAI API Key',
-		prompt: 'Enter your OpenAI API key (get one from https://platform.openai.com/api-keys)',
-		value: currentKey ? '••••••••••••••••' : '',
-		password: true,
-		placeHolder: 'sk-...',
-		validateInput: (value) => {
-			if (!value || value.trim().length === 0) {
-				return 'API key cannot be empty';
-			}
-			if (value === '••••••••••••••••') {
-				return null; // User didn't change the masked value, that's OK
-			}
-			if (!value.startsWith('sk-')) {
-				return 'OpenAI API keys should start with "sk-"';
-			}
-			return null;
-		}
-	});
+    const input = await vscode.window.showInputBox({
+        title: 'Configure OpenAI API Key',
+        prompt: 'Enter your OpenAI API key (get one from https://platform.openai.com/api-keys)',
+        value: currentKey ? '••••••••••••••••' : '',
+        password: true,
+        placeHolder: 'sk-...',
+        validateInput: value => {
+            if (!value || value.trim().length === 0) {
+                return 'API key cannot be empty';
+            }
+            if (value === '••••••••••••••••') {
+                return null; // User didn't change the masked value, that's OK
+            }
+            if (!value.startsWith('sk-')) {
+                return 'OpenAI API keys should start with "sk-"';
+            }
+            return null;
+        },
+    });
 
-	if (input !== undefined) {
-		// Only update if user didn't just keep the masked value
-		if (input !== '••••••••••••••••') {
-			try {
-				await vscode.workspace.getConfiguration('securedesign').update(
-					'openaiApiKey', 
-					input.trim(), 
-					vscode.ConfigurationTarget.Global
-				);
-				vscode.window.showInformationMessage('✅ OpenAI API key configured successfully!');
-			} catch (error) {
-				vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
-			}
-		} else if (currentKey) {
-			vscode.window.showInformationMessage('API key unchanged (already configured)');
-		} else {
-			vscode.window.showWarningMessage('No API key was set');
-		}
-	}
+    if (input !== undefined) {
+        // Only update if user didn't just keep the masked value
+        if (input !== '••••••••••••••••') {
+            try {
+                await vscode.workspace
+                    .getConfiguration('securedesign')
+                    .update('openaiApiKey', input.trim(), vscode.ConfigurationTarget.Global);
+                vscode.window.showInformationMessage('✅ OpenAI API key configured successfully!');
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
+            }
+        } else if (currentKey) {
+            vscode.window.showInformationMessage('API key unchanged (already configured)');
+        } else {
+            vscode.window.showWarningMessage('No API key was set');
+        }
+    }
 }
 
 // Function to configure OpenRouter API key
 async function configureOpenRouterApiKey() {
-	const currentKey = vscode.workspace.getConfiguration('securedesign').get<string>('openrouterApiKey');
+    const currentKey = vscode.workspace
+        .getConfiguration('securedesign')
+        .get<string>('openrouterApiKey');
 
-	const input = await vscode.window.showInputBox({
-		title: 'Configure OpenRouter API Key',
-		prompt: 'Enter your OpenRouter API key (get one from https://openrouter.ai/)',
-		value: currentKey ? '••••••••••••••••' : '',
-		password: true,
-		placeHolder: 'sk-...',
-		validateInput: (value) => {
-			if (!value || value.trim().length === 0) {
-				return 'API key cannot be empty';
-			}
-			if (value === '••••••••••••••••') {
-				return null; // User didn't change the masked value, that's OK
-			}
-			if (!value.startsWith('sk-')) {
-				return 'OpenRouter API keys should start with "sk-"';
-			}
-			return null;
-		}
-	});
+    const input = await vscode.window.showInputBox({
+        title: 'Configure OpenRouter API Key',
+        prompt: 'Enter your OpenRouter API key (get one from https://openrouter.ai/)',
+        value: currentKey ? '••••••••••••••••' : '',
+        password: true,
+        placeHolder: 'sk-...',
+        validateInput: value => {
+            if (!value || value.trim().length === 0) {
+                return 'API key cannot be empty';
+            }
+            if (value === '••••••••••••••••') {
+                return null; // User didn't change the masked value, that's OK
+            }
+            if (!value.startsWith('sk-')) {
+                return 'OpenRouter API keys should start with "sk-"';
+            }
+            return null;
+        },
+    });
 
-	if (input !== undefined) {
-		// Only update if user didn't just keep the masked value
-		if (input !== '••••••••••••••••') {
-			try {
-				await vscode.workspace.getConfiguration('securedesign').update(
-					'openrouterApiKey', 
-					input.trim(), 
-					vscode.ConfigurationTarget.Global
-				);
-				vscode.window.showInformationMessage('✅ OpenRouter API key configured successfully!');
-			} catch (error) {
-				vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
-			}
-		} else if (currentKey) {
-			vscode.window.showInformationMessage('API key unchanged (already configured)');
-		} else {
-			vscode.window.showWarningMessage('No API key was set');
-		}
-	}
+    if (input !== undefined) {
+        // Only update if user didn't just keep the masked value
+        if (input !== '••••••••••••••••') {
+            try {
+                await vscode.workspace
+                    .getConfiguration('securedesign')
+                    .update('openrouterApiKey', input.trim(), vscode.ConfigurationTarget.Global);
+                vscode.window.showInformationMessage(
+                    '✅ OpenRouter API key configured successfully!'
+                );
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
+            }
+        } else if (currentKey) {
+            vscode.window.showInformationMessage('API key unchanged (already configured)');
+        } else {
+            vscode.window.showWarningMessage('No API key was set');
+        }
+    }
 }
 
 // Function to configure OpenAI url
 async function configureOpenAIUrl() {
-  const currentKey = vscode.workspace.getConfiguration('securedesign').get<string>('openaiUrl');
+    const currentKey = vscode.workspace.getConfiguration('securedesign').get<string>('openaiUrl');
 
-  const input = await vscode.window.showInputBox({
-    title: 'Configure OpenAI url',
-    prompt: 'Enter your OpenAI url',
-    value: currentKey ?? '',
-    password: false,
-    placeHolder: 'http://localhost:1234/v1',
-    validateInput: (value) => {
-      if (!value || value.trim().length === 0) {
-        return 'Url cannot be empty';
-      }
-      if (!value.startsWith('http')) {
-        return 'Url should start with "http"';
-      }
-      return null;
-    }
-  });
+    const input = await vscode.window.showInputBox({
+        title: 'Configure OpenAI url',
+        prompt: 'Enter your OpenAI url',
+        value: currentKey ?? '',
+        password: false,
+        placeHolder: 'http://localhost:1234/v1',
+        validateInput: value => {
+            if (!value || value.trim().length === 0) {
+                return 'Url cannot be empty';
+            }
+            if (!value.startsWith('http')) {
+                return 'Url should start with "http"';
+            }
+            return null;
+        },
+    });
 
-  if (input !== undefined) {
-    if (input !== '') {
-      try {
-        await vscode.workspace
-          .getConfiguration('securedesign')
-          .update('openaiUrl', input.trim(), vscode.ConfigurationTarget.Global);
-        vscode.window.showInformationMessage('✅ OpenAI url configured successfully!');
-      } catch (error) {
-        vscode.window.showErrorMessage(`Failed to save url: ${error}`);
-      }
-    } else if (currentKey) {
-      vscode.window.showInformationMessage('Url unchanged (already configured)');
-    } else {
-      vscode.window.showWarningMessage('No Url was set');
+    if (input !== undefined) {
+        if (input !== '') {
+            try {
+                await vscode.workspace
+                    .getConfiguration('securedesign')
+                    .update('openaiUrl', input.trim(), vscode.ConfigurationTarget.Global);
+                vscode.window.showInformationMessage('✅ OpenAI url configured successfully!');
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to save url: ${error}`);
+            }
+        } else if (currentKey) {
+            vscode.window.showInformationMessage('Url unchanged (already configured)');
+        } else {
+            vscode.window.showWarningMessage('No Url was set');
+        }
     }
-  }
 }
 
-  async function configureGoogleApiKey() {
-	const config = vscode.workspace.getConfiguration('securedesign');
-	const currentKey = config.get<string>('googleApiKey');
+async function configureGoogleApiKey() {
+    const config = vscode.workspace.getConfiguration('securedesign');
+    const currentKey = config.get<string>('googleApiKey');
 
-	const input = await vscode.window.showInputBox({
-		title: 'Configure Google API Key',
-		prompt: 'Enter your Google API key',
-		value: currentKey ? '••••••••••••••••' : '',
-		password: true,
-		placeHolder: 'Enter your Google API Key',
-		validateInput: (value) => {
-			if (!value || value.trim().length === 0) {
-				return 'API key cannot be empty';
-			}
-			if (value === '••••••••••••••••') {
-				return null; // User didn't change the masked value, that's OK
-			}
-			return null;
-		}
-	});
+    const input = await vscode.window.showInputBox({
+        title: 'Configure Google API Key',
+        prompt: 'Enter your Google API key',
+        value: currentKey ? '••••••••••••••••' : '',
+        password: true,
+        placeHolder: 'Enter your Google API Key',
+        validateInput: value => {
+            if (!value || value.trim().length === 0) {
+                return 'API key cannot be empty';
+            }
+            if (value === '••••••••••••••••') {
+                return null; // User didn't change the masked value, that's OK
+            }
+            return null;
+        },
+    });
 
-	if (input !== undefined) {
-		// Only update if user didn't just keep the masked value
-		if (input !== '••••••••••••••••') {
-			try {
-				await vscode.workspace.getConfiguration('securedesign').update(
-					'googleApiKey',
-					input.trim(),
-					vscode.ConfigurationTarget.Global
-				);
-				vscode.window.showInformationMessage('✅ Google API key configured successfully!');
-			} catch (error) {
-				vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
-			}
-		} else if (currentKey) {
-			vscode.window.showInformationMessage('API key unchanged (already configured)');
-		} else {
-			vscode.window.showWarningMessage('No API key was set');
-		}
-	}
+    if (input !== undefined) {
+        // Only update if user didn't just keep the masked value
+        if (input !== '••••••••••••••••') {
+            try {
+                await vscode.workspace
+                    .getConfiguration('securedesign')
+                    .update('googleApiKey', input.trim(), vscode.ConfigurationTarget.Global);
+                vscode.window.showInformationMessage('✅ Google API key configured successfully!');
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
+            }
+        } else if (currentKey) {
+            vscode.window.showInformationMessage('API key unchanged (already configured)');
+        } else {
+            vscode.window.showWarningMessage('No API key was set');
+        }
+    }
 }
 
 // Function to configure AWS Bedrock credentials
 async function configureAWSBedrock() {
-	const config = vscode.workspace.getConfiguration('superdesign');
-	
-	// Get current values
-	const currentAccessKeyId = config.get<string>('awsAccessKeyId');
-	const currentSecretAccessKey = config.get<string>('awsSecretAccessKey');
-	const currentRegion = config.get<string>('awsRegion') || 'us-east-1';
+    const config = vscode.workspace.getConfiguration('superdesign');
 
-	// Configure Access Key ID
-	const accessKeyInput = await vscode.window.showInputBox({
-		title: 'Configure AWS Access Key ID',
-		prompt: 'Enter your AWS Access Key ID (get one from AWS IAM)',
-		value: currentAccessKeyId ? '••••••••••••••••' : '',
-		password: true,
-		placeHolder: 'AKIA...',
-		validateInput: (value) => {
-			if (!value || value.trim().length === 0) {
-				return 'Access Key ID cannot be empty';
-			}
-			if (value === '••••••••••••••••') {
-				return null; // User didn't change the masked value, that's OK
-			}
-			if (!value.startsWith('AKIA')) {
-				return 'AWS Access Key IDs should start with "AKIA"';
-			}
-			return null;
-		}
-	});
+    // Get current values
+    const currentAccessKeyId = config.get<string>('awsAccessKeyId');
+    const currentSecretAccessKey = config.get<string>('awsSecretAccessKey');
+    const currentRegion = config.get<string>('awsRegion') || 'us-east-1';
 
-	if (accessKeyInput === undefined) {
-		return; // User cancelled
-	}
+    // Configure Access Key ID
+    const accessKeyInput = await vscode.window.showInputBox({
+        title: 'Configure AWS Access Key ID',
+        prompt: 'Enter your AWS Access Key ID (get one from AWS IAM)',
+        value: currentAccessKeyId ? '••••••••••••••••' : '',
+        password: true,
+        placeHolder: 'AKIA...',
+        validateInput: value => {
+            if (!value || value.trim().length === 0) {
+                return 'Access Key ID cannot be empty';
+            }
+            if (value === '••••••••••••••••') {
+                return null; // User didn't change the masked value, that's OK
+            }
+            if (!value.startsWith('AKIA')) {
+                return 'AWS Access Key IDs should start with "AKIA"';
+            }
+            return null;
+        },
+    });
 
-	// Configure Secret Access Key only if Access Key ID was provided
-	if (accessKeyInput !== '••••••••••••••••' || !currentAccessKeyId) {
-		const secretKeyInput = await vscode.window.showInputBox({
-			title: 'Configure AWS Secret Access Key',
-			prompt: 'Enter your AWS Secret Access Key',
-			value: currentSecretAccessKey ? '••••••••••••••••••••••••••••••••••••••••' : '',
-			password: true,
-			placeHolder: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-			validateInput: (value) => {
-				if (!value || value.trim().length === 0) {
-					return 'Secret Access Key cannot be empty';
-				}
-				if (value === '••••••••••••••••••••••••••••••••••••••••') {
-					return null; // User didn't change the masked value, that's OK
-				}
-				if (value.length < 40) {
-					return 'AWS Secret Access Keys should be at least 40 characters long';
-				}
-				return null;
-			}
-		});
+    if (accessKeyInput === undefined) {
+        return; // User cancelled
+    }
 
-		if (secretKeyInput === undefined) {
-			return; // User cancelled
-		}
+    // Configure Secret Access Key only if Access Key ID was provided
+    if (accessKeyInput !== '••••••••••••••••' || !currentAccessKeyId) {
+        const secretKeyInput = await vscode.window.showInputBox({
+            title: 'Configure AWS Secret Access Key',
+            prompt: 'Enter your AWS Secret Access Key',
+            value: currentSecretAccessKey ? '••••••••••••••••••••••••••••••••••••••••' : '',
+            password: true,
+            placeHolder: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+            validateInput: value => {
+                if (!value || value.trim().length === 0) {
+                    return 'Secret Access Key cannot be empty';
+                }
+                if (value === '••••••••••••••••••••••••••••••••••••••••') {
+                    return null; // User didn't change the masked value, that's OK
+                }
+                if (value.length < 40) {
+                    return 'AWS Secret Access Keys should be at least 40 characters long';
+                }
+                return null;
+            },
+        });
 
-		// Configure Region
-		const regionInput = await vscode.window.showInputBox({
-			title: 'Configure AWS Region',
-			prompt: 'Enter your preferred AWS region for Bedrock (default: us-east-1)',
-			value: currentRegion,
-			placeHolder: 'us-east-1',
-			validateInput: (value) => {
-				if (!value || value.trim().length === 0) {
-					return null; // Will use default
-				}
-				// Basic region format validation
-				if (!/^[a-z]{2}-[a-z]+-\d+$/.test(value)) {
-					return 'Invalid region format. Example: us-east-1, eu-west-1';
-				}
-				return null;
-			}
-		});
+        if (secretKeyInput === undefined) {
+            return; // User cancelled
+        }
 
-		if (regionInput === undefined) {
-			return; // User cancelled
-		}
+        // Configure Region
+        const regionInput = await vscode.window.showInputBox({
+            title: 'Configure AWS Region',
+            prompt: 'Enter your preferred AWS region for Bedrock (default: us-east-1)',
+            value: currentRegion,
+            placeHolder: 'us-east-1',
+            validateInput: value => {
+                if (!value || value.trim().length === 0) {
+                    return null; // Will use default
+                }
+                // Basic region format validation
+                if (!/^[a-z]{2}-[a-z]+-\d+$/.test(value)) {
+                    return 'Invalid region format. Example: us-east-1, eu-west-1';
+                }
+                return null;
+            },
+        });
 
-		try {
-			// Save all configurations
-			const updates: Thenable<void>[] = [];
-			
-			if (accessKeyInput !== '••••••••••••••••') {
-				updates.push(config.update('awsAccessKeyId', accessKeyInput.trim(), vscode.ConfigurationTarget.Global));
-			}
-			
-			if (secretKeyInput !== '••••••••••••••••••••••••••••••••••••••••') {
-				updates.push(config.update('awsSecretAccessKey', secretKeyInput.trim(), vscode.ConfigurationTarget.Global));
-			}
-			
-			const region = regionInput.trim() || 'us-east-1';
-			updates.push(config.update('awsRegion', region, vscode.ConfigurationTarget.Global));
+        if (regionInput === undefined) {
+            return; // User cancelled
+        }
 
-			await Promise.all(updates);
-			
-			vscode.window.showInformationMessage(`✅ AWS Bedrock credentials configured successfully! Region: ${region}`);
-		} catch (error) {
-			vscode.window.showErrorMessage(`Failed to save AWS credentials: ${error}`);
-		}
-	} else if (currentAccessKeyId && currentSecretAccessKey) {
-		vscode.window.showInformationMessage('AWS credentials unchanged (already configured)');
-	} else {
-		vscode.window.showWarningMessage('No AWS credentials were set');
-	}
+        try {
+            // Save all configurations
+            const updates: Thenable<void>[] = [];
+
+            if (accessKeyInput !== '••••••••••••••••') {
+                updates.push(
+                    config.update(
+                        'awsAccessKeyId',
+                        accessKeyInput.trim(),
+                        vscode.ConfigurationTarget.Global
+                    )
+                );
+            }
+
+            if (secretKeyInput !== '••••••••••••••••••••••••••••••••••••••••') {
+                updates.push(
+                    config.update(
+                        'awsSecretAccessKey',
+                        secretKeyInput.trim(),
+                        vscode.ConfigurationTarget.Global
+                    )
+                );
+            }
+
+            const region = regionInput.trim() || 'us-east-1';
+            updates.push(config.update('awsRegion', region, vscode.ConfigurationTarget.Global));
+
+            await Promise.all(updates);
+
+            vscode.window.showInformationMessage(
+                `✅ AWS Bedrock credentials configured successfully! Region: ${region}`
+            );
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to save AWS credentials: ${error}`);
+        }
+    } else if (currentAccessKeyId && currentSecretAccessKey) {
+        vscode.window.showInformationMessage('AWS credentials unchanged (already configured)');
+    } else {
+        vscode.window.showWarningMessage('No AWS credentials were set');
+    }
 }
 
 class SuperdesignCanvasPanel {
-	public static currentPanel: SuperdesignCanvasPanel | undefined;
-	public static readonly viewType = 'superdesignCanvasPanel';
+    public static currentPanel: SuperdesignCanvasPanel | undefined;
+    public static readonly viewType = 'superdesignCanvasPanel';
 
-	private readonly _panel: vscode.WebviewPanel;
-	private readonly _extensionUri: vscode.Uri;
-	private readonly _sidebarProvider: ChatSidebarProvider;
-	private readonly _disposables: vscode.Disposable[] = [];
-	private _fileWatcher: vscode.FileSystemWatcher | undefined;
+    private readonly _panel: vscode.WebviewPanel;
+    private readonly _extensionUri: vscode.Uri;
+    private readonly _sidebarProvider: ChatSidebarProvider;
+    private readonly _disposables: vscode.Disposable[] = [];
+    private _fileWatcher: vscode.FileSystemWatcher | undefined;
 
-	public static createOrShow(extensionUri: vscode.Uri, sidebarProvider: ChatSidebarProvider) {
-		const column = vscode.window.activeTextEditor?.viewColumn;
+    public static createOrShow(extensionUri: vscode.Uri, sidebarProvider: ChatSidebarProvider) {
+        const column = vscode.window.activeTextEditor?.viewColumn;
 
-		if (SuperdesignCanvasPanel.currentPanel) {
-			SuperdesignCanvasPanel.currentPanel._panel.reveal(column);
-			return;
-		}
+        if (SuperdesignCanvasPanel.currentPanel) {
+            SuperdesignCanvasPanel.currentPanel._panel.reveal(column);
+            return;
+        }
 
-		const panel = vscode.window.createWebviewPanel(
-			SuperdesignCanvasPanel.viewType,
-			'SecureDesign Canvas',
-			column || vscode.ViewColumn.One,
-			{
-				enableScripts: true,
-				localResourceRoots: [
-					vscode.Uri.joinPath(extensionUri, 'dist'),
-					vscode.Uri.joinPath(extensionUri, 'src', 'assets')
-				]
-			}
-		);
+        const panel = vscode.window.createWebviewPanel(
+            SuperdesignCanvasPanel.viewType,
+            'SecureDesign Canvas',
+            column || vscode.ViewColumn.One,
+            {
+                enableScripts: true,
+                localResourceRoots: [
+                    vscode.Uri.joinPath(extensionUri, 'dist'),
+                    vscode.Uri.joinPath(extensionUri, 'src', 'assets'),
+                ],
+            }
+        );
 
-		SuperdesignCanvasPanel.currentPanel = new SuperdesignCanvasPanel(panel, extensionUri, sidebarProvider);
-	}
+        SuperdesignCanvasPanel.currentPanel = new SuperdesignCanvasPanel(
+            panel,
+            extensionUri,
+            sidebarProvider
+        );
+    }
 
-	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, sidebarProvider: ChatSidebarProvider) {
-		this._panel = panel;
-		this._extensionUri = extensionUri;
-		this._sidebarProvider = sidebarProvider;
+    private constructor(
+        panel: vscode.WebviewPanel,
+        extensionUri: vscode.Uri,
+        sidebarProvider: ChatSidebarProvider
+    ) {
+        this._panel = panel;
+        this._extensionUri = extensionUri;
+        this._sidebarProvider = sidebarProvider;
 
-		this._update();
-		this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
-		this._setupFileWatcher();
+        this._update();
+        this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+        this._setupFileWatcher();
 
-		// Handle messages from the webview
-		this._panel.webview.onDidReceiveMessage(
-			message => {
-				switch (message.command) {
-					case 'loadDesignFiles':
-						void this._loadDesignFiles();
-						break;
-					case 'selectFrame':
-						Logger.debug(`Frame selected: ${message.data?.fileName}`);
-						break;
-					case 'setContextFromCanvas':
-						// Forward context to chat sidebar
-						this._sidebarProvider.sendMessage({
-							command: 'contextFromCanvas',
-							data: message.data
-						});
-						break;
-					case 'setChatPrompt':
-						// Forward prompt to chat sidebar
-						this._sidebarProvider.sendMessage({
-							command: 'setChatPrompt',
-							data: message.data
-						});
-						break;
-				}
-			},
-			null,
-			this._disposables
-		);
-	}
+        // Handle messages from the webview
+        this._panel.webview.onDidReceiveMessage(
+            message => {
+                switch (message.command) {
+                    case 'loadDesignFiles':
+                        void this._loadDesignFiles();
+                        break;
+                    case 'selectFrame':
+                        Logger.debug(`Frame selected: ${message.data?.fileName}`);
+                        break;
+                    case 'setContextFromCanvas':
+                        // Forward context to chat sidebar
+                        this._sidebarProvider.sendMessage({
+                            command: 'contextFromCanvas',
+                            data: message.data,
+                        });
+                        break;
+                    case 'setChatPrompt':
+                        // Forward prompt to chat sidebar
+                        this._sidebarProvider.sendMessage({
+                            command: 'setChatPrompt',
+                            data: message.data,
+                        });
+                        break;
+                }
+            },
+            null,
+            this._disposables
+        );
+    }
 
-	public dispose() {
-		SuperdesignCanvasPanel.currentPanel = undefined;
+    public dispose() {
+        SuperdesignCanvasPanel.currentPanel = undefined;
 
-		// Dispose of file watcher
-		if (this._fileWatcher) {
-			this._fileWatcher.dispose();
-			this._fileWatcher = undefined;
-		}
+        // Dispose of file watcher
+        if (this._fileWatcher) {
+            this._fileWatcher.dispose();
+            this._fileWatcher = undefined;
+        }
 
-		this._panel.dispose();
-		while (this._disposables.length) {
-			const x = this._disposables.pop();
-			if (x) {
-				x.dispose();
-			}
-		}
-	}
+        this._panel.dispose();
+        while (this._disposables.length) {
+            const x = this._disposables.pop();
+            if (x) {
+                x.dispose();
+            }
+        }
+    }
 
-	private _setupFileWatcher() {
-		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-		if (!workspaceFolder) {
-			return;
-		}
+    private _setupFileWatcher() {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) {
+            return;
+        }
 
-		// Watch for changes in .superdesign/design_iterations/*.html, *.svg, and *.css
-		const pattern = new vscode.RelativePattern(
-			workspaceFolder,
-			'.superdesign/design_iterations/**/*.{html,svg,css}'
-		);
+        // Watch for changes in .superdesign/design_iterations/*.html, *.svg, and *.css
+        const pattern = new vscode.RelativePattern(
+            workspaceFolder,
+            '.superdesign/design_iterations/**/*.{html,svg,css}'
+        );
 
-		this._fileWatcher = vscode.workspace.createFileSystemWatcher(
-			pattern,
-			false, // Don't ignore create events
-			false, // Don't ignore change events  
-			false  // Don't ignore delete events
-		);
+        this._fileWatcher = vscode.workspace.createFileSystemWatcher(
+            pattern,
+            false, // Don't ignore create events
+            false, // Don't ignore change events
+            false // Don't ignore delete events
+        );
 
-		// Handle file creation
-		this._fileWatcher.onDidCreate((uri) => {
-			Logger.debug(`Design file created: ${uri.fsPath}`);
-			this._panel.webview.postMessage({
-				command: 'fileChanged',
-				data: {
-					fileName: uri.fsPath.split('/').pop() || '',
-					changeType: 'created'
-				}
-			});
-		});
+        // Handle file creation
+        this._fileWatcher.onDidCreate(uri => {
+            Logger.debug(`Design file created: ${uri.fsPath}`);
+            this._panel.webview.postMessage({
+                command: 'fileChanged',
+                data: {
+                    fileName: uri.fsPath.split('/').pop() || '',
+                    changeType: 'created',
+                },
+            });
+        });
 
-		// Handle file modification
-		this._fileWatcher.onDidChange((uri) => {
-			Logger.debug(`Design file modified: ${uri.fsPath}`);
-			this._panel.webview.postMessage({
-				command: 'fileChanged',
-				data: {
-					fileName: uri.fsPath.split('/').pop() || '',
-					changeType: 'modified'
-				}
-			});
-		});
+        // Handle file modification
+        this._fileWatcher.onDidChange(uri => {
+            Logger.debug(`Design file modified: ${uri.fsPath}`);
+            this._panel.webview.postMessage({
+                command: 'fileChanged',
+                data: {
+                    fileName: uri.fsPath.split('/').pop() || '',
+                    changeType: 'modified',
+                },
+            });
+        });
 
-		// Handle file deletion
-		this._fileWatcher.onDidDelete((uri) => {
-			Logger.debug(`Design file deleted: ${uri.fsPath}`);
-			this._panel.webview.postMessage({
-				command: 'fileChanged',
-				data: {
-					fileName: uri.fsPath.split('/').pop() || '',
-					changeType: 'deleted'
-				}
-			});
-		});
-	}
+        // Handle file deletion
+        this._fileWatcher.onDidDelete(uri => {
+            Logger.debug(`Design file deleted: ${uri.fsPath}`);
+            this._panel.webview.postMessage({
+                command: 'fileChanged',
+                data: {
+                    fileName: uri.fsPath.split('/').pop() || '',
+                    changeType: 'deleted',
+                },
+            });
+        });
+    }
 
-	private _update() {
-		const webview = this._panel.webview;
-		this._panel.webview.html = this._getHtmlForWebview(webview);
-	}
+    private _update() {
+        const webview = this._panel.webview;
+        this._panel.webview.html = this._getHtmlForWebview(webview);
+    }
 
-	private _getHtmlForWebview(webview: vscode.Webview) {
-		const scriptUri = webview.asWebviewUri(
-			vscode.Uri.joinPath(this._extensionUri, 'dist', 'webview.js')
-		);
+    private _getHtmlForWebview(webview: vscode.Webview) {
+        const scriptUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, 'dist', 'webview.js')
+        );
 
-		// Generate webview URIs for logo images
-		const logoUris = {
-			cursor: webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'assets', 'cursor_logo.png')).toString(),
-			windsurf: webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'assets', 'windsurf_logo.png')).toString(),
-			claudeCode: webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'assets', 'claude_code_logo.png')).toString(),
-			lovable: webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'assets', 'lovable_logo.png')).toString(),
-			bolt: webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'assets', 'bolt_logo.jpg')).toString(),
-		};
+        // Generate webview URIs for logo images
+        const logoUris = {
+            cursor: webview
+                .asWebviewUri(
+                    vscode.Uri.joinPath(this._extensionUri, 'src', 'assets', 'cursor_logo.png')
+                )
+                .toString(),
+            windsurf: webview
+                .asWebviewUri(
+                    vscode.Uri.joinPath(this._extensionUri, 'src', 'assets', 'windsurf_logo.png')
+                )
+                .toString(),
+            claudeCode: webview
+                .asWebviewUri(
+                    vscode.Uri.joinPath(this._extensionUri, 'src', 'assets', 'claude_code_logo.png')
+                )
+                .toString(),
+            lovable: webview
+                .asWebviewUri(
+                    vscode.Uri.joinPath(this._extensionUri, 'src', 'assets', 'lovable_logo.png')
+                )
+                .toString(),
+            bolt: webview
+                .asWebviewUri(
+                    vscode.Uri.joinPath(this._extensionUri, 'src', 'assets', 'bolt_logo.jpg')
+                )
+                .toString(),
+        };
 
-		// Debug logging
-		Logger.debug(`Canvas Panel - Extension URI: ${this._extensionUri.toString()}`);
-		Logger.debug(`Canvas Panel - Generated logo URIs: ${JSON.stringify(logoUris)}`);
+        // Debug logging
+        Logger.debug(`Canvas Panel - Extension URI: ${this._extensionUri.toString()}`);
+        Logger.debug(`Canvas Panel - Generated logo URIs: ${JSON.stringify(logoUris)}`);
 
-		const nonce = getNonce();
+        const nonce = getNonce();
 
-		return `<!DOCTYPE html>
+        return `<!DOCTYPE html>
 			<html lang="en">
 			<head>
 				<meta charset="UTF-8">
@@ -1942,194 +2060,201 @@ class SuperdesignCanvasPanel {
 				<script nonce="${nonce}" src="${scriptUri}"></script>
 			</body>
 			</html>`;
-	}
+    }
 
-	private async _loadDesignFiles() {
-		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-		if (!workspaceFolder) {
-			this._panel.webview.postMessage({
-				command: 'error',
-				data: { error: 'No workspace folder found. Please open a workspace first.' }
-			});
-			return;
-		}
+    private async _loadDesignFiles() {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) {
+            this._panel.webview.postMessage({
+                command: 'error',
+                data: { error: 'No workspace folder found. Please open a workspace first.' },
+            });
+            return;
+        }
 
-		try {
-			const designFolder = vscode.Uri.joinPath(workspaceFolder.uri, '.superdesign', 'design_iterations');
+        try {
+            const designFolder = vscode.Uri.joinPath(
+                workspaceFolder.uri,
+                '.superdesign',
+                'design_iterations'
+            );
 
-			// Check if the design_files folder exists
-			try {
-				await vscode.workspace.fs.stat(designFolder);
-			} catch (error) {
-				// Folder doesn't exist, create it
-				try {
-					await vscode.workspace.fs.createDirectory(designFolder);
-					Logger.info('Created .superdesign/design_iterations directory');
-				} catch (createError) {
-					this._panel.webview.postMessage({
-						command: 'error',
-						data: { error: `Failed to create design_files directory: ${createError}` }
-					});
-					return;
-				}
-			}
+            // Check if the design_files folder exists
+            try {
+                await vscode.workspace.fs.stat(designFolder);
+            } catch (error) {
+                // Folder doesn't exist, create it
+                try {
+                    await vscode.workspace.fs.createDirectory(designFolder);
+                    Logger.info('Created .superdesign/design_iterations directory');
+                } catch (createError) {
+                    this._panel.webview.postMessage({
+                        command: 'error',
+                        data: { error: `Failed to create design_files directory: ${createError}` },
+                    });
+                    return;
+                }
+            }
 
-			// Read all files in the directory
-			const files = await vscode.workspace.fs.readDirectory(designFolder);
-			const designFiles = files.filter(([name, type]) =>
-				type === vscode.FileType.File && (
-					name.toLowerCase().endsWith('.html') ||
-					name.toLowerCase().endsWith('.svg')
-				)
-			);
+            // Read all files in the directory
+            const files = await vscode.workspace.fs.readDirectory(designFolder);
+            const designFiles = files.filter(
+                ([name, type]) =>
+                    type === vscode.FileType.File &&
+                    (name.toLowerCase().endsWith('.html') || name.toLowerCase().endsWith('.svg'))
+            );
 
-			const loadedFiles = await Promise.all(
-				designFiles.map(async ([fileName, _]) => {
-					const filePath = vscode.Uri.joinPath(designFolder, fileName);
+            const loadedFiles = await Promise.all(
+                designFiles.map(async ([fileName, _]) => {
+                    const filePath = vscode.Uri.joinPath(designFolder, fileName);
 
-					try {
-						// Read file stats and content
-						const [stat, content] = await Promise.all([
-							vscode.workspace.fs.stat(filePath),
-							vscode.workspace.fs.readFile(filePath)
-						]);
+                    try {
+                        // Read file stats and content
+                        const [stat, content] = await Promise.all([
+                            vscode.workspace.fs.stat(filePath),
+                            vscode.workspace.fs.readFile(filePath),
+                        ]);
 
-						const fileType = fileName.toLowerCase().endsWith('.svg') ? 'svg' : 'html';
-						let htmlContent = Buffer.from(content).toString('utf8');
+                        const fileType = fileName.toLowerCase().endsWith('.svg') ? 'svg' : 'html';
+                        let htmlContent = Buffer.from(content).toString('utf8');
 
-						// For HTML files, inline any external CSS files
-						if (fileType === 'html') {
-							htmlContent = await this._inlineExternalCSS(htmlContent, designFolder);
-						}
+                        // For HTML files, inline any external CSS files
+                        if (fileType === 'html') {
+                            htmlContent = await this._inlineExternalCSS(htmlContent, designFolder);
+                        }
 
-						return {
-							name: fileName,
-							path: filePath.fsPath,
-							content: htmlContent,
-							size: stat.size,
-							modified: new Date(stat.mtime),
-							fileType
-						};
-					} catch (fileError) {
-						Logger.error(`Failed to read file ${fileName}: ${fileError}`);
-						return null;
-					}
-				})
-			);
+                        return {
+                            name: fileName,
+                            path: filePath.fsPath,
+                            content: htmlContent,
+                            size: stat.size,
+                            modified: new Date(stat.mtime),
+                            fileType,
+                        };
+                    } catch (fileError) {
+                        Logger.error(`Failed to read file ${fileName}: ${fileError}`);
+                        return null;
+                    }
+                })
+            );
 
-			// Filter out any failed file reads
-			const validFiles = loadedFiles.filter(file => file !== null);
+            // Filter out any failed file reads
+            const validFiles = loadedFiles.filter(file => file !== null);
 
-			Logger.info(`Loaded ${validFiles.length} design files (HTML & SVG)`);
+            Logger.info(`Loaded ${validFiles.length} design files (HTML & SVG)`);
 
-			this._panel.webview.postMessage({
-				command: 'designFilesLoaded',
-				data: { files: validFiles }
-			});
+            this._panel.webview.postMessage({
+                command: 'designFilesLoaded',
+                data: { files: validFiles },
+            });
+        } catch (error) {
+            Logger.error(`Error loading design files: ${error}`);
+            this._panel.webview.postMessage({
+                command: 'error',
+                data: { error: `Failed to load design files: ${error}` },
+            });
+        }
+    }
 
-		} catch (error) {
-			Logger.error(`Error loading design files: ${error}`);
-			this._panel.webview.postMessage({
-				command: 'error',
-				data: { error: `Failed to load design files: ${error}` }
-			});
-		}
-	}
+    private async _inlineExternalCSS(
+        htmlContent: string,
+        designFolder: vscode.Uri
+    ): Promise<string> {
+        // Match link tags that reference CSS files
+        const linkRegex = /<link\s+[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi;
+        let modifiedContent = htmlContent;
+        const matches = Array.from(htmlContent.matchAll(linkRegex));
 
-	private async _inlineExternalCSS(htmlContent: string, designFolder: vscode.Uri): Promise<string> {
-		// Match link tags that reference CSS files
-		const linkRegex = /<link\s+[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi;
-		let modifiedContent = htmlContent;
-		const matches = Array.from(htmlContent.matchAll(linkRegex));
+        for (const match of matches) {
+            const fullLinkTag = match[0];
+            const cssFileName = match[1];
 
-		for (const match of matches) {
-			const fullLinkTag = match[0];
-			const cssFileName = match[1];
+            try {
+                // Only process relative paths (not absolute URLs)
+                if (!cssFileName.startsWith('http') && !cssFileName.startsWith('//')) {
+                    const cssFilePath = vscode.Uri.joinPath(designFolder, cssFileName);
 
-			try {
-				// Only process relative paths (not absolute URLs)
-				if (!cssFileName.startsWith('http') && !cssFileName.startsWith('//')) {
-					const cssFilePath = vscode.Uri.joinPath(designFolder, cssFileName);
+                    // Check if CSS file exists
+                    try {
+                        const cssContent = await vscode.workspace.fs.readFile(cssFilePath);
+                        const cssText = Buffer.from(cssContent).toString('utf8');
 
-					// Check if CSS file exists
-					try {
-						const cssContent = await vscode.workspace.fs.readFile(cssFilePath);
-						const cssText = Buffer.from(cssContent).toString('utf8');
+                        // Replace the link tag with a style tag containing the CSS content
+                        const styleTag = `<style>\n${cssText}\n</style>`;
+                        modifiedContent = modifiedContent.replace(fullLinkTag, styleTag);
 
-						// Replace the link tag with a style tag containing the CSS content
-						const styleTag = `<style>\n${cssText}\n</style>`;
-						modifiedContent = modifiedContent.replace(fullLinkTag, styleTag);
+                        Logger.debug(`Inlined CSS file: ${cssFileName}`);
+                    } catch (cssError) {
+                        Logger.warn(`Could not read CSS file ${cssFileName}: ${cssError}`);
+                        // Leave the original link tag in place if CSS file can't be read
+                    }
+                }
+            } catch (error) {
+                Logger.warn(`Error processing CSS link ${cssFileName}: ${error}`);
+            }
+        }
 
-						Logger.debug(`Inlined CSS file: ${cssFileName}`);
-					} catch (cssError) {
-						Logger.warn(`Could not read CSS file ${cssFileName}: ${cssError}`);
-						// Leave the original link tag in place if CSS file can't be read
-					}
-				}
-			} catch (error) {
-				Logger.warn(`Error processing CSS link ${cssFileName}: ${error}`);
-			}
-		}
-
-		return modifiedContent;
-	}
+        return modifiedContent;
+    }
 }
 
 function getNonce() {
-	let text = '';
-	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-	for (let i = 0; i < 32; i++) {
-		text += possible.charAt(Math.floor(Math.random() * possible.length));
-	}
-	return text;
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 32; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
 }
 
 // This method is called when your extension is deactivated
 // Function to configure Moonshot API key
 async function configureMoonshotApiKey() {
-	const currentKey = vscode.workspace.getConfiguration('superdesign').get<string>('moonshotApiKey');
+    const currentKey = vscode.workspace
+        .getConfiguration('superdesign')
+        .get<string>('moonshotApiKey');
 
-	const input = await vscode.window.showInputBox({
-		title: 'Configure Moonshot API Key',
-		prompt: 'Enter your Moonshot AI API key (get one from https://platform.moonshot.cn/)',
-		value: currentKey ? '••••••••••••••••' : '',
-		password: true,
-		placeHolder: 'sk-...',
-		validateInput: (value) => {
-			if (!value || value.trim().length === 0) {
-				return 'API key cannot be empty';
-			}
-			if (value === '••••••••••••••••') {
-				return null; // User didn't change the masked value, that's OK
-			}
-			if (!value.startsWith('sk-')) {
-				return 'Moonshot API keys should start with "sk-"';
-			}
-			return null;
-		}
-	});
+    const input = await vscode.window.showInputBox({
+        title: 'Configure Moonshot API Key',
+        prompt: 'Enter your Moonshot AI API key (get one from https://platform.moonshot.cn/)',
+        value: currentKey ? '••••••••••••••••' : '',
+        password: true,
+        placeHolder: 'sk-...',
+        validateInput: value => {
+            if (!value || value.trim().length === 0) {
+                return 'API key cannot be empty';
+            }
+            if (value === '••••••••••••••••') {
+                return null; // User didn't change the masked value, that's OK
+            }
+            if (!value.startsWith('sk-')) {
+                return 'Moonshot API keys should start with "sk-"';
+            }
+            return null;
+        },
+    });
 
-	if (input !== undefined) {
-		// Only update if user didn't just keep the masked value
-		if (input !== '••••••••••••••••') {
-			try {
-				await vscode.workspace.getConfiguration('superdesign').update(
-					'moonshotApiKey',
-					input.trim(),
-					vscode.ConfigurationTarget.Global
-				);
-				vscode.window.showInformationMessage('✅ Moonshot API key configured successfully!');
-			} catch (error) {
-				vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
-			}
-		} else if (currentKey) {
-			vscode.window.showInformationMessage('API key unchanged (already configured)');
-		} else {
-			vscode.window.showWarningMessage('No API key was set');
-		}
-	}
+    if (input !== undefined) {
+        // Only update if user didn't just keep the masked value
+        if (input !== '••••••••••••••••') {
+            try {
+                await vscode.workspace
+                    .getConfiguration('superdesign')
+                    .update('moonshotApiKey', input.trim(), vscode.ConfigurationTarget.Global);
+                vscode.window.showInformationMessage(
+                    '✅ Moonshot API key configured successfully!'
+                );
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
+            }
+        } else if (currentKey) {
+            vscode.window.showInformationMessage('API key unchanged (already configured)');
+        } else {
+            vscode.window.showWarningMessage('No API key was set');
+        }
+    }
 }
 
 export function deactivate() {
-	Logger.dispose();
+    Logger.dispose();
 }

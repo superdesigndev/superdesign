@@ -184,8 +184,13 @@
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+    50% {
+        opacity: 1;
+    }
 }
 
 /* Chat Input Container */
@@ -308,11 +313,11 @@
     .chat-history {
         padding: 16px;
     }
-    
+
     .chat-input-container {
         padding: 12px 16px;
     }
-    
+
     .chat-message {
         max-width: 95%;
     }
@@ -330,7 +335,8 @@
     font-size: 0.9rem;
 }
 
-.control-btn, .viewport-btn {
+.control-btn,
+.viewport-btn {
     background-color: transparent;
     border: none;
     color: #ffffff;
@@ -345,11 +351,13 @@
     transition: background-color 0.15s ease;
 }
 
-.control-btn:hover, .viewport-btn:hover {
+.control-btn:hover,
+.viewport-btn:hover {
     background-color: #3f3f3f;
 }
 
-.control-btn:disabled, .viewport-btn:disabled {
+.control-btn:disabled,
+.viewport-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
     background-color: transparent;
@@ -404,7 +412,7 @@
     font-size: 12px;
     z-index: 100;
     white-space: nowrap;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 /* Transform Wrapper */
@@ -430,13 +438,22 @@
     min-height: 10000px;
     user-select: none;
     /* Always show subtle grid background */
-    background-image: 
-        linear-gradient(90deg, rgba(var(--vscode-panel-border-rgb, 128, 128, 128), 0.3) 1px, transparent 1px),
-        linear-gradient(rgba(var(--vscode-panel-border-rgb, 128, 128, 128), 0.3) 1px, transparent 1px);
+    background-image:
+        linear-gradient(
+            90deg,
+            rgba(var(--vscode-panel-border-rgb, 128, 128, 128), 0.3) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            rgba(var(--vscode-panel-border-rgb, 128, 128, 128), 0.3) 1px,
+            transparent 1px
+        );
     background-size: 50px 50px;
-    background-position: 0 0, 0 0;
+    background-position:
+        0 0,
+        0 0;
     /* Fallback for browsers that don't support CSS custom property RGB values */
-    background: 
+    background:
         linear-gradient(90deg, var(--vscode-panel-border) 1px, transparent 1px),
         linear-gradient(var(--vscode-panel-border) 1px, transparent 1px);
     background-size: 50px 50px;
@@ -444,11 +461,13 @@
 
 .canvas-grid.dragging {
     /* Enhance grid visibility during dragging with smaller, more visible grid */
-    background-image: 
+    background-image:
         linear-gradient(90deg, var(--vscode-focusBorder) 1px, transparent 1px),
         linear-gradient(var(--vscode-focusBorder) 1px, transparent 1px);
     background-size: 25px 25px;
-    background-position: 0 0, 0 0;
+    background-position:
+        0 0,
+        0 0;
 }
 
 /* Design Frames */
@@ -598,8 +617,13 @@
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
 }
 
 /* Viewport Controls */
@@ -828,8 +852,12 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Error States */
@@ -1055,7 +1083,7 @@
     top: 16px;
     left: 16px;
     z-index: 1000;
-    
+
     display: flex;
     align-items: stretch;
     background: var(--vscode-titleBar-activeBackground);
@@ -1340,7 +1368,7 @@
         flex-wrap: wrap;
         max-width: calc(100vw - 16px);
     }
-    
+
     .toolbar-section {
         padding: 0 8px;
     }
@@ -1497,7 +1525,7 @@
 }
 
 .copy-prompt-main-btn.success::before {
-    content: "✓";
+    content: '✓';
     font-size: 16px;
     margin-right: 8px;
     color: white !important;

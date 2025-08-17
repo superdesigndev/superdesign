@@ -32,7 +32,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
     public resolveWebviewView(
         webviewView: vscode.WebviewView,
         _context: vscode.WebviewViewResolveContext,
-        _token: vscode.CancellationToken,
+        _token: vscode.CancellationToken
     ) {
         this._view = webviewView;
 
@@ -40,13 +40,13 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             enableScripts: true,
             localResourceRoots: [
                 vscode.Uri.joinPath(this._extensionUri, 'dist'),
-                vscode.Uri.joinPath(this._extensionUri, 'src', 'assets')
-            ]
+                vscode.Uri.joinPath(this._extensionUri, 'src', 'assets'),
+            ],
         };
 
         const webviewContext: WebviewContext = {
             layout: 'sidebar',
-            extensionUri: this._extensionUri.toString()
+            extensionUri: this._extensionUri.toString(),
         };
 
         webviewView.webview.html = generateWebviewHtml(
@@ -56,53 +56,54 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
         );
 
         // Handle messages from the webview
-        webviewView.webview.onDidReceiveMessage(
-            async (message) => {
-                // First try custom message handler for auto-canvas functionality
-                if (this.customMessageHandler) {
-                    this.customMessageHandler(message);
-                }
-
-                // Then handle regular chat messages
-                switch (message.command) {
-                    case 'chatMessage':
-                        await this.messageHandler.handleChatMessage(message, webviewView.webview);
-                        break;
-                    case 'stopChat':
-                        await this.messageHandler.stopCurrentChat(webviewView.webview);
-                        break;
-                    case 'executeAction':
-                        // Execute command from error action buttons
-                        console.log('Executing action:', message.actionCommand, message.actionArgs);
-                        if (message.actionArgs) {
-                            await vscode.commands.executeCommand(message.actionCommand, message.actionArgs);
-                        } else {
-                            await vscode.commands.executeCommand(message.actionCommand);
-                        }
-                        break;
-                    case 'getBase64Image':
-                        // Forward to extension for image conversion
-                        // This will be handled by extension.ts
-                        break;
-                    case 'getCurrentProvider':
-                        await this.handleGetCurrentProvider(webviewView.webview);
-                        break;
-                    case 'changeProvider':
-                        await this.handleChangeProvider(message.model, webviewView.webview);
-                        break;
-                    case 'showContextPicker':
-                        await this.handleShowContextPicker(webviewView.webview);
-                        break;
-                }
+        webviewView.webview.onDidReceiveMessage(async message => {
+            // First try custom message handler for auto-canvas functionality
+            if (this.customMessageHandler) {
+                this.customMessageHandler(message);
             }
-        );
+
+            // Then handle regular chat messages
+            switch (message.command) {
+                case 'chatMessage':
+                    await this.messageHandler.handleChatMessage(message, webviewView.webview);
+                    break;
+                case 'stopChat':
+                    await this.messageHandler.stopCurrentChat(webviewView.webview);
+                    break;
+                case 'executeAction':
+                    // Execute command from error action buttons
+                    console.log('Executing action:', message.actionCommand, message.actionArgs);
+                    if (message.actionArgs) {
+                        await vscode.commands.executeCommand(
+                            message.actionCommand,
+                            message.actionArgs
+                        );
+                    } else {
+                        await vscode.commands.executeCommand(message.actionCommand);
+                    }
+                    break;
+                case 'getBase64Image':
+                    // Forward to extension for image conversion
+                    // This will be handled by extension.ts
+                    break;
+                case 'getCurrentProvider':
+                    await this.handleGetCurrentProvider(webviewView.webview);
+                    break;
+                case 'changeProvider':
+                    await this.handleChangeProvider(message.model, webviewView.webview);
+                    break;
+                case 'showContextPicker':
+                    await this.handleShowContextPicker(webviewView.webview);
+                    break;
+            }
+        });
     }
 
     private async handleGetCurrentProvider(webview: vscode.Webview) {
         const config = vscode.workspace.getConfiguration('securedesign');
         const currentProvider = config.get<string>('aiModelProvider', 'anthropic');
         const currentModel = config.get<string>('aiModel');
-        
+
         // If no specific model is set, use defaults
         let defaultModel: string;
         switch (currentProvider) {
@@ -122,24 +123,24 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 defaultModel = 'claude-3-5-sonnet-20241022';
                 break;
         }
-        
+
         await webview.postMessage({
             command: 'currentProviderResponse',
             provider: currentProvider,
-            model: currentModel || defaultModel
+            model: currentModel || defaultModel,
         });
     }
 
     private async handleChangeProvider(model: string, webview: vscode.Webview) {
         try {
             const config = vscode.workspace.getConfiguration('securedesign');
-            
+
             // Determine provider and API key based on model
             let provider: string;
             let apiKeyKey: string;
             let configureCommand: string;
             let displayName: string;
-            
+
             if (model.includes('/')) {
                 // OpenRouter model (contains slash like "openai/gpt-4o")
                 provider = 'openrouter';
@@ -156,12 +157,14 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 apiKeyKey = 'googleApiKey';
                 configureCommand = 'securedesign.configureGoogleApiKey';
                 displayName = `Google (${this.getModelDisplayName(model)})`;
-            } else if (model.startsWith('anthropic.') || 
-                       model.startsWith('amazon.') ||
-                       model.startsWith('meta.') ||
-                       model.startsWith('ai21.') ||
-                       model.startsWith('cohere.') ||
-                       model.startsWith('mistral.')) {
+            } else if (
+                model.startsWith('anthropic.') ||
+                model.startsWith('amazon.') ||
+                model.startsWith('meta.') ||
+                model.startsWith('ai21.') ||
+                model.startsWith('cohere.') ||
+                model.startsWith('mistral.')
+            ) {
                 provider = 'bedrock';
                 apiKeyKey = 'awsAccessKeyId'; // We'll check both AWS keys in the validation
                 configureCommand = 'superdesign.configureAWSBedrock';
@@ -172,11 +175,11 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 configureCommand = 'securedesign.configureOpenAIApiKey';
                 displayName = `OpenAI (${this.getModelDisplayName(model)})`;
             }
-            
+
             // Update both provider and specific model
             await config.update('aiModelProvider', provider, vscode.ConfigurationTarget.Global);
             await config.update('aiModel', model, vscode.ConfigurationTarget.Global);
-            
+
             // Check if the credentials are configured for the selected provider
             let isConfigured = false;
             if (provider === 'bedrock') {
@@ -187,14 +190,14 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 const apiKey = config.get<string>(apiKeyKey);
                 isConfigured = !!apiKey;
             }
-            
+
             if (!isConfigured) {
                 const result = await vscode.window.showWarningMessage(
                     `${displayName} selected, but credentials are not configured. Would you like to configure them now?`,
                     'Configure Credentials',
                     'Later'
                 );
-                
+
                 if (result === 'Configure Credentials') {
                     await vscode.commands.executeCommand(configureCommand);
                 }
@@ -204,9 +207,8 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             await webview.postMessage({
                 command: 'providerChanged',
                 provider: provider,
-                model: model
+                model: model,
             });
-
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to update AI model: ${error}`);
         }
@@ -219,28 +221,28 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 {
                     label: '📄 Select File',
                     description: 'Choose a file from your workspace',
-                    action: 'selectFile'
+                    action: 'selectFile',
                 },
                 {
                     label: '📁 Select Folder',
                     description: 'Choose a folder from your workspace',
-                    action: 'selectFolder'
+                    action: 'selectFolder',
                 },
                 {
                     label: '🖼️ Select Images',
                     description: 'Choose image files for analysis',
-                    action: 'selectImages'
+                    action: 'selectImages',
                 },
                 {
                     label: '📋 Canvas Content',
                     description: 'Use current canvas as context',
-                    action: 'canvasContent'
-                }
+                    action: 'canvasContent',
+                },
             ];
 
             const selected = await vscode.window.showQuickPick(options, {
                 placeHolder: 'What would you like to add as context?',
-                matchOnDescription: true
+                matchOnDescription: true,
             });
 
             if (!selected) {
@@ -273,10 +275,23 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             canSelectMany: false,
             filters: {
                 'All Files': ['*'],
-                'Code Files': ['js', 'ts', 'jsx', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'go', 'rs', 'php'],
+                'Code Files': [
+                    'js',
+                    'ts',
+                    'jsx',
+                    'tsx',
+                    'py',
+                    'java',
+                    'cpp',
+                    'c',
+                    'cs',
+                    'go',
+                    'rs',
+                    'php',
+                ],
                 'Text Files': ['txt', 'md', 'json', 'xml', 'yaml', 'yml', 'toml'],
-                'Config Files': ['config', 'conf', 'env', 'ini']
-            }
+                'Config Files': ['config', 'conf', 'env', 'ini'],
+            },
         });
 
         if (files && files.length > 0) {
@@ -285,8 +300,8 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 command: 'contextFromCanvas',
                 data: {
                     fileName: filePath,
-                    type: 'file'
-                }
+                    type: 'file',
+                },
             });
         }
     }
@@ -295,7 +310,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
         const folders = await vscode.window.showOpenDialog({
             canSelectFiles: false,
             canSelectFolders: true,
-            canSelectMany: false
+            canSelectMany: false,
         });
 
         if (folders && folders.length > 0) {
@@ -304,8 +319,8 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 command: 'contextFromCanvas',
                 data: {
                     fileName: folderPath,
-                    type: 'folder'
-                }
+                    type: 'folder',
+                },
             });
         }
     }
@@ -316,8 +331,8 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             canSelectFolders: false,
             canSelectMany: true,
             filters: {
-                'Images': ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg', 'webp']
-            }
+                Images: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg', 'webp'],
+            },
         });
 
         if (images && images.length > 0) {
@@ -326,8 +341,8 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                     command: 'contextFromCanvas',
                     data: {
                         fileName: images[0].fsPath,
-                        type: 'image'
-                    }
+                        type: 'image',
+                    },
                 });
             } else {
                 const imagePaths = images.map(img => img.fsPath).join(', ');
@@ -335,8 +350,8 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                     command: 'contextFromCanvas',
                     data: {
                         fileName: imagePaths,
-                        type: 'images'
-                    }
+                        type: 'images',
+                    },
                 });
             }
         }
@@ -348,12 +363,12 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             command: 'contextFromCanvas',
             data: {
                 fileName: 'Canvas Content',
-                type: 'canvas'
-            }
+                type: 'canvas',
+            },
         });
         vscode.window.showInformationMessage('Canvas content added as context');
     }
-    
+
     private getModelDisplayName(model: string): string {
         const modelNames: { [key: string]: string } = {
             // OpenAI models
@@ -538,9 +553,9 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             'inflection/inflection-3-productivity': 'Inflection 3 Productivity',
             'inflection/inflection-3-pi': 'Inflection 3 Pi',
             'rekaai/reka-flash-3': 'Reka Flash 3',
-            'openrouter/auto': 'Auto (Best Available)'
+            'openrouter/auto': 'Auto (Best Available)',
         };
-        
+
         return modelNames[model] || model;
     }
-} 
+}

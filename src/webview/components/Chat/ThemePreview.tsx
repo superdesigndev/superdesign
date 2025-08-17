@@ -1,166 +1,174 @@
 import React, { useEffect, useRef } from 'react';
 
 interface ThemePreviewProps {
-  theme: any;
-  isDarkMode: boolean;
-  cssSheet: string;
+    theme: any;
+    isDarkMode: boolean;
+    cssSheet: string;
 }
 
 // Google Fonts that we support
 const SUPPORTED_GOOGLE_FONTS = [
-  'JetBrains Mono',
-  'Fira Code', 
-  'Source Code Pro',
-  'IBM Plex Mono',
-  'Roboto Mono',
-  'Space Mono',
-  'Geist Mono',
-  'Inter',
-  'Roboto',
-  'Open Sans',
-  'Poppins',
-  'Montserrat',
-  'Outfit',
-  'Plus Jakarta Sans',
-  'DM Sans',
-  'Geist',
-  'Oxanium',
-  'Architects Daughter',
-  'Merriweather',
-  'Playfair Display',
-  'Lora',
-  'Source Serif Pro',
-  'Libre Baskerville',
-  'Space Grotesk'
+    'JetBrains Mono',
+    'Fira Code',
+    'Source Code Pro',
+    'IBM Plex Mono',
+    'Roboto Mono',
+    'Space Mono',
+    'Geist Mono',
+    'Inter',
+    'Roboto',
+    'Open Sans',
+    'Poppins',
+    'Montserrat',
+    'Outfit',
+    'Plus Jakarta Sans',
+    'DM Sans',
+    'Geist',
+    'Oxanium',
+    'Architects Daughter',
+    'Merriweather',
+    'Playfair Display',
+    'Lora',
+    'Source Serif Pro',
+    'Libre Baskerville',
+    'Space Grotesk',
 ];
 
 // System fonts that should not be loaded from Google Fonts
 const SYSTEM_FONTS = [
-  'system-ui',
-  'sans-serif',
-  'serif',
-  'monospace',
-  'cursive',
-  'fantasy',
-  'ui-sans-serif',
-  'ui-serif',
-  'ui-monospace',
-  'ui-rounded',
-  'Arial',
-  'Helvetica',
-  'Times',
-  'Times New Roman',
-  'Courier',
-  'Courier New',
-  'Georgia',
-  'Verdana',
-  'Tahoma',
-  'Trebuchet MS',
-  'Impact',
-  'Comic Sans MS',
-  'MS Sans Serif',
-  'MS Serif',
-  'Pixelated MS Sans Serif'
+    'system-ui',
+    'sans-serif',
+    'serif',
+    'monospace',
+    'cursive',
+    'fantasy',
+    'ui-sans-serif',
+    'ui-serif',
+    'ui-monospace',
+    'ui-rounded',
+    'Arial',
+    'Helvetica',
+    'Times',
+    'Times New Roman',
+    'Courier',
+    'Courier New',
+    'Georgia',
+    'Verdana',
+    'Tahoma',
+    'Trebuchet MS',
+    'Impact',
+    'Comic Sans MS',
+    'MS Sans Serif',
+    'MS Serif',
+    'Pixelated MS Sans Serif',
 ];
 
 // Extract font families from CSS variables
 const extractFontsFromCSS = (cssSheet: string): string[] => {
-  const fonts = new Set<string>();
-  
-  // Look for font-family declarations
-  const fontRegex = /--font-[^:]*:\s*["']?([^"';,]+)/g;
-  let match;
-  
-  while ((match = fontRegex.exec(cssSheet)) !== null) {
-    const fontName = match[1].trim();
-    
-    // Skip system fonts and empty values
-    if (fontName && !SYSTEM_FONTS.includes(fontName)) {
-      fonts.add(fontName);
+    const fonts = new Set<string>();
+
+    // Look for font-family declarations
+    const fontRegex = /--font-[^:]*:\s*["']?([^"';,]+)/g;
+    let match;
+
+    while ((match = fontRegex.exec(cssSheet)) !== null) {
+        const fontName = match[1].trim();
+
+        // Skip system fonts and empty values
+        if (fontName && !SYSTEM_FONTS.includes(fontName)) {
+            fonts.add(fontName);
+        }
     }
-  }
-  
-  return Array.from(fonts);
+
+    return Array.from(fonts);
 };
 
 // Load Google Fonts dynamically
 const loadGoogleFonts = (fontNames: string[]): Promise<void> => {
-  if (fontNames.length === 0) {return Promise.resolve();}
-  
-  return new Promise((resolve) => {
-    try {
-      // Check if we already have a Google Fonts link
-      const existingLink = document.querySelector('link[href*="fonts.googleapis.com"]') as HTMLLinkElement;
-      
-      // Convert font names to Google Fonts URL format
-      const fontParams = fontNames.map(name => {
-        try {
-          const urlName = name.replace(/\s+/g, '+');
-          // Load multiple weights for better coverage
-          return `${urlName}:300,400,500,600,700`;
-        } catch (error) {
-          console.warn(`Failed to process font name: ${name}`, error);
-          return null;
-        }
-      }).filter(Boolean).join('&family=');
-      
-      // If no valid fonts to load, just resolve
-      if (!fontParams) {
-        resolve();
-        return;
-      }
-      
-      const fontUrl = `https://fonts.googleapis.com/css2?family=${fontParams}&display=swap`;
-      
-      if (existingLink) {
-        existingLink.href = fontUrl;
-        existingLink.onload = () => resolve();
-        existingLink.onerror = (error) => {
-          console.warn('Failed to load Google Fonts (existing link):', fontNames, error);
-          resolve(); // Continue even if fonts fail to load
-        };
-      } else {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = fontUrl;
-        link.onload = () => resolve();
-        link.onerror = (error) => {
-          console.warn('Failed to load Google Fonts (new link):', fontNames, error);
-          resolve(); // Continue even if fonts fail to load
-        };
-        document.head.appendChild(link);
-      }
-      
-      // Fallback timeout - resolve after 2 seconds even if fonts haven't loaded
-      setTimeout(() => {
-        console.warn('Google Fonts loading timeout for:', fontNames);
-        resolve();
-      }, 2000);
-      
-    } catch (error) {
-      console.warn('Error in loadGoogleFonts:', error);
-      resolve(); // Always resolve, never reject
+    if (fontNames.length === 0) {
+        return Promise.resolve();
     }
-  });
+
+    return new Promise(resolve => {
+        try {
+            // Check if we already have a Google Fonts link
+            const existingLink = document.querySelector(
+                'link[href*="fonts.googleapis.com"]'
+            ) as HTMLLinkElement;
+
+            // Convert font names to Google Fonts URL format
+            const fontParams = fontNames
+                .map(name => {
+                    try {
+                        const urlName = name.replace(/\s+/g, '+');
+                        // Load multiple weights for better coverage
+                        return `${urlName}:300,400,500,600,700`;
+                    } catch (error) {
+                        console.warn(`Failed to process font name: ${name}`, error);
+                        return null;
+                    }
+                })
+                .filter(Boolean)
+                .join('&family=');
+
+            // If no valid fonts to load, just resolve
+            if (!fontParams) {
+                resolve();
+                return;
+            }
+
+            const fontUrl = `https://fonts.googleapis.com/css2?family=${fontParams}&display=swap`;
+
+            if (existingLink) {
+                existingLink.href = fontUrl;
+                existingLink.onload = () => resolve();
+                existingLink.onerror = error => {
+                    console.warn('Failed to load Google Fonts (existing link):', fontNames, error);
+                    resolve(); // Continue even if fonts fail to load
+                };
+            } else {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = fontUrl;
+                link.onload = () => resolve();
+                link.onerror = error => {
+                    console.warn('Failed to load Google Fonts (new link):', fontNames, error);
+                    resolve(); // Continue even if fonts fail to load
+                };
+                document.head.appendChild(link);
+            }
+
+            // Fallback timeout - resolve after 2 seconds even if fonts haven't loaded
+            setTimeout(() => {
+                console.warn('Google Fonts loading timeout for:', fontNames);
+                resolve();
+            }, 2000);
+        } catch (error) {
+            console.warn('Error in loadGoogleFonts:', error);
+            resolve(); // Always resolve, never reject
+        }
+    });
 };
 
 const ThemePreview: React.FC<ThemePreviewProps> = ({ theme, isDarkMode, cssSheet }) => {
-  const previewRef = useRef<HTMLDivElement>(null);
-  const styleRef = useRef<HTMLStyleElement | null>(null);
-  const fontsLoadedRef = useRef<boolean>(false);
+    const previewRef = useRef<HTMLDivElement>(null);
+    const styleRef = useRef<HTMLStyleElement | null>(null);
+    const fontsLoadedRef = useRef<boolean>(false);
 
-  useEffect(() => {
-    if (!cssSheet || !previewRef.current) {return;}
+    useEffect(() => {
+        if (!cssSheet || !previewRef.current) {
+            return;
+        }
 
-    const setupPreview = () => {
-      // Remove existing style element first
-      if (styleRef.current) {
-        styleRef.current.remove();
-      }
+        const setupPreview = () => {
+            // Remove existing style element first
+            if (styleRef.current) {
+                styleRef.current.remove();
+            }
 
-      // Create new style element with the actual CSS immediately
-      const styleElement = document.createElement('style');
-      styleElement.textContent = `
+            // Create new style element with the actual CSS immediately
+            const styleElement = document.createElement('style');
+            styleElement.textContent = `
         ${cssSheet}
         
         .theme-preview-live {
@@ -440,62 +448,73 @@ const ThemePreview: React.FC<ThemePreviewProps> = ({ theme, isDarkMode, cssSheet
           border: 1px solid var(--border);
         }
       `;
-      document.head.appendChild(styleElement);
-      styleRef.current = styleElement;
+            document.head.appendChild(styleElement);
+            styleRef.current = styleElement;
 
-      // Load Google Fonts asynchronously (non-blocking)
-      const loadFonts = async () => {
-        const requiredFonts = extractFontsFromCSS(cssSheet);
-        
-        if (requiredFonts.length > 0 && !fontsLoadedRef.current) {
-          try {
-            await loadGoogleFonts(requiredFonts);
-            // eslint-disable-next-line require-atomic-updates
-            fontsLoadedRef.current = true;
-          } catch (error) {
-            console.warn('Failed to load Google Fonts:', error);
-            // Continue without fonts rather than blocking
-          }
-        }
-      };
+            // Load Google Fonts asynchronously (non-blocking)
+            const loadFonts = async () => {
+                const requiredFonts = extractFontsFromCSS(cssSheet);
 
-      // Start font loading in background
-      void loadFonts();
+                if (requiredFonts.length > 0 && !fontsLoadedRef.current) {
+                    try {
+                        await loadGoogleFonts(requiredFonts);
+                        // eslint-disable-next-line require-atomic-updates
+                        fontsLoadedRef.current = true;
+                    } catch (error) {
+                        console.warn('Failed to load Google Fonts:', error);
+                        // Continue without fonts rather than blocking
+                    }
+                }
+            };
+
+            // Start font loading in background
+            void loadFonts();
+        };
+
+        void setupPreview();
+
+        // Cleanup on unmount
+        return () => {
+            if (styleRef.current) {
+                styleRef.current.remove();
+            }
+        };
+    }, [cssSheet, isDarkMode]);
+
+    const containerStyles = {
+        border: '1px solid var(--vscode-panel-border)',
+        borderRadius: '4px',
+        overflow: 'hidden',
+        backgroundColor: 'var(--vscode-editor-background)',
     };
 
-    void setupPreview();
-
-    // Cleanup on unmount
-    return () => {
-      if (styleRef.current) {
-        styleRef.current.remove();
-      }
+    const contentStyles = {
+        padding: '16px',
+        minHeight: '400px',
     };
-  }, [cssSheet, isDarkMode]);
 
-  const containerStyles = {
-    border: '1px solid var(--vscode-panel-border)',
-    borderRadius: '4px',
-    overflow: 'hidden',
-    backgroundColor: 'var(--vscode-editor-background)'
-  };
+    if (!theme) {
+        return (
+            <div style={containerStyles}>
+                <div
+                    style={{
+                        ...contentStyles,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <span
+                        style={{ color: 'var(--vscode-descriptionForeground)', fontSize: '12px' }}
+                    >
+                        No theme data available
+                    </span>
+                </div>
+            </div>
+        );
+    }
 
-  const contentStyles = {
-    padding: '16px',
-    minHeight: '400px'
-  };
-
-  if (!theme) {
-    return (
-      <div style={containerStyles}>
-        <div style={{...contentStyles, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-          <span style={{color: 'var(--vscode-descriptionForeground)', fontSize: '12px'}}>No theme data available</span>
-        </div>
-      </div>
-    );
-  }
-
-  const sampleHTML = `
+    const sampleHTML = `
     <nav class="preview-nav">
       <div class="nav-brand">MyApp</div>
       <div class="nav-links">
@@ -564,17 +583,17 @@ Your branch is up to date</div>
     </div>
   `;
 
-  return (
-    <div style={containerStyles}>
-      <div style={contentStyles}>
-        <div 
-          ref={previewRef}
-          className={`theme-preview-live ${isDarkMode ? 'dark' : ''}`}
-          dangerouslySetInnerHTML={{ __html: sampleHTML }}
-        />
-      </div>
-    </div>
-  );
+    return (
+        <div style={containerStyles}>
+            <div style={contentStyles}>
+                <div
+                    ref={previewRef}
+                    className={`theme-preview-live ${isDarkMode ? 'dark' : ''}`}
+                    dangerouslySetInnerHTML={{ __html: sampleHTML }}
+                />
+            </div>
+        </div>
+    );
 };
 
-export default ThemePreview; 
+export default ThemePreview;

@@ -39,14 +39,20 @@ export class CustomAgentService implements AgentService {
             if (workspaceRoot) {
                 // Create .superdesign folder in workspace root
                 const superdesignDir = path.join(workspaceRoot, '.superdesign');
-                this.outputChannel.appendLine(`Setting up .superdesign directory at: ${superdesignDir}`);
+                this.outputChannel.appendLine(
+                    `Setting up .superdesign directory at: ${superdesignDir}`
+                );
 
                 // Create directory if it doesn't exist
                 if (!fs.existsSync(superdesignDir)) {
                     fs.mkdirSync(superdesignDir, { recursive: true });
-                    this.outputChannel.appendLine(`Created .superdesign directory: ${superdesignDir}`);
+                    this.outputChannel.appendLine(
+                        `Created .superdesign directory: ${superdesignDir}`
+                    );
                 } else {
-                    this.outputChannel.appendLine(`.superdesign directory already exists: ${superdesignDir}`);
+                    this.outputChannel.appendLine(
+                        `.superdesign directory already exists: ${superdesignDir}`
+                    );
                 }
 
                 this.workingDirectory = superdesignDir;
@@ -58,11 +64,15 @@ export class CustomAgentService implements AgentService {
 
                 if (!fs.existsSync(tempDir)) {
                     fs.mkdirSync(tempDir, { recursive: true });
-                    this.outputChannel.appendLine(`Created temporary superdesign directory: ${tempDir}`);
+                    this.outputChannel.appendLine(
+                        `Created temporary superdesign directory: ${tempDir}`
+                    );
                 }
 
                 this.workingDirectory = tempDir;
-                this.outputChannel.appendLine(`Working directory set to (fallback): ${this.workingDirectory}`);
+                this.outputChannel.appendLine(
+                    `Working directory set to (fallback): ${this.workingDirectory}`
+                );
 
                 vscode.window.showWarningMessage(
                     'No workspace folder found. Using temporary directory for Custom Agent operations.'
@@ -74,7 +84,9 @@ export class CustomAgentService implements AgentService {
             this.outputChannel.appendLine(`Failed to setup working directory: ${error}`);
             // Final fallback to current working directory
             this.workingDirectory = process.cwd();
-            this.outputChannel.appendLine(`Working directory set to (final fallback): ${this.workingDirectory}`);
+            this.outputChannel.appendLine(
+                `Working directory set to (final fallback): ${this.workingDirectory}`
+            );
             this.isInitialized = true;
         }
     }
@@ -97,35 +109,39 @@ export class CustomAgentService implements AgentService {
             } else if (specificModel.startsWith('claude-')) {
                 effectiveProvider = 'anthropic';
             } else if (specificModel.startsWith('gemini-')) {
-               effectiveProvider = 'google';
-            } else if (specificModel.startsWith('anthropic.') || 
-                       specificModel.startsWith('us.anthropic.') ||
-                       specificModel.startsWith('amazon.') ||
-                       specificModel.startsWith('meta.') ||
-                       specificModel.startsWith('ai21.') ||
-                       specificModel.startsWith('cohere.') ||
-                       specificModel.startsWith('mistral.')) {
+                effectiveProvider = 'google';
+            } else if (
+                specificModel.startsWith('anthropic.') ||
+                specificModel.startsWith('us.anthropic.') ||
+                specificModel.startsWith('amazon.') ||
+                specificModel.startsWith('meta.') ||
+                specificModel.startsWith('ai21.') ||
+                specificModel.startsWith('cohere.') ||
+                specificModel.startsWith('mistral.')
+            ) {
                 effectiveProvider = 'bedrock';
             } else if (specificModel.includes('kimi') || specificModel.includes('moonshot')) {
                 effectiveProvider = 'moonshot';
             } else {
-               effectiveProvider = 'openai';
-           }
-       }
+                effectiveProvider = 'openai';
+            }
+        }
 
         switch (effectiveProvider) {
             case 'google':
                 const googleKey = config.get<string>('googleApiKey');
                 if (!googleKey) {
-                    throw new Error('Google API key not configured. Please run "Configure Google API Key" command.');
+                    throw new Error(
+                        'Google API key not configured. Please run "Configure Google API Key" command.'
+                    );
                 }
-                
+
                 this.outputChannel.appendLine(`Google API key found.`);
-                
+
                 const google = createGoogleGenerativeAI({
                     apiKey: googleKey,
                 });
-                
+
                 const googleModel = specificModel || 'gemini-2.5-pro';
                 this.outputChannel.appendLine(`Using Google model: ${googleModel}`);
                 return google(googleModel);
@@ -133,55 +149,70 @@ export class CustomAgentService implements AgentService {
             case 'openrouter':
                 const openrouterKey = config.get<string>('openrouterApiKey');
                 if (!openrouterKey) {
-                    throw new Error('OpenRouter API key not configured. Please run "Configure OpenRouter API Key" command.');
+                    throw new Error(
+                        'OpenRouter API key not configured. Please run "Configure OpenRouter API Key" command.'
+                    );
                 }
 
-                this.outputChannel.appendLine(`OpenRouter API key found: ${openrouterKey.substring(0, 12)}...`);
+                this.outputChannel.appendLine(
+                    `OpenRouter API key found: ${openrouterKey.substring(0, 12)}...`
+                );
 
                 const openrouter = createOpenRouter({
-                    apiKey: openrouterKey
+                    apiKey: openrouterKey,
                 });
 
                 // Use specific model if available, otherwise default to Claude 3.7 Sonnet via OpenRouter
                 const openrouterModel = specificModel || 'anthropic/claude-3-7-sonnet-20250219';
                 this.outputChannel.appendLine(`Using OpenRouter model: ${openrouterModel}`);
-                return openrouter.chat(openrouterModel);                
+                return openrouter.chat(openrouterModel);
 
             case 'bedrock':
                 const awsRegion = config.get<string>('awsRegion') || 'us-east-1';
                 const awsAccessKeyId = config.get<string>('awsAccessKeyId');
                 const awsSecretAccessKey = config.get<string>('awsSecretAccessKey');
-                
+
                 if (!awsAccessKeyId || !awsSecretAccessKey) {
-                    throw new Error('AWS credentials not configured. Please run "Configure AWS Bedrock" command.');
+                    throw new Error(
+                        'AWS credentials not configured. Please run "Configure AWS Bedrock" command.'
+                    );
                 }
-                
+
                 this.outputChannel.appendLine(`AWS region: ${awsRegion}`);
-                this.outputChannel.appendLine(`AWS access key found: ${awsAccessKeyId.substring(0, 8)}...`);
-                
+                this.outputChannel.appendLine(
+                    `AWS access key found: ${awsAccessKeyId.substring(0, 8)}...`
+                );
+
                 const bedrock = createAmazonBedrock({
                     region: awsRegion,
                     accessKeyId: awsAccessKeyId,
-                    secretAccessKey: awsSecretAccessKey
+                    secretAccessKey: awsSecretAccessKey,
                 });
-                
+
                 // Use specific model if available, otherwise default to Claude 3.5 Sonnet on Bedrock
-                const bedrockModel = specificModel || 'us.anthropic.claude-3-5-sonnet-20241022-v2:0';
+                const bedrockModel =
+                    specificModel || 'us.anthropic.claude-3-5-sonnet-20241022-v2:0';
                 this.outputChannel.appendLine(`Using Bedrock model: ${bedrockModel}`);
                 return bedrock(bedrockModel);
 
             case 'moonshot':
                 const moonshotKey = config.get<string>('moonshotApiKey');
                 if (!moonshotKey) {
-                    throw new Error('Moonshot API key not configured. Please run "Configure Moonshot API Key" command.');
+                    throw new Error(
+                        'Moonshot API key not configured. Please run "Configure Moonshot API Key" command.'
+                    );
                 }
 
-                this.outputChannel.appendLine(`Moonshot API key found: ${moonshotKey.substring(0, 12)}...`);
-                this.outputChannel.appendLine(`Using Moonshot API baseURL: https://api.moonshot.ai/v1`);
+                this.outputChannel.appendLine(
+                    `Moonshot API key found: ${moonshotKey.substring(0, 12)}...`
+                );
+                this.outputChannel.appendLine(
+                    `Using Moonshot API baseURL: https://api.moonshot.ai/v1`
+                );
 
                 const moonshot = createOpenAI({
                     apiKey: moonshotKey,
-                    baseURL: "https://api.moonshot.ai/v1",
+                    baseURL: 'https://api.moonshot.ai/v1',
                 });
 
                 // Use specific model if available, otherwise default to kimi-k2-0711-preview
@@ -192,13 +223,17 @@ export class CustomAgentService implements AgentService {
             case 'anthropic':
                 const anthropicKey = config.get<string>('anthropicApiKey');
                 if (!anthropicKey) {
-                    throw new Error('Anthropic API key not configured. Please run "Configure Anthropic API Key" command.');
+                    throw new Error(
+                        'Anthropic API key not configured. Please run "Configure Anthropic API Key" command.'
+                    );
                 }
 
-                this.outputChannel.appendLine(`Anthropic API key found: ${anthropicKey.substring(0, 12)}...`);
+                this.outputChannel.appendLine(
+                    `Anthropic API key found: ${anthropicKey.substring(0, 12)}...`
+                );
 
                 const anthropic = createAnthropic({
-                    apiKey: anthropicKey
+                    apiKey: anthropicKey,
                 });
 
                 // Use specific model if available, otherwise default to claude-3-5-sonnet
@@ -211,10 +246,14 @@ export class CustomAgentService implements AgentService {
                 const openaiKey = config.get<string>('openaiApiKey');
                 const openaiUrl = config.get<string>('openaiUrl');
                 if (!openaiKey) {
-                    throw new Error('OpenAI API key not configured. Please run "Configure OpenAI API Key" command.');
+                    throw new Error(
+                        'OpenAI API key not configured. Please run "Configure OpenAI API Key" command.'
+                    );
                 }
 
-                this.outputChannel.appendLine(`OpenAI API key found: ${openaiKey.substring(0, 7)}...`);
+                this.outputChannel.appendLine(
+                    `OpenAI API key found: ${openaiKey.substring(0, 7)}...`
+                );
 
                 const openai = createOpenAI({
                     apiKey: openaiKey,
@@ -639,7 +678,7 @@ I've created the html design, please reveiw and let me know if you need any chan
     async query(
         prompt?: string,
         conversationHistory?: ModelMessage[],
-        options?: any, 
+        options?: any,
         abortController?: AbortController,
         onMessage?: (message: any) => void
     ): Promise<any[]> {
@@ -649,7 +688,9 @@ I've created the html design, please reveiw and let me know if you need any chan
         const usingConversationHistory = !!conversationHistory && conversationHistory.length > 0;
 
         if (usingConversationHistory) {
-            this.outputChannel.appendLine(`Query using conversation history: ${conversationHistory.length} messages`);
+            this.outputChannel.appendLine(
+                `Query using conversation history: ${conversationHistory.length} messages`
+            );
         } else if (prompt) {
             this.outputChannel.appendLine(`Query prompt: ${prompt.substring(0, 200)}...`);
         } else {
@@ -692,7 +733,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                 grep: createGrepTool(executionContext),
                 ls: createLsTool(executionContext),
                 bash: createBashTool(executionContext),
-                generateTheme: createThemeTool(executionContext)
+                generateTheme: createThemeTool(executionContext),
             };
 
             // Prepare AI SDK input based on available data
@@ -702,34 +743,41 @@ I've created the html design, please reveiw and let me know if you need any chan
                 tools: tools,
                 toolCallStreaming: true,
                 maxSteps: 10, // Enable multi-step reasoning with tools
-                maxTokens: 8192 // Increase token limit to prevent truncation
+                maxTokens: 8192, // Increase token limit to prevent truncation
             };
 
             if (usingConversationHistory) {
                 // Use conversation messages
                 streamTextConfig.messages = conversationHistory;
-                this.outputChannel.appendLine(`Using conversation history with ${conversationHistory.length} messages`);
+                this.outputChannel.appendLine(
+                    `Using conversation history with ${conversationHistory.length} messages`
+                );
 
                 // Debug: Log the actual messages being sent to AI SDK
                 this.outputChannel.appendLine('=== AI SDK MESSAGES DEBUG ===');
                 conversationHistory.forEach((msg, index) => {
-                    const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
-                    this.outputChannel.appendLine(`  [${index}] ${msg.role}: "${content.substring(0, 150)}..."`);
+                    const content =
+                        typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+                    this.outputChannel.appendLine(
+                        `  [${index}] ${msg.role}: "${content.substring(0, 150)}..."`
+                    );
                 });
                 this.outputChannel.appendLine('=== END AI SDK MESSAGES DEBUG ===');
             } else {
                 // Use single prompt
                 streamTextConfig.prompt = prompt;
-                this.outputChannel.appendLine(`Using single prompt: ${prompt!.substring(0, 100)}...`);
+                this.outputChannel.appendLine(
+                    `Using single prompt: ${prompt!.substring(0, 100)}...`
+                );
             }
 
             console.log('========streamTextConfig', streamTextConfig);
 
             const result = streamText(streamTextConfig);
 
-            this.outputChannel.appendLine('AI SDK streamText created, starting to process chunks...');
-
-
+            this.outputChannel.appendLine(
+                'AI SDK streamText created, starting to process chunks...'
+            );
 
             for await (const chunk of result.fullStream) {
                 // Check for abort signal
@@ -744,10 +792,10 @@ I've created the html design, please reveiw and let me know if you need any chan
                     case 'text-delta':
                         // Handle streaming text (assistant message chunks) - CoreMessage format
                         messageBuffer += chunk.text;
-                        
+
                         const textMessage: ModelMessage = {
                             role: 'assistant',
-                            content: chunk.text
+                            content: chunk.text,
                         };
 
                         onMessage?.(textMessage);
@@ -756,13 +804,18 @@ I've created the html design, please reveiw and let me know if you need any chan
 
                     case 'finish':
                         // Final result message - CoreMessage format
-                        this.outputChannel.appendLine(`===Stream finished with reason: ${chunk.finishReason}`);
+                        this.outputChannel.appendLine(
+                            `===Stream finished with reason: ${chunk.finishReason}`
+                        );
                         this.outputChannel.appendLine(`${JSON.stringify(chunk)}`);
                         this.outputChannel.appendLine(`========================================`);
-                        
+
                         const resultMessage: ModelMessage = {
                             role: 'assistant',
-                            content: chunk.finishReason === 'stop' ? 'Response completed successfully' : 'Response completed'
+                            content:
+                                chunk.finishReason === 'stop'
+                                    ? 'Response completed successfully'
+                                    : 'Response completed',
                         };
 
                         onMessage?.(resultMessage);
@@ -773,10 +826,10 @@ I've created the html design, please reveiw and let me know if you need any chan
                         // Error handling - CoreMessage format
                         const errorMsg = (chunk as any).error?.message || 'Unknown error occurred';
                         this.outputChannel.appendLine(`Stream error: ${errorMsg}`);
-                        
+
                         const errorMessage: ModelMessage = {
                             role: 'assistant',
-                            content: `Error: ${errorMsg}`
+                            content: `Error: ${errorMsg}`,
                         };
 
                         onMessage?.(errorMessage);
@@ -787,21 +840,25 @@ I've created the html design, please reveiw and let me know if you need any chan
                         currentToolCall = {
                             toolCallId: chunk.id,
                             toolName: chunk.toolName,
-                            input: {}
+                            input: {},
                         };
                         toolCallBuffer = '';
-                        
-                        this.outputChannel.appendLine(`Tool call streaming started: ${chunk.toolName} (ID: ${chunk.id})`);
+
+                        this.outputChannel.appendLine(
+                            `Tool call streaming started: ${chunk.toolName} (ID: ${chunk.id})`
+                        );
 
                         // Send initial tool call message in CoreAssistantMessage format
                         const toolCallStartMessage: ModelMessage = {
                             role: 'assistant',
-                            content: [{
-                                type: 'tool-call',
-                                toolCallId: chunk.id,
-                                toolName: chunk.toolName,
-                                input: {} // Empty initially, will be updated with deltas
-                            }]
+                            content: [
+                                {
+                                    type: 'tool-call',
+                                    toolCallId: chunk.id,
+                                    toolName: chunk.toolName,
+                                    input: {}, // Empty initially, will be updated with deltas
+                                },
+                            ],
                         };
 
                         onMessage?.(toolCallStartMessage);
@@ -818,24 +875,30 @@ I've created the html design, please reveiw and let me know if you need any chan
                                 const parsedArgs = JSON.parse(toolCallBuffer);
 
                                 // Send UPDATE signal (not new message) with special marker
-                                const updateMessage: ModelMessage & { _isUpdate?: boolean, _updateToolId?: string } = {
+                                const updateMessage: ModelMessage & {
+                                    _isUpdate?: boolean;
+                                    _updateToolId?: string;
+                                } = {
                                     role: 'assistant',
-                                    content: [{
-                                        type: 'tool-call',
-                                        toolCallId: currentToolCall.toolCallId,
-                                        toolName: currentToolCall.toolName,
-                                        input: parsedArgs
-                                    }],
+                                    content: [
+                                        {
+                                            type: 'tool-call',
+                                            toolCallId: currentToolCall.toolCallId,
+                                            toolName: currentToolCall.toolName,
+                                            input: parsedArgs,
+                                        },
+                                    ],
                                     _isUpdate: true,
-                                    _updateToolId: currentToolCall.toolCallId
+                                    _updateToolId: currentToolCall.toolCallId,
                                 };
 
                                 onMessage?.(updateMessage);
-
                             } catch (parseError) {
                                 // JSON not complete yet, continue buffering
                                 if (toolCallBuffer.length % 100 === 0) {
-                                    this.outputChannel.appendLine(`Tool call progress: ${toolCallBuffer.length} characters received (parsing...)`);
+                                    this.outputChannel.appendLine(
+                                        `Tool call progress: ${toolCallBuffer.length} characters received (parsing...)`
+                                    );
                                 }
                             }
                         }
@@ -843,7 +906,9 @@ I've created the html design, please reveiw and let me know if you need any chan
 
                     case 'tool-call':
                         // Handle final complete tool call - CoreAssistantMessage format
-                        this.outputChannel.appendLine(`=====Tool call complete: ${JSON.stringify(chunk)}`);
+                        this.outputChannel.appendLine(
+                            `=====Tool call complete: ${JSON.stringify(chunk)}`
+                        );
                         this.outputChannel.appendLine(`========================================`);
 
                         // Skip sending duplicate tool call message if we already sent streaming start
@@ -851,18 +916,22 @@ I've created the html design, please reveiw and let me know if you need any chan
                             // Only send if we didn't already send a streaming start message
                             const toolCallMessage: ModelMessage = {
                                 role: 'assistant',
-                                content: [{
-                                    type: 'tool-call',
-                                    toolCallId: chunk.toolCallId,
-                                    toolName: chunk.toolName,
-                                    input: chunk.input
-                                }]
+                                content: [
+                                    {
+                                        type: 'tool-call',
+                                        toolCallId: chunk.toolCallId,
+                                        toolName: chunk.toolName,
+                                        input: chunk.input,
+                                    },
+                                ],
                             };
 
                             onMessage?.(toolCallMessage);
                             responseMessages.push(toolCallMessage);
                         } else {
-                            this.outputChannel.appendLine(`Skipping duplicate tool call message - already sent streaming start for ID: ${chunk.toolCallId}`);
+                            this.outputChannel.appendLine(
+                                `Skipping duplicate tool call message - already sent streaming start for ID: ${chunk.toolCallId}`
+                            );
                         }
 
                         // Reset tool call streaming state
@@ -874,22 +943,25 @@ I've created the html design, please reveiw and let me know if you need any chan
                         // Handle tool results and other unknown chunk types
                         if ((chunk as any).type === 'tool-result') {
                             const toolResult = chunk as any;
-                            this.outputChannel.appendLine(`Tool result received for ID: ${toolResult.toolCallId}: ${JSON.stringify(toolResult.result).substring(0, 200)}...`);
+                            this.outputChannel.appendLine(
+                                `Tool result received for ID: ${toolResult.toolCallId}: ${JSON.stringify(toolResult.result).substring(0, 200)}...`
+                            );
 
                             // Send tool result in CoreToolMessage format
                             const toolResultMessage: ModelMessage = {
                                 role: 'tool',
-                                content: [{
-                                    type: 'tool-result',
-                                    toolCallId: toolResult.toolCallId,
-                                    toolName: toolResult.toolName,
-                                    output: toolResult.result
-                                }]
+                                content: [
+                                    {
+                                        type: 'tool-result',
+                                        toolCallId: toolResult.toolCallId,
+                                        toolName: toolResult.toolName,
+                                        output: toolResult.result,
+                                    },
+                                ],
                             };
 
                             onMessage?.(toolResultMessage);
                             responseMessages.push(toolResultMessage);
-                            
                         } else {
                             this.outputChannel.appendLine(`Unknown chunk type: ${chunk.type}`);
                         }
@@ -897,14 +969,17 @@ I've created the html design, please reveiw and let me know if you need any chan
                 }
             }
 
-            this.outputChannel.appendLine(`Query completed successfully. Total messages: ${responseMessages.length}`);
+            this.outputChannel.appendLine(
+                `Query completed successfully. Total messages: ${responseMessages.length}`
+            );
             this.outputChannel.appendLine(`Complete response: "${messageBuffer}"`);
 
             return responseMessages;
-
         } catch (error) {
             this.outputChannel.appendLine(`Custom Agent query failed: ${error}`);
-            this.outputChannel.appendLine(`Error stack: ${error instanceof Error ? error.stack : 'No stack trace'}`);
+            this.outputChannel.appendLine(
+                `Error stack: ${error instanceof Error ? error.stack : 'No stack trace'}`
+            );
 
             // Send error message if streaming callback is available
             if (onMessage) {
@@ -913,7 +988,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                     subtype: 'error',
                     result: error instanceof Error ? error.message : String(error),
                     session_id: sessionId,
-                    is_error: true
+                    is_error: true,
                 };
                 onMessage(errorMessage);
             }
@@ -949,13 +1024,15 @@ I've created the html design, please reveiw and let me know if you need any chan
                 effectiveProvider = 'openrouter';
             } else if (specificModel.startsWith('claude-')) {
                 effectiveProvider = 'anthropic';
-            } else if (specificModel.startsWith('anthropic.') || 
-                       specificModel.startsWith('us.anthropic.') ||
-                       specificModel.startsWith('amazon.') ||
-                       specificModel.startsWith('meta.') ||
-                       specificModel.startsWith('ai21.') ||
-                       specificModel.startsWith('cohere.') ||
-                       specificModel.startsWith('mistral.')) {
+            } else if (
+                specificModel.startsWith('anthropic.') ||
+                specificModel.startsWith('us.anthropic.') ||
+                specificModel.startsWith('amazon.') ||
+                specificModel.startsWith('meta.') ||
+                specificModel.startsWith('ai21.') ||
+                specificModel.startsWith('cohere.') ||
+                specificModel.startsWith('mistral.')
+            ) {
                 effectiveProvider = 'bedrock';
             } else if (specificModel.includes('kimi') || specificModel.includes('k2')) {
                 effectiveProvider = 'moonshot';
@@ -968,7 +1045,10 @@ I've created the html design, please reveiw and let me know if you need any chan
             case 'openrouter':
                 return !!config.get<string>('openrouterApiKey');
             case 'bedrock':
-                return !!config.get<string>('awsAccessKeyId') && !!config.get<string>('awsSecretAccessKey');
+                return (
+                    !!config.get<string>('awsAccessKeyId') &&
+                    !!config.get<string>('awsSecretAccessKey')
+                );
             case 'anthropic':
                 return !!config.get<string>('anthropicApiKey');
             case 'google':
@@ -987,12 +1067,14 @@ I've created the html design, please reveiw and let me know if you need any chan
         }
 
         const lowerError = errorMessage.toLowerCase();
-        return lowerError.includes('api key') ||
+        return (
+            lowerError.includes('api key') ||
             lowerError.includes('authentication') ||
             lowerError.includes('unauthorized') ||
             lowerError.includes('invalid_api_key') ||
             lowerError.includes('permission_denied') ||
             lowerError.includes('api_key_invalid') ||
-            lowerError.includes('unauthenticated');
+            lowerError.includes('unauthenticated')
+        );
     }
-} 
+}

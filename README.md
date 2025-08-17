@@ -10,6 +10,7 @@
 - 🧑‍🧑‍🧒‍🧒 **Community Driven**: No business pressures, quickly merged PRs
 
 ## 🚀 Links
+
 - 🪟 [VS Code Marketplace install](https://marketplace.visualstudio.com/items?itemName=HaroldMartin.securedesign)
 - 💞 [Open VSX Registry install](https://open-vsx.org/extension/HaroldMartin/securedesign)
 - ⚙️ [DeepWiki architecture description / diagrams](https://deepwiki.com/hbmartin/secure-design)
@@ -53,11 +54,13 @@ Works seamlessly with Cursor, Windsurf, Claude Code, and plain VS Code.
 ---
 
 ## Can I use my own Claude Code or Cursor subscription?
+
 Yes, after you initialise securedesign extension, some cursor/claude code rules will be added, so you can prompt the agent to do design and preview in securedesign canva (cmd + shift + p -> securedesign: open canva)
 
 If using Cursor - I will highly suggest copy the prompt in 'design.mdc' and create a custom mode in cursor with that same system prompt; This should give you much better performance
 
 ## How to run local OpenAI compatible servers?
+
 1. Select open ai on Ai Model Provider
 2. Put anything in Openai Api Key input
 3. Add your OpenAi Url on the Openai Url input (example: http://127.0.0.1:1234/v1 for LM Studio)
@@ -80,4 +83,3 @@ Absolutely — select a component, describe the change, and let the agent do the
 ## 👯 Contributors
 
 [![Profile images of all the contributors](https://contrib.rocks/image?repo=hbmartin/secure-design)](https://github.com/hbmartin/secure-design/graphs/contributors)
-

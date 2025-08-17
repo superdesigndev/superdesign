@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Build outputs
+dist/
+out/
+*.vsix
+
+# Logs and temporary files
+*.log
+report.json
+temp*
+
+# Package files
+package-lock.json
+
+# Generated files
+.vscode-test/
+coverage/
+
+# Large data files
+**/*.min.js
+**/*.min.css
+
+.claude/settings.local.json
+.claude/settings.json
+
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+
+*.json
+*.yml

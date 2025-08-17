@@ -1,19 +1,19 @@
 import React from 'react';
 
 interface ModeToggleProps {
-  isDarkMode: boolean;
-  onToggle: (isDarkMode: boolean) => void;
+    isDarkMode: boolean;
+    onToggle: (isDarkMode: boolean) => void;
 }
 
 const ModeToggle: React.FC<ModeToggleProps> = ({ isDarkMode, onToggle }) => {
-  const handleToggle = () => {
-    onToggle(!isDarkMode);
-  };
+    const handleToggle = () => {
+        onToggle(!isDarkMode);
+    };
 
-  return (
-    <>
-      <style>
-        {`
+    return (
+        <>
+            <style>
+                {`
           .mode-toggle {
             display: flex;
             align-items: center;
@@ -41,17 +41,13 @@ const ModeToggle: React.FC<ModeToggleProps> = ({ isDarkMode, onToggle }) => {
             color: var(--vscode-foreground);
           }
         `}
-      </style>
-      <div className="mode-toggle" onClick={handleToggle}>
-        <span className="mode-toggle-icon">
-          {isDarkMode ? '🌙' : '☀️'}
-        </span>
-        <span className="mode-toggle-text">
-          {isDarkMode ? 'Dark' : 'Light'}
-        </span>
-      </div>
-    </>
-  );
+            </style>
+            <div className='mode-toggle' onClick={handleToggle}>
+                <span className='mode-toggle-icon'>{isDarkMode ? '🌙' : '☀️'}</span>
+                <span className='mode-toggle-text'>{isDarkMode ? 'Dark' : 'Light'}</span>
+            </div>
+        </>
+    );
 };
 
-export default ModeToggle; 
+export default ModeToggle;

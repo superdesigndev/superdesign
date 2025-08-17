@@ -21,7 +21,12 @@ export class Logger {
         this.currentLevel = level;
     }
 
-    private static log(level: LogLevel, label: string, message: string, showNotification: boolean = false) {
+    private static log(
+        level: LogLevel,
+        label: string,
+        message: string,
+        showNotification: boolean = false
+    ) {
         if (level < this.currentLevel) {
             return;
         }
@@ -77,4 +82,4 @@ export class Logger {
         this.initialize();
         return this.outputChannel;
     }
-} 
+}

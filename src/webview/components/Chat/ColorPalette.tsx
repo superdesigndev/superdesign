@@ -1,48 +1,50 @@
 import React from 'react';
 
 interface ColorPaletteProps {
-  colors: any;
-  isDarkMode: boolean;
+    colors: any;
+    isDarkMode: boolean;
 }
 
 const ColorPalette: React.FC<ColorPaletteProps> = ({ colors, isDarkMode }) => {
-  const handleColorCopy = (color: string) => {
-    void navigator.clipboard.writeText(color);
-  };
+    const handleColorCopy = (color: string) => {
+        void navigator.clipboard.writeText(color);
+    };
 
-  const renderColorGroup = (groupName: string, colorGroup: any) => {
-    if (!colorGroup || Object.keys(colorGroup).length === 0) {return null;}
+    const renderColorGroup = (groupName: string, colorGroup: any) => {
+        if (!colorGroup || Object.keys(colorGroup).length === 0) {
+            return null;
+        }
+
+        return (
+            <div key={groupName} className='color-group'>
+                <h4 className='color-group-title'>{groupName}</h4>
+                <div className='color-grid'>
+                    {Object.entries(colorGroup).map(([name, color]) => (
+                        <div
+                            key={name}
+                            className='color-swatch'
+                            onClick={() => handleColorCopy(color as string)}
+                            title={`${name}: ${color}`}
+                        >
+                            <div
+                                className='color-preview'
+                                style={{ backgroundColor: color as string }}
+                            />
+                            <div className='color-info'>
+                                <span className='color-name'>{name}</span>
+                                <span className='color-value'>{color as string}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
 
     return (
-      <div key={groupName} className="color-group">
-        <h4 className="color-group-title">{groupName}</h4>
-        <div className="color-grid">
-          {Object.entries(colorGroup).map(([name, color]) => (
-            <div
-              key={name}
-              className="color-swatch"
-              onClick={() => handleColorCopy(color as string)}
-              title={`${name}: ${color}`}
-            >
-              <div 
-                className="color-preview"
-                style={{ backgroundColor: color as string }}
-              />
-              <div className="color-info">
-                <span className="color-name">{name}</span>
-                <span className="color-value">{color as string}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <>
-      <style>
-        {`
+        <>
+            <style>
+                {`
           .color-palette {
             display: flex;
             flex-direction: column;
@@ -119,14 +121,15 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({ colors, isDarkMode }) => {
             text-overflow: ellipsis;
           }
         `}
-      </style>
-      <div className="color-palette">
-        {colors && Object.entries(colors).map(([groupName, colorGroup]) => 
-          renderColorGroup(groupName, colorGroup)
-        )}
-      </div>
-    </>
-  );
+            </style>
+            <div className='color-palette'>
+                {colors &&
+                    Object.entries(colors).map(([groupName, colorGroup]) =>
+                        renderColorGroup(groupName, colorGroup)
+                    )}
+            </div>
+        </>
+    );
 };
 
-export default ColorPalette; 
+export default ColorPalette;

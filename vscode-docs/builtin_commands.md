@@ -2,7 +2,7 @@ Try [MCP servers](https://code.visualstudio.com/mcp) to extend agent mode in VS 
 
 Dismiss this update
 
-[Edit](https://vscode.dev/github/microsoft/vscode-docs/blob/main/api/references/commands.md "Edit this document in vscode.dev")
+[Edit](https://vscode.dev/github/microsoft/vscode-docs/blob/main/api/references/commands.md 'Edit this document in vscode.dev')
 
 # Built-in Commands
 
@@ -20,7 +20,7 @@ Copy
 
 > **Note**: You can review the full set of VS Code commands via the Keyboard Shortcuts editor **File** \> **Preferences** \> **Keyboard Shortcuts**. The Keyboard Shortcuts editor lists all commands built into VS Code or contributed by extensions, along with their keybindings and visibility when clauses.
 
-## [Commands](https://code.visualstudio.com/api/references/commands\#commands)
+## [Commands](https://code.visualstudio.com/api/references/commands#commands)
 
 `vscode.executeDataToNotebook` \- Invoke notebook serializer
 
@@ -306,84 +306,79 @@ Copy
 `vscode.executeMappedEditsProvider` \- Execute Mapped Edits Provider
 
 - _uri_ \- Uri of a text document
-- _string\_array_ \- Array of string,
+- _string_array_ \- Array of string,
 - _MappedEditsContext_ \- Mapped Edits Context
 - _(returns)_ \- A promise that resolves to a workspace edit or null
 
 `cursorMove` \- Move cursor to a logical position in the view
 
 - _Cursor move argument object_ \- Property-value pairs that can be passed through this argument:
+    - 'to': A mandatory logical position value providing where to move the cursor.
 
-  - 'to': A mandatory logical position value providing where to move the cursor.
+        ```
+        'left', 'right', 'up', 'down', 'prevBlankLine', 'nextBlankLine',
+        'wrappedLineStart', 'wrappedLineEnd', 'wrappedLineColumnCenter'
+        'wrappedLineFirstNonWhitespaceCharacter', 'wrappedLineLastNonWhitespaceCharacter'
+        'viewPortTop', 'viewPortCenter', 'viewPortBottom', 'viewPortIfOutside'
+        Copy
+        ```
 
-    ```
-    'left', 'right', 'up', 'down', 'prevBlankLine', 'nextBlankLine',
-    'wrappedLineStart', 'wrappedLineEnd', 'wrappedLineColumnCenter'
-    'wrappedLineFirstNonWhitespaceCharacter', 'wrappedLineLastNonWhitespaceCharacter'
-    'viewPortTop', 'viewPortCenter', 'viewPortBottom', 'viewPortIfOutside'
-    Copy
-    ```
+    - 'by': Unit to move. Default is computed based on 'to' value.
 
-  - 'by': Unit to move. Default is computed based on 'to' value.
+        ```
+        'line', 'wrappedLine', 'character', 'halfLine'
+        Copy
+        ```
 
-    ```
-    'line', 'wrappedLine', 'character', 'halfLine'
-    Copy
-    ```
-
-  - 'value': Number of units to move. Default is '1'.
-  - 'select': If 'true' makes the selection. Default is 'false'.
+    - 'value': Number of units to move. Default is '1'.
+    - 'select': If 'true' makes the selection. Default is 'false'.
 
 `editorScroll` \- Scroll editor in the given direction
 
 - _Editor scroll argument object_ \- Property-value pairs that can be passed through this argument:
+    - 'to': A mandatory direction value.
 
-  - 'to': A mandatory direction value.
+        ```
+        'up', 'down'
+        Copy
+        ```
 
-    ```
-    'up', 'down'
-    Copy
-    ```
+    - 'by': Unit to move. Default is computed based on 'to' value.
 
-  - 'by': Unit to move. Default is computed based on 'to' value.
+        ```
+        'line', 'wrappedLine', 'page', 'halfPage', 'editor'
+        Copy
+        ```
 
-    ```
-    'line', 'wrappedLine', 'page', 'halfPage', 'editor'
-    Copy
-    ```
-
-  - 'value': Number of units to move. Default is '1'.
-  - 'revealCursor': If 'true' reveals the cursor if it is outside view port.
+    - 'value': Number of units to move. Default is '1'.
+    - 'revealCursor': If 'true' reveals the cursor if it is outside view port.
 
 `revealLine` \- Reveal the given line at the given logical position
 
 - _Reveal line argument object_ \- Property-value pairs that can be passed through this argument:
+    - 'lineNumber': A mandatory line number value.
+    - 'at': Logical position at which line has to be revealed.
 
-  - 'lineNumber': A mandatory line number value.
-  - 'at': Logical position at which line has to be revealed.
-
-    ```
-    'top', 'center', 'bottom'
-    Copy
-    ```
+        ```
+        'top', 'center', 'bottom'
+        Copy
+        ```
 
 `editor.unfold` \- Unfold the content in the editor
 
 - _Unfold editor argument_ \- Property-value pairs that can be passed through this argument:
-
-  - 'levels': Number of levels to unfold. If not set, defaults to 1.
-  - 'direction': If 'up', unfold given number of levels up otherwise unfolds down.
-  - 'selectionLines': Array of the start lines (0-based) of the editor selections to apply the unfold action to. If not
-    set, the active selection(s) will be used.
+    - 'levels': Number of levels to unfold. If not set, defaults to 1.
+    - 'direction': If 'up', unfold given number of levels up otherwise unfolds down.
+    - 'selectionLines': Array of the start lines (0-based) of the editor selections to apply the unfold action to. If not
+      set, the active selection(s) will be used.
 
 `editor.fold` \- Fold the content in the editor
 
 - _Fold editor argument_ \- Property-value pairs that can be passed through this argument:
-
-  - 'levels': Number of levels to fold.
-  - 'direction': If 'up', folds given number of levels up otherwise folds down.
-  - 'selectionLines': Array of the start lines (0-based) of the editor selections to apply the fold action to. If not set, the active selection(s) will be used.
-    If no levels or direction is set, folds the region at the locations or if already collapsed, the first uncollapsed parent instead.
+    - 'levels': Number of levels to fold.
+    - 'direction': If 'up', folds given number of levels up otherwise folds down.
+    - 'selectionLines': Array of the start lines (0-based) of the editor selections to apply the fold action to. If not set, the active selection(s) will be used.
+      If no levels or direction is set, folds the region at the locations or if already collapsed, the first uncollapsed parent instead.
 
 `editor.toggleFold` \- Folds or unfolds the content in the editor depending on its current state
 
@@ -496,17 +491,15 @@ Copy
 `moveActiveEditor` \- Move the active editor by tabs or groups
 
 - _Active editor move argument_ \- Argument Properties:
-
-  - 'to': String value providing where to move.
-  - 'by': String value providing the unit for move (by tab or by group).
-  - 'value': Number value providing how many positions or an absolute position to move.
+    - 'to': String value providing where to move.
+    - 'by': String value providing the unit for move (by tab or by group).
+    - 'value': Number value providing how many positions or an absolute position to move.
 
 `copyActiveEditor` \- Copy the active editor by groups
 
 - _Active editor copy argument_ \- Argument Properties:
-
-  - 'to': String value providing where to copy.
-  - 'value': Number value providing how many positions or an absolute position to copy.
+    - 'to': String value providing where to copy.
+    - 'value': Number value providing how many positions or an absolute position to copy.
 
 `vscode.getEditorLayout` \- Get Editor Layout
 
@@ -550,7 +543,7 @@ Copy
 - _walkthroughID_ \- ID of the walkthrough to open.
 - _toSide_ \- Opens the walkthrough in a new editor group to the side.
 
-## [Simple commands](https://code.visualstudio.com/api/references/commands\#simple-commands)
+## [Simple commands](https://code.visualstudio.com/api/references/commands#simple-commands)
 
 Simple commands that do not require parameters can be found in the Keyboard Shortcuts list in the default `keybindings.json` file. The unbound commands are listed in a comment block at the bottom of the file.
 

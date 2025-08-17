@@ -8,7 +8,7 @@ import { Logger } from './logger';
 
 // Dynamic import types for Claude Code
 type SDKMessage = any; // Will be properly typed when imported
-type ClaudeCodeOptions = any; // Will be properly typed when imported  
+type ClaudeCodeOptions = any; // Will be properly typed when imported
 type QueryFunction = (params: {
     prompt: string;
     abortController?: AbortController;
@@ -36,14 +36,14 @@ export class ClaudeCodeService {
 
         try {
             Logger.info('Starting Claude Code initialization...');
-            
+
             // Setup working directory first
             this.setupWorkingDirectory();
 
             // Check if API key is configured
             const config = vscode.workspace.getConfiguration('securedesign');
             const apiKey = config.get<string>('anthropicApiKey');
-            
+
             if (!apiKey) {
                 Logger.warn('No API key found');
                 throw new Error('Missing API key');
@@ -60,11 +60,31 @@ export class ClaudeCodeService {
                 try {
                     // Try multiple possible paths for the extension location
                     const possiblePaths = [
-                        path.resolve(__dirname, '..', 'node_modules', '@anthropic-ai', 'claude-code', 'sdk.mjs'),
-                        path.resolve(__dirname, 'node_modules', '@anthropic-ai', 'claude-code', 'sdk.mjs'),
-                        path.join(__dirname, '..', 'node_modules', '@anthropic-ai', 'claude-code', 'sdk.mjs')
+                        path.resolve(
+                            __dirname,
+                            '..',
+                            'node_modules',
+                            '@anthropic-ai',
+                            'claude-code',
+                            'sdk.mjs'
+                        ),
+                        path.resolve(
+                            __dirname,
+                            'node_modules',
+                            '@anthropic-ai',
+                            'claude-code',
+                            'sdk.mjs'
+                        ),
+                        path.join(
+                            __dirname,
+                            '..',
+                            'node_modules',
+                            '@anthropic-ai',
+                            'claude-code',
+                            'sdk.mjs'
+                        ),
                     ];
-                    
+
                     let importSucceeded = false;
                     for (const modulePath of possiblePaths) {
                         try {
@@ -77,7 +97,7 @@ export class ClaudeCodeService {
                             continue;
                         }
                     }
-                    
+
                     if (!importSucceeded) {
                         throw new Error('All local import paths failed');
                     }
@@ -90,13 +110,13 @@ export class ClaudeCodeService {
                         throw standardImportError;
                     }
                 }
-                
+
                 this.claudeCodeQuery = claudeCodeModule.query;
-                
+
                 if (!this.claudeCodeQuery) {
                     throw new Error('Query function not found in Claude Code module');
                 }
-                
+
                 Logger.info('Claude Code SDK imported successfully');
             } catch (importError) {
                 Logger.error(`Failed to import Claude Code SDK: ${importError}`);
@@ -107,13 +127,13 @@ export class ClaudeCodeService {
             Logger.info('Claude Code SDK initialized successfully');
         } catch (error) {
             Logger.error(`Failed to initialize Claude Code SDK: ${error}`);
-            
+
             // Check if this is an API key related error (no UI popup needed here as error will be handled in chat)
             const errorMessage = error instanceof Error ? error.message : String(error);
             if (!this.isApiKeyAuthError(errorMessage)) {
                 vscode.window.showErrorMessage(`Failed to initialize Claude Code: ${error}`);
             }
-            
+
             // Reset initialization promise so it can be retried
             this.initializationPromise = null;
             this.isInitialized = false;
@@ -125,30 +145,30 @@ export class ClaudeCodeService {
         try {
             // Try to get workspace root first
             const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-            
+
             if (workspaceRoot) {
                 // Create .superdesign folder in workspace root
                 const superdesignDir = path.join(workspaceRoot, '.superdesign');
-                
+
                 // Create directory if it doesn't exist
                 if (!fs.existsSync(superdesignDir)) {
                     fs.mkdirSync(superdesignDir, { recursive: true });
                     Logger.info(`Created .superdesign directory: ${superdesignDir}`);
                 }
-                
+
                 this.workingDirectory = superdesignDir;
             } else {
                 Logger.warn('No workspace root found, using temporary directory');
                 // Fallback to OS temp directory if no workspace
                 const tempDir = path.join(os.tmpdir(), 'superdesign-claude');
-                
+
                 if (!fs.existsSync(tempDir)) {
                     fs.mkdirSync(tempDir, { recursive: true });
                     Logger.info(`Created temporary directory: ${tempDir}`);
                 }
-                
+
                 this.workingDirectory = tempDir;
-                
+
                 vscode.window.showWarningMessage(
                     'No workspace folder found. Using temporary directory for Claude Code operations.'
                 );
@@ -176,21 +196,29 @@ export class ClaudeCodeService {
         }
     }
 
-    async query(prompt?: string, conversationMessages?: any, options?: Partial<ClaudeCodeOptions>, abortController?: AbortController, onMessage?: (message: SDKMessage) => void): Promise<SDKMessage[]> {
+    async query(
+        prompt?: string,
+        conversationMessages?: any,
+        options?: Partial<ClaudeCodeOptions>,
+        abortController?: AbortController,
+        onMessage?: (message: SDKMessage) => void
+    ): Promise<SDKMessage[]> {
         // ClaudeCodeService handles conversation via internal session management
         // so we ignore conversationMessages and just use the prompt
-        
+
         if (!prompt) {
             throw new Error('ClaudeCodeService requires a prompt parameter');
         }
-        
+
         Logger.info('=== QUERY FUNCTION CALLED ===');
         Logger.info(`Query prompt: ${prompt.substring(0, 200)}...`);
         Logger.info(`Query options: ${JSON.stringify(options, null, 2)}`);
         Logger.info(`Streaming enabled: ${!!onMessage}`);
-        
+
         if (conversationMessages) {
-            Logger.info('Note: ClaudeCodeService ignores conversationMessages (uses internal session management)');
+            Logger.info(
+                'Note: ClaudeCodeService ignores conversationMessages (uses internal session management)'
+            );
         }
 
         await this.ensureInitialized();
@@ -305,17 +333,15 @@ Your goal is to extract a generalized and reusable design system from the screen
 * Use consistent **margin spacing above/below headings** (e.g., margin-top: 1.2× line-height) .
 
 `;
-        
+
         try {
             const finalOptions: Partial<ClaudeCodeOptions> = {
                 maxTurns: 10,
-                allowedTools: [
-                    'Read', 'Write', 'Edit', 'MultiEdit', 'Bash', 'LS', 'Grep', 'Glob'
-                ],
+                allowedTools: ['Read', 'Write', 'Edit', 'MultiEdit', 'Bash', 'LS', 'Grep', 'Glob'],
                 permissionMode: 'acceptEdits' as const,
                 cwd: this.workingDirectory,
                 customSystemPrompt: systemPrompt,
-                ...options
+                ...options,
             };
 
             if (this.currentSessionId) {
@@ -325,16 +351,18 @@ Your goal is to extract a generalized and reusable design system from the screen
             const queryParams = {
                 prompt: prompt, // Non-null assertion since we checked above
                 abortController: abortController || new AbortController(),
-                options: finalOptions
+                options: finalOptions,
             };
 
             if (!this.claudeCodeQuery) {
-                throw new Error('Claude Code SDK not properly initialized - query function not available');
+                throw new Error(
+                    'Claude Code SDK not properly initialized - query function not available'
+                );
             }
 
             for await (const message of this.claudeCodeQuery(queryParams)) {
                 messages.push(message);
-                
+
                 // Call the streaming callback if provided
                 if (onMessage) {
                     try {
@@ -346,8 +374,14 @@ Your goal is to extract a generalized and reusable design system from the screen
                 }
             }
 
-            const lastMessageWithSessionId = [...messages].reverse().find(m => 'session_id' in m && m.session_id);
-            if (lastMessageWithSessionId && 'session_id' in lastMessageWithSessionId && lastMessageWithSessionId.session_id) {
+            const lastMessageWithSessionId = [...messages]
+                .reverse()
+                .find(m => 'session_id' in m && m.session_id);
+            if (
+                lastMessageWithSessionId &&
+                'session_id' in lastMessageWithSessionId &&
+                lastMessageWithSessionId.session_id
+            ) {
                 this.currentSessionId = lastMessageWithSessionId.session_id;
             }
 
@@ -355,7 +389,7 @@ Your goal is to extract a generalized and reusable design system from the screen
             return messages;
         } catch (error) {
             Logger.error(`Claude Code query failed: ${error}`);
-            
+
             // Check if this is an API key authentication error (handled in chat interface)
             const errorMessage = error instanceof Error ? error.message : String(error);
             if (!this.isApiKeyAuthError(errorMessage)) {
@@ -388,7 +422,7 @@ Your goal is to extract a generalized and reusable design system from the screen
         try {
             const config = vscode.workspace.getConfiguration('securedesign');
             const apiKey = config.get<string>('anthropicApiKey');
-            
+
             if (!apiKey) {
                 Logger.warn('No API key found during refresh');
                 return false;
@@ -397,7 +431,7 @@ Your goal is to extract a generalized and reusable design system from the screen
             // Update environment variable
             process.env.ANTHROPIC_API_KEY = apiKey;
             Logger.info('API key refreshed from settings');
-            
+
             // If not initialized yet, try to initialize
             if (!this.isInitialized) {
                 try {
@@ -408,7 +442,7 @@ Your goal is to extract a generalized and reusable design system from the screen
                     return false;
                 }
             }
-            
+
             return true;
         } catch (error) {
             Logger.error(`Failed to refresh API key: ${error}`);
@@ -437,18 +471,20 @@ Your goal is to extract a generalized and reusable design system from the screen
             'ANTHROPIC_API_KEY',
             'process exited with code 1',
             'claude code process exited',
-            'exit code 1'
+            'exit code 1',
         ];
-        
+
         const lowercaseMessage = errorMessage.toLowerCase();
         const isAuthError = authErrorPatterns.some(pattern => lowercaseMessage.includes(pattern));
-        
+
         Logger.info(`Checking if error is auth-related: "${errorMessage}" -> ${isAuthError}`);
         if (isAuthError) {
-            const matchedPattern = authErrorPatterns.find(pattern => lowercaseMessage.includes(pattern));
+            const matchedPattern = authErrorPatterns.find(pattern =>
+                lowercaseMessage.includes(pattern)
+            );
             Logger.info(`Matched pattern: "${matchedPattern}"`);
         }
-        
+
         return isAuthError;
     }
-} 
+}

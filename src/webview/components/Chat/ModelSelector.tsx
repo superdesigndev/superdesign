@@ -14,7 +14,11 @@ interface ModelOption {
     category: string;
 }
 
-const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelChange, disabled }) => {
+const ModelSelector: React.FC<ModelSelectorProps> = ({
+    selectedModel,
+    onModelChange,
+    disabled,
+}) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -23,63 +27,176 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
 
     const models: ModelOption[] = [
         // Anthropic
-        { id: 'claude-4-opus-20250514', name: 'Claude 4 Opus', provider: 'Anthropic', category: 'Premium' },
-        { id: 'claude-4-sonnet-20250514', name: 'Claude 4 Sonnet', provider: 'Anthropic', category: 'Balanced' },
-        { id: 'claude-3-7-sonnet-20250219', name: 'Claude 3.7 Sonnet', provider: 'Anthropic', category: 'Balanced' },
-        { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', category: 'Balanced' },
+        {
+            id: 'claude-4-opus-20250514',
+            name: 'Claude 4 Opus',
+            provider: 'Anthropic',
+            category: 'Premium',
+        },
+        {
+            id: 'claude-4-sonnet-20250514',
+            name: 'Claude 4 Sonnet',
+            provider: 'Anthropic',
+            category: 'Balanced',
+        },
+        {
+            id: 'claude-3-7-sonnet-20250219',
+            name: 'Claude 3.7 Sonnet',
+            provider: 'Anthropic',
+            category: 'Balanced',
+        },
+        {
+            id: 'claude-3-5-sonnet-20241022',
+            name: 'Claude 3.5 Sonnet',
+            provider: 'Anthropic',
+            category: 'Balanced',
+        },
         // Google (Direct)
         { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'Google', category: 'Balanced' },
         { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'Google', category: 'Fast' },
-        { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', provider: 'Google', category: 'Fast' },
+        {
+            id: 'gemini-2.5-flash-lite',
+            name: 'Gemini 2.5 Flash Lite',
+            provider: 'Google',
+            category: 'Fast',
+        },
         // Google (OpenRouter)
-        { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'OpenRouter (Google)', category: 'Balanced' },
+        {
+            id: 'google/gemini-2.5-pro',
+            name: 'Gemini 2.5 Pro',
+            provider: 'OpenRouter (Google)',
+            category: 'Balanced',
+        },
         // Meta (OpenRouter)
-        { id: 'meta-llama/llama-4-maverick-17b-128e-instruct', name: 'Llama 4 Maverick 17B', provider: 'OpenRouter (Meta)', category: 'Balanced' },
+        {
+            id: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+            name: 'Llama 4 Maverick 17B',
+            provider: 'OpenRouter (Meta)',
+            category: 'Balanced',
+        },
         // DeepSeek (OpenRouter)
-        { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', provider: 'OpenRouter (DeepSeek)', category: 'Balanced' },
+        {
+            id: 'deepseek/deepseek-r1',
+            name: 'DeepSeek R1',
+            provider: 'OpenRouter (DeepSeek)',
+            category: 'Balanced',
+        },
         // Mistral (OpenRouter)
-        { id: 'mistralai/mistral-small-3.2-24b-instruct-2506', name: 'Mistral Small 3.2 24B', provider: 'OpenRouter (Mistral)', category: 'Balanced' },
+        {
+            id: 'mistralai/mistral-small-3.2-24b-instruct-2506',
+            name: 'Mistral Small 3.2 24B',
+            provider: 'OpenRouter (Mistral)',
+            category: 'Balanced',
+        },
         // xAI (OpenRouter)
         { id: 'x-ai/grok-3', name: 'Grok 3', provider: 'OpenRouter (xAI)', category: 'Balanced' },
         // Qwen (OpenRouter)
-        { id: 'qwen/qwen3-235b-a22b-04-28', name: 'Qwen3 235B', provider: 'OpenRouter (Qwen)', category: 'Balanced' },
+        {
+            id: 'qwen/qwen3-235b-a22b-04-28',
+            name: 'Qwen3 235B',
+            provider: 'OpenRouter (Qwen)',
+            category: 'Balanced',
+        },
         // Perplexity (OpenRouter)
-        { id: 'perplexity/sonar-reasoning-pro', name: 'Sonar Reasoning Pro', provider: 'OpenRouter (Perplexity)', category: 'Balanced' },
+        {
+            id: 'perplexity/sonar-reasoning-pro',
+            name: 'Sonar Reasoning Pro',
+            provider: 'OpenRouter (Perplexity)',
+            category: 'Balanced',
+        },
         // Microsoft (OpenRouter)
-        { id: 'microsoft/phi-4-reasoning-plus-04-30', name: 'Phi-4 Reasoning Plus', provider: 'OpenRouter (Microsoft)', category: 'Balanced' },
+        {
+            id: 'microsoft/phi-4-reasoning-plus-04-30',
+            name: 'Phi-4 Reasoning Plus',
+            provider: 'OpenRouter (Microsoft)',
+            category: 'Balanced',
+        },
         // NVIDIA (OpenRouter)
-        { id: 'nvidia/llama-3.3-nemotron-super-49b-v1', name: 'Llama 3.3 Nemotron Super 49B', provider: 'OpenRouter (NVIDIA)', category: 'Balanced' },
+        {
+            id: 'nvidia/llama-3.3-nemotron-super-49b-v1',
+            name: 'Llama 3.3 Nemotron Super 49B',
+            provider: 'OpenRouter (NVIDIA)',
+            category: 'Balanced',
+        },
         // Cohere (OpenRouter)
-        { id: 'cohere/command-a-03-2025', name: 'Command A', provider: 'OpenRouter (Cohere)', category: 'Balanced' },
+        {
+            id: 'cohere/command-a-03-2025',
+            name: 'Command A',
+            provider: 'OpenRouter (Cohere)',
+            category: 'Balanced',
+        },
         // Amazon (OpenRouter)
-        { id: 'amazon/nova-pro-v1', name: 'Nova Pro', provider: 'OpenRouter (Amazon)', category: 'Balanced' },
+        {
+            id: 'amazon/nova-pro-v1',
+            name: 'Nova Pro',
+            provider: 'OpenRouter (Amazon)',
+            category: 'Balanced',
+        },
         // Inflection (OpenRouter)
-        { id: 'inflection/inflection-3-productivity', name: 'Inflection 3 Productivity', provider: 'OpenRouter (Inflection)', category: 'Balanced' },
+        {
+            id: 'inflection/inflection-3-productivity',
+            name: 'Inflection 3 Productivity',
+            provider: 'OpenRouter (Inflection)',
+            category: 'Balanced',
+        },
         // Reka (OpenRouter)
-        { id: 'rekaai/reka-flash-3', name: 'Reka Flash 3', provider: 'OpenRouter (Reka)', category: 'Balanced' },
+        {
+            id: 'rekaai/reka-flash-3',
+            name: 'Reka Flash 3',
+            provider: 'OpenRouter (Reka)',
+            category: 'Balanced',
+        },
         // Existing OpenAI (direct)
         { id: 'gpt-4.1', name: 'GPT-4.1', provider: 'OpenAI', category: 'Balanced' },
         { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', provider: 'OpenAI', category: 'Fast' },
         // AWS Bedrock - Anthropic (Claude 4)
-        { id: 'us.anthropic.claude-opus-4-20250514-v1:0', name: 'Claude 4 Opus', provider: 'AWS Bedrock (Anthropic)', category: 'Premium' },
-        { id: 'us.anthropic.claude-sonnet-4-20250514-v1:0', name: 'Claude 4 Sonnet', provider: 'AWS Bedrock (Anthropic)', category: 'Balanced' },
+        {
+            id: 'us.anthropic.claude-opus-4-20250514-v1:0',
+            name: 'Claude 4 Opus',
+            provider: 'AWS Bedrock (Anthropic)',
+            category: 'Premium',
+        },
+        {
+            id: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
+            name: 'Claude 4 Sonnet',
+            provider: 'AWS Bedrock (Anthropic)',
+            category: 'Balanced',
+        },
         // AWS Bedrock - Anthropic (Claude 3)
-        { id: 'anthropic.claude-3-5-sonnet-20241022-v2:0', name: 'Claude 3.5 Sonnet v2', provider: 'AWS Bedrock (Anthropic)', category: 'Balanced' },
-        { id: 'anthropic.claude-3-opus-20240229-v1:0', name: 'Claude 3 Opus', provider: 'AWS Bedrock (Anthropic)', category: 'Premium' },
-        { id: 'anthropic.claude-3-haiku-20240307-v1:0', name: 'Claude 3 Haiku', provider: 'AWS Bedrock (Anthropic)', category: 'Fast' },
+        {
+            id: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+            name: 'Claude 3.5 Sonnet v2',
+            provider: 'AWS Bedrock (Anthropic)',
+            category: 'Balanced',
+        },
+        {
+            id: 'anthropic.claude-3-opus-20240229-v1:0',
+            name: 'Claude 3 Opus',
+            provider: 'AWS Bedrock (Anthropic)',
+            category: 'Premium',
+        },
+        {
+            id: 'anthropic.claude-3-haiku-20240307-v1:0',
+            name: 'Claude 3 Haiku',
+            provider: 'AWS Bedrock (Anthropic)',
+            category: 'Fast',
+        },
         // Moonshot AI
-        { id: 'kimi-k2-0711-preview', name: 'Kimi K2', provider: 'Moonshot', category: 'Balanced' }
+        { id: 'kimi-k2-0711-preview', name: 'Kimi K2', provider: 'Moonshot', category: 'Balanced' },
     ];
 
-    const filteredModels = models.filter(model =>
-        model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        model.provider.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredModels = models.filter(
+        model =>
+            model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            model.provider.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const selectedModelName = models.find(m => m.id === selectedModel)?.name || selectedModel;
 
     const calculateDropdownPosition = () => {
-        if (!triggerRef.current) {return;}
+        if (!triggerRef.current) {
+            return;
+        }
 
         const triggerRect = triggerRef.current.getBoundingClientRect();
         const modalHeight = 190; // Reduced from 220 since we removed add models section
@@ -111,8 +228,12 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (modalRef.current && !modalRef.current.contains(event.target as Node) &&
-                triggerRef.current && !triggerRef.current.contains(event.target as Node)) {
+            if (
+                modalRef.current &&
+                !modalRef.current.contains(event.target as Node) &&
+                triggerRef.current &&
+                !triggerRef.current.contains(event.target as Node)
+            ) {
                 setIsOpen(false);
             }
         };
@@ -370,71 +491,71 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
                 `}
             </style>
 
-            <div className="model-selector-wrapper">
+            <div className='model-selector-wrapper'>
                 <button
                     ref={triggerRef}
-                    className="model-selector-trigger"
+                    className='model-selector-trigger'
                     onClick={handleToggleOpen}
                     disabled={disabled}
                 >
-                    <div className="selector-icon model-icon">
+                    <div className='selector-icon model-icon'>
                         <BrainIcon />
                     </div>
                     <span>{selectedModelName}</span>
                     <svg
                         className={`model-selector-arrow ${isOpen ? 'open' : ''}`}
-                        width="12"
-                        height="12"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
+                        width='12'
+                        height='12'
+                        viewBox='0 0 20 20'
+                        fill='currentColor'
                     >
                         <path
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="1.5"
-                            d="m6 12 4-4 4 4"
+                            stroke='currentColor'
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth='1.5'
+                            d='m6 12 4-4 4 4'
                         />
                     </svg>
                 </button>
 
                 {isOpen && (
-                    <div className="model-selector-modal">
+                    <div className='model-selector-modal'>
                         <div
-                            className="model-selector-content"
+                            className='model-selector-content'
                             ref={modalRef}
                             style={{
                                 top: dropdownPosition.top,
-                                left: dropdownPosition.left
+                                left: dropdownPosition.left,
                             }}
                         >
-                            <div className="model-selector-header">
+                            <div className='model-selector-header'>
                                 <input
-                                    type="text"
-                                    className="model-selector-search"
-                                    placeholder="Search models..."
+                                    type='text'
+                                    className='model-selector-search'
+                                    placeholder='Search models...'
                                     value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onChange={e => setSearchTerm(e.target.value)}
                                     autoFocus
                                 />
                             </div>
 
-                            <div className="model-selector-list">
-                                {filteredModels.map((model) => (
+                            <div className='model-selector-list'>
+                                {filteredModels.map(model => (
                                     <button
                                         key={model.id}
                                         className={`model-option ${model.id === selectedModel ? 'selected' : ''}`}
                                         onClick={() => handleModelSelect(model.id)}
                                     >
-                                        <div className="model-icon">
+                                        <div className='model-icon'>
                                             <BrainIcon />
                                         </div>
-                                        <div className="model-info">
-                                            <div className="model-name">{model.name}</div>
-                                            <div className="model-provider">{model.provider}</div>
+                                        <div className='model-info'>
+                                            <div className='model-name'>{model.name}</div>
+                                            <div className='model-provider'>{model.provider}</div>
                                         </div>
                                         {model.id === selectedModel && (
-                                            <div className="model-check">✓</div>
+                                            <div className='model-check'>✓</div>
                                         )}
                                     </button>
                                 ))}
@@ -447,4 +568,4 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
     );
 };
 
-export default ModelSelector; 
+export default ModelSelector;

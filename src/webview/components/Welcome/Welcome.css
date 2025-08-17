@@ -71,7 +71,8 @@
 }
 
 /* Button styles following VS Code design system */
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
     padding: 8px 16px;
     border-radius: 4px;
     font-size: 12px;
@@ -124,19 +125,19 @@
         padding: 16px;
         gap: 24px;
     }
-    
+
     .welcome-header h1 {
         font-size: 20px;
     }
-    
+
     .welcome-subtitle {
         font-size: 13px;
     }
-    
+
     .welcome-form {
         max-width: 100%;
     }
-    
+
     .btn-primary {
         width: 100%;
     }
@@ -251,4 +252,4 @@
     font-size: 12px;
     color: var(--vscode-foreground);
     line-height: 1.3;
-} 
+}

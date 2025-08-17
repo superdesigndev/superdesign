@@ -12,7 +12,7 @@ const ConnectionLines: React.FC<ConnectionLinesProps> = ({
     connections,
     containerBounds,
     isVisible,
-    zoomLevel
+    zoomLevel,
 }) => {
     if (!isVisible || connections.length === 0) {
         return null;
@@ -24,26 +24,26 @@ const ConnectionLines: React.FC<ConnectionLinesProps> = ({
         strokeWidth: (connection.width || 2) / zoomLevel, // Thinner lines when zoomed out
         strokeDasharray: zoomLevel < 0.5 ? '5,5' : 'none', // Dashed when very zoomed out
         opacity: Math.max(0.3, Math.min(1, zoomLevel)), // More transparent when zoomed out
-        markerEnd: 'url(#arrowhead)'
+        markerEnd: 'url(#arrowhead)',
     });
 
     // Calculate curve path for organic looking connections
     const createCurvePath = (from: { x: number; y: number }, to: { x: number; y: number }) => {
         const dx = to.x - from.x;
         const dy = to.y - from.y;
-        
+
         // Create a smooth curve with control points
         const cp1x = from.x + dx * 0.6;
         const cp1y = from.y;
         const cp2x = to.x - dx * 0.6;
         const cp2y = to.y;
-        
+
         return `M ${from.x} ${from.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${to.x} ${to.y}`;
     };
 
     return (
         <svg
-            className="connection-lines"
+            className='connection-lines'
             style={{
                 position: 'absolute',
                 top: 0,
@@ -52,42 +52,42 @@ const ConnectionLines: React.FC<ConnectionLinesProps> = ({
                 height: containerBounds.height,
                 pointerEvents: 'none',
                 zIndex: 1,
-                overflow: 'visible'
+                overflow: 'visible',
             }}
         >
             {/* Arrow marker definition */}
             <defs>
                 <marker
-                    id="arrowhead"
-                    markerWidth="10"
-                    markerHeight="7"
-                    refX="9"
-                    refY="3.5"
-                    orient="auto"
-                    fill="var(--vscode-textLink-foreground)"
+                    id='arrowhead'
+                    markerWidth='10'
+                    markerHeight='7'
+                    refX='9'
+                    refY='3.5'
+                    orient='auto'
+                    fill='var(--vscode-textLink-foreground)'
                 >
-                    <polygon points="0 0, 10 3.5, 0 7" />
+                    <polygon points='0 0, 10 3.5, 0 7' />
                 </marker>
             </defs>
 
             {/* Render all connection lines */}
-            {connections.map((connection) => (
-                <g key={connection.id} className="connection-group">
+            {connections.map(connection => (
+                <g key={connection.id} className='connection-group'>
                     {/* Main connection line */}
                     <path
                         d={createCurvePath(connection.fromPosition, connection.toPosition)}
-                        fill="none"
+                        fill='none'
                         style={getLineStyle(connection)}
-                        className="connection-line"
+                        className='connection-line'
                     />
-                    
+
                     {/* Optional: Add a thicker invisible line for easier hover detection */}
                     <path
                         d={createCurvePath(connection.fromPosition, connection.toPosition)}
-                        fill="none"
-                        stroke="transparent"
-                        strokeWidth="10"
-                        className="connection-line-hover-target"
+                        fill='none'
+                        stroke='transparent'
+                        strokeWidth='10'
+                        className='connection-line-hover-target'
                         style={{ pointerEvents: 'stroke' }}
                     >
                         <title>{`${connection.fromFrame} → ${connection.toFrame}`}</title>
@@ -98,4 +98,4 @@ const ConnectionLines: React.FC<ConnectionLinesProps> = ({
     );
 };
 
-export default ConnectionLines; 
+export default ConnectionLines;

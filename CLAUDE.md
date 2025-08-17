@@ -30,6 +30,7 @@ npm run test:tools     # Test file operation tools
 ## Architecture Overview
 
 ### Extension Structure
+
 - **`src/extension.ts`**: Main extension entry point and activation logic
 - **`src/providers/chatSidebarProvider.ts`**: Manages the chat sidebar webview interface
 - **`src/services/`**: Core services including AI agent integration and logging
@@ -40,41 +41,49 @@ npm run test:tools     # Test file operation tools
 ### Key Components
 
 **Extension Entry Point** (`src/extension.ts`)
+
 - Main activation function and command registration
 - Manages WebView panels for chat sidebar and canvas view
 - Handles file operations (image saving, CSS reading)
 - Coordinates between different services and providers
 
 **CustomAgentService** (`src/services/customAgentService.ts`):
+
 - Handles AI provider integration (OpenAI, Anthropic, OpenRouter)
 - Manages tool execution context and file operations
 - Creates `.superdesign` directory for design storage
 
 **ChatSidebarProvider** (`src/providers/chatSidebarProvider.ts`):
+
 - Provides the main chat interface as a VS Code webview
 - Handles message routing between extension and webview
 - Manages webview lifecycle and context
 
 **Canvas Components** (`src/webview/components/`):
+
 - **CanvasView**: Main canvas interface for design previews
 - **Chat/**: Chat interface components with model selection and theming
 - **DesignFrame**: Renders design mockups and components
 - **ConnectionLines**: Visual connections in design layouts
 
 **Services Layer**
+
 - `CustomAgentService`: Manages AI interactions with multiple providers
 - `ClaudeCodeService`: (Deprecated) Legacy Claude Code SDK integration
 - `ChatMessageService`: Processes chat messages and streams responses
 - `Logger`: Centralized logging system
 
 **WebView Components** (`src/webview/`)
+
 - React-based UI for chat interface and canvas view
 - Supports both sidebar and panel layouts
 - Theme-aware design system with color palette management
 - Canvas view for design file visualization
 
 ### Tool System
+
 The extension includes a comprehensive tool system for file operations:
+
 - **read-tool**: File reading with line-based access
 - **write-tool**: File creation and modification
 - **edit-tool**: In-place text replacements
@@ -85,6 +94,7 @@ The extension includes a comprehensive tool system for file operations:
 - **bash-tool**: Shell command execution
 
 ### Configuration Management
+
 - Extension settings stored in VS Code configuration
 - API keys configured per provider (Anthropic, OpenAI, OpenRouter)
 - Design files stored in `.superdesign/` directory
@@ -93,12 +103,14 @@ The extension includes a comprehensive tool system for file operations:
 ### Design File Management
 
 **File Structure**
+
 - Design files stored in `.superdesign/design_iterations/`
 - Supports HTML and SVG formats
 - CSS theme files for consistent styling
 - Automatic file watching and live updates
 
 **Design Agent Integration**
+
 - Integrated design rules for AI agents
 - Template system for generating consistent UI components
 - Theme generation tools
@@ -107,31 +119,38 @@ The extension includes a comprehensive tool system for file operations:
 ## Development Patterns
 
 ### Webview Communication
+
 The extension uses a message-based system for webview communication:
+
 - Commands sent via `vscode.postMessage()`
 - Message handling in `ChatMessageService`
 - Context propagation through `WebviewContext`
 
 ### AI Integration
+
 - Multi-provider support with unified interface
 - Streaming responses for real-time chat
 - Tool execution within secure context
 - Model selection per provider (configurable)
 
 ### File Operations
+
 - All file operations go through VS Code's file system API
 - Working directory managed relative to workspace root
 - Tool results include proper error handling and validation
 
 ### Error Handling
+
 Centralized error handling with user-friendly messages and actionable error responses (e.g., API key configuration prompts).
 
 ### Extension Lifecycle
+
 Proper disposal patterns for file watchers, webview panels, and event subscriptions to prevent memory leaks.
 
 ## Testing Strategy
 
 The project uses a modular testing approach:
+
 - **Core tests**: Basic extension functionality
 - **LLM tests**: AI service integration
 - **Tool tests**: File operation tools
@@ -140,6 +159,7 @@ The project uses a modular testing approach:
 Run specific test suites based on the area being modified.
 
 ### Security Considerations
+
 - API keys stored in VS Code's secure configuration system
 - Content Security Policy enforcement for webviews
 - Sandboxed file operations within workspace boundaries
@@ -147,18 +167,22 @@ Run specific test suites based on the area being modified.
 ## Important Notes
 
 ### Cursor Rules Integration
+
 The project includes comprehensive Cursor rules in `.cursor/rules/`:
+
 - Follow the dev workflow patterns in `dev_workflow.mdc`
 - Use Taskmaster for complex feature development
 - Reference `cursor_rules.mdc` for rule structure guidelines
 
 ### Security Considerations
+
 - API keys stored in VS Code secure storage
 - File operations restricted to workspace scope
 - Webview content security policies enforced
 - Base64 image handling with size limits
 
 ### Design Storage
+
 - Generated designs saved locally in `.superdesign/`
 - Moodboard images stored in `.superdesign/moodboard/`
 - No external file dependencies for core functionality

@@ -34,24 +34,19 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
                     },
                     // Custom rendering for links to open externally
                     a: ({ node, children, href, ...props }) => (
-                        <a
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            {...props}
-                        >
+                        <a href={href} target='_blank' rel='noopener noreferrer' {...props}>
                             {children}
                         </a>
                     ),
                     // Custom rendering for tables
                     table: ({ node, children, ...props }) => (
-                        <div className="table-wrapper">
+                        <div className='table-wrapper'>
                             <table {...props}>{children}</table>
                         </div>
                     ),
                     // Custom rendering for blockquotes
                     blockquote: ({ node, children, ...props }) => (
-                        <blockquote className="markdown-blockquote" {...props}>
+                        <blockquote className='markdown-blockquote' {...props}>
                             {children}
                         </blockquote>
                     ),
@@ -63,4 +58,4 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
     );
 };
 
-export default MarkdownRenderer; 
+export default MarkdownRenderer;

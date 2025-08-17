@@ -9,13 +9,13 @@ import App from './App';
 const container = document.getElementById('root');
 if (container) {
     const root = createRoot(container);
-    
+
     console.log('🚀 Index.tsx starting...');
-    
+
     // Check if this is a canvas view (doesn't need context)
     const viewType = container.getAttribute('data-view');
     console.log('🎯 View type from index.tsx:', viewType);
-    
+
     if (viewType === 'canvas') {
         console.log('🎨 Canvas view detected, rendering App without context check');
         // Canvas view - render App component directly (it will handle the canvas routing)
@@ -25,7 +25,7 @@ if (container) {
         // Chat view - needs context
         const context: WebviewContext = (window as any).__WEBVIEW_CONTEXT__;
         console.log('🌐 Context found:', !!context);
-        
+
         if (!context) {
             console.error('❌ No context provided for chat view');
             root.render(<div>Error: No context provided for chat view</div>);
@@ -37,7 +37,7 @@ if (container) {
             console.log('🔲 Sidebar layout, rendering ChatInterface directly');
             // Use ChatInterface directly for sidebar (compact layout)
             const vscode = acquireVsCodeApi();
-            root.render(<ChatInterface layout="sidebar" vscode={vscode} />);
+            root.render(<ChatInterface layout='sidebar' vscode={vscode} />);
         }
     }
 }

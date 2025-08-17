@@ -10,13 +10,13 @@ export const useFirstTimeUser = () => {
         try {
             const hasVisited = localStorage.getItem(FIRST_TIME_USER_KEY);
             const isFirstTimeUser = hasVisited === null;
-            
+
             setIsFirstTime(isFirstTimeUser);
             setIsLoading(false);
-            
+
             console.log('First time user check:', {
                 hasVisited: hasVisited,
-                isFirstTimeUser: isFirstTimeUser
+                isFirstTimeUser: isFirstTimeUser,
             });
         } catch (error) {
             console.warn('Failed to check first-time user status:', error);
@@ -50,6 +50,6 @@ export const useFirstTimeUser = () => {
         isFirstTime,
         isLoading,
         markAsReturningUser,
-        resetFirstTimeUser
+        resetFirstTimeUser,
     };
-}; 
+};

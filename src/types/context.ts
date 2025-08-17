@@ -43,4 +43,4 @@ export interface ChatStopped extends WebviewMessage {
 export interface InitContext extends WebviewMessage {
     command: 'initContext';
     context: WebviewContext;
-} 
+}

@@ -52,24 +52,24 @@ const TOOL_TIME_ESTIMATES: { [key: string]: number } = {
     'mcp_taskmaster-ai_update_subtask': 45,
     'mcp_taskmaster-ai_add_task': 75,
     'mcp_taskmaster-ai_research': 150,
-    'codebase_search': 30,
-    'read_file': 15,
-    'edit_file': 45,
-    'run_terminal_cmd': 60,
-    'default': 90
+    codebase_search: 30,
+    read_file: 15,
+    edit_file: 45,
+    run_terminal_cmd: 60,
+    default: 90,
 };
 
 function getToolTimeEstimate(toolName: string): number {
     if (TOOL_TIME_ESTIMATES[toolName]) {
         return TOOL_TIME_ESTIMATES[toolName];
     }
-    
+
     for (const [key, value] of Object.entries(TOOL_TIME_ESTIMATES)) {
         if (toolName.includes(key) || key.includes(toolName)) {
             return value;
         }
     }
-    
+
     if (toolName.includes('taskmaster') || toolName.includes('task')) {
         return 120;
     }
@@ -79,7 +79,7 @@ function getToolTimeEstimate(toolName: string): number {
     if (toolName.includes('file') || toolName.includes('read') || toolName.includes('write')) {
         return 25;
     }
-    
+
     return TOOL_TIME_ESTIMATES.default;
 }
 
@@ -115,46 +115,53 @@ export function useChat(vscode: any): ChatHookResult {
         }
     }, []);
 
-    const sendMessage = useCallback((message: string) => {
-        setIsLoading(true);
-        
-        // Add user message to history
-        const userMessage: ChatMessage = {
-            role: 'user',
-            content: message,
-            metadata: {
-                timestamp: Date.now()
-            }
-        };
-        
-        setChatHistory(prev => [...prev, userMessage]);
-        
-        // Send to extension
-        vscode.postMessage({
-            command: 'chatMessage',
-            message: message,
-            chatHistory: [...chatHistory, userMessage]
-        });
-    }, [chatHistory, vscode]);
+    const sendMessage = useCallback(
+        (message: string) => {
+            setIsLoading(true);
+
+            // Add user message to history
+            const userMessage: ChatMessage = {
+                role: 'user',
+                content: message,
+                metadata: {
+                    timestamp: Date.now(),
+                },
+            };
+
+            setChatHistory(prev => [...prev, userMessage]);
+
+            // Send to extension
+            vscode.postMessage({
+                command: 'chatMessage',
+                message: message,
+                chatHistory: [...chatHistory, userMessage],
+            });
+        },
+        [chatHistory, vscode]
+    );
 
     useEffect(() => {
         const messageHandler = (event: MessageEvent) => {
             const message = event.data;
-            
+
             switch (message.command) {
                 case 'chatResponseChunk':
                     setChatHistory(prev => {
                         const newHistory = [...prev];
-                        
+
                         if (message.messageType === 'assistant') {
                             // Handle assistant text messages
                             const lastMessage = newHistory[newHistory.length - 1];
-                            
-                            if (lastMessage && lastMessage.role === 'assistant' && typeof lastMessage.content === 'string') {
+
+                            if (
+                                lastMessage &&
+                                lastMessage.role === 'assistant' &&
+                                typeof lastMessage.content === 'string'
+                            ) {
                                 // Append to existing assistant message
                                 newHistory[newHistory.length - 1] = {
                                     ...lastMessage,
-                                    content: lastMessage.content + message.content
+                                    content: lastMessage.content + message.content,
                                 };
                             } else {
                                 // Create new assistant message
@@ -163,8 +170,8 @@ export function useChat(vscode: any): ChatHookResult {
                                     content: message.content,
                                     metadata: {
                                         timestamp: Date.now(),
-                                        session_id: message.metadata?.session_id
-                                    }
+                                        session_id: message.metadata?.session_id,
+                                    },
                                 });
                             }
                         } else if (message.messageType === 'tool-call') {
@@ -173,13 +180,13 @@ export function useChat(vscode: any): ChatHookResult {
                                 type: 'tool-call' as const,
                                 toolCallId: message.metadata?.tool_id || 'unknown',
                                 toolName: message.metadata?.tool_name || 'unknown',
-                                input: message.metadata?.tool_input || {}
+                                input: message.metadata?.tool_input || {},
                             };
-                            
+
                             // Find the last assistant message and append tool call to it
                             const lastMessage = newHistory[newHistory.length - 1];
                             const lastIndex = newHistory.length - 1;
-                            
+
                             if (lastMessage && lastMessage.role === 'assistant') {
                                 // Convert content to array format and append tool call
                                 let newContent;
@@ -187,7 +194,7 @@ export function useChat(vscode: any): ChatHookResult {
                                     // Convert string to array with text part + tool call part
                                     newContent = [
                                         { type: 'text', text: lastMessage.content },
-                                        toolCallPart
+                                        toolCallPart,
                                     ];
                                 } else if (Array.isArray(lastMessage.content)) {
                                     // Append to existing array
@@ -196,7 +203,7 @@ export function useChat(vscode: any): ChatHookResult {
                                     // Fallback: create new array
                                     newContent = [toolCallPart];
                                 }
-                                
+
                                 newHistory[lastIndex] = {
                                     ...lastMessage,
                                     content: newContent as any,
@@ -205,8 +212,8 @@ export function useChat(vscode: any): ChatHookResult {
                                         is_loading: true,
                                         estimated_duration: 90,
                                         start_time: Date.now(),
-                                        progress_percentage: 0
-                                    }
+                                        progress_percentage: 0,
+                                    },
                                 };
                             } else {
                                 // No assistant message to append to, create new one
@@ -219,8 +226,8 @@ export function useChat(vscode: any): ChatHookResult {
                                         is_loading: true,
                                         estimated_duration: 90,
                                         start_time: Date.now(),
-                                        progress_percentage: 0
-                                    }
+                                        progress_percentage: 0,
+                                    },
                                 });
                             }
                         } else if (message.messageType === 'tool-result') {
@@ -229,19 +236,19 @@ export function useChat(vscode: any): ChatHookResult {
                                 type: 'tool-result' as const,
                                 toolCallId: message.metadata?.tool_id || 'unknown',
                                 toolName: message.metadata?.tool_name || 'unknown',
-                                output: message.content || ''
+                                output: message.content || '',
                             };
-                            
+
                             newHistory.push({
                                 role: 'tool',
                                 content: [toolResultPart],
                                 metadata: {
                                     timestamp: Date.now(),
-                                    session_id: message.metadata?.session_id
-                                }
+                                    session_id: message.metadata?.session_id,
+                                },
                             });
                         }
-                        
+
                         return newHistory;
                     });
                     break;
@@ -250,32 +257,34 @@ export function useChat(vscode: any): ChatHookResult {
                     // Update tool parameters during streaming
                     setChatHistory(prev => {
                         const newHistory = [...prev];
-                        
+
                         // Find the most recent tool call message with matching ID
                         for (let i = newHistory.length - 1; i >= 0; i--) {
                             const msg = newHistory[i];
                             if (msg.role === 'assistant' && Array.isArray(msg.content)) {
                                 const toolCallIndex = msg.content.findIndex(
-                                    part => part.type === 'tool-call' && (part as any).toolCallId === message.tool_use_id
+                                    part =>
+                                        part.type === 'tool-call' &&
+                                        (part as any).toolCallId === message.tool_use_id
                                 );
-                                
+
                                 if (toolCallIndex !== -1) {
                                     // Update the tool call args
                                     const updatedContent = [...msg.content];
                                     updatedContent[toolCallIndex] = {
                                         ...updatedContent[toolCallIndex],
-                                        args: message.tool_input
+                                        args: message.tool_input,
                                     } as any;
-                                    
+
                                     newHistory[i] = {
                                         ...msg,
-                                        content: updatedContent
+                                        content: updatedContent,
                                     };
                                     break;
                                 }
                             }
                         }
-                        
+
                         return newHistory;
                     });
                     break;
@@ -285,15 +294,21 @@ export function useChat(vscode: any): ChatHookResult {
                     console.log('Received tool result for:', message.tool_use_id);
                     setChatHistory(prev => {
                         const newHistory = [...prev];
-                        
+
                         // Find and complete tool loading
                         for (let i = newHistory.length - 1; i >= 0; i--) {
                             const msg = newHistory[i];
-                            if (msg.role === 'assistant' && Array.isArray(msg.content) && msg.metadata?.is_loading) {
+                            if (
+                                msg.role === 'assistant' &&
+                                Array.isArray(msg.content) &&
+                                msg.metadata?.is_loading
+                            ) {
                                 const hasMatchingToolCall = msg.content.some(
-                                    part => part.type === 'tool-call' && (part as any).toolCallId === message.tool_use_id
+                                    part =>
+                                        part.type === 'tool-call' &&
+                                        (part as any).toolCallId === message.tool_use_id
                                 );
-                                
+
                                 if (hasMatchingToolCall) {
                                     newHistory[i] = {
                                         ...msg,
@@ -301,63 +316,63 @@ export function useChat(vscode: any): ChatHookResult {
                                             ...msg.metadata,
                                             is_loading: false,
                                             progress_percentage: 100,
-                                            elapsed_time: msg.metadata.estimated_duration || 90
-                                        }
+                                            elapsed_time: msg.metadata.estimated_duration || 90,
+                                        },
                                     };
                                     break;
                                 }
                             }
                         }
-                        
+
                         return newHistory;
                     });
                     break;
-                    
+
                 case 'chatStreamEnd':
                     console.log('Chat stream ended');
                     setIsLoading(false);
                     break;
-                    
+
                 case 'chatErrorWithActions':
                     // Handle API key and authentication errors with action buttons
                     console.log('Chat error with actions:', message.error);
                     setIsLoading(false);
-                    
+
                     const errorMessage: ChatMessage = {
                         role: 'assistant',
                         content: `❌ **${message.error}**\n\nPlease configure your API key to use this AI model.`,
                         metadata: {
                             timestamp: Date.now(),
                             is_error: true,
-                            actions: message.actions || []
-                        }
+                            actions: message.actions || [],
+                        },
                     };
-                    
+
                     setChatHistory(prev => [...prev, errorMessage]);
                     break;
-                    
+
                 case 'chatError':
                     // Handle general errors
                     console.log('Chat error:', message.error);
                     setIsLoading(false);
-                    
+
                     const generalErrorMessage: ChatMessage = {
                         role: 'assistant',
                         content: `❌ **Error**: ${message.error}`,
                         metadata: {
                             timestamp: Date.now(),
-                            is_error: true
-                        }
+                            is_error: true,
+                        },
                     };
-                    
+
                     setChatHistory(prev => [...prev, generalErrorMessage]);
                     break;
-                    
+
                 case 'chatStopped':
                     console.log('Chat was stopped');
                     setIsLoading(false);
                     break;
-                    
+
                 default:
                     break;
             }
@@ -372,6 +387,6 @@ export function useChat(vscode: any): ChatHookResult {
         isLoading,
         sendMessage,
         clearHistory,
-        setChatHistory
+        setChatHistory,
     };
-} 
+}
