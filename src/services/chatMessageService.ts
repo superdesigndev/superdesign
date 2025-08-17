@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { ClaudeCodeService } from './claudeCodeService';
 import type { AgentService } from '../types/agent';
-import type { CoreMessage } from 'ai';
+import type { ModelMessage } from 'ai';
 import { Logger } from './logger';
 
 export class ChatMessageService {
@@ -14,7 +14,7 @@ export class ChatMessageService {
 
     async handleChatMessage(message: any, webview: vscode.Webview): Promise<void> {
         try {
-            const chatHistory: CoreMessage[] = message.chatHistory || [];
+            const chatHistory: ModelMessage[] = message.chatHistory || [];
             const latestMessage = message.message || '';
             const messageContent = message.messageContent || latestMessage;
 
@@ -22,22 +22,6 @@ export class ChatMessageService {
 
             Logger.info(`Chat message received with ${chatHistory.length} history messages`);
             Logger.info(`Latest message: ${latestMessage}`);
-
-            // Debug structured content
-            if (typeof messageContent !== 'string' && Array.isArray(messageContent)) {
-                Logger.info(`Structured content: ${messageContent.length} parts`);
-                messageContent.forEach((part, index) => {
-                    if (part.type === 'text') {
-                        Logger.info(`  [${index}] text: "${part.text?.substring(0, 100)}..."`);
-                    } else if (part.type === 'image') {
-                        Logger.info(
-                            `  [${index}] image: ${part.mimeType || 'unknown type'} (${part.image?.length || 0} chars)`
-                        );
-                    }
-                });
-            } else {
-                Logger.info(`Simple text content: ${String(messageContent).substring(0, 100)}...`);
-            }
 
             // Create new AbortController for this request
             this.currentRequestController = new AbortController();
@@ -60,8 +44,7 @@ export class ChatMessageService {
                         : Array.isArray(msg.content)
                           ? msg.content
                                 .map(part =>
-                                    part.type === 'text'
-                                        ? `${part.text?.substring(0, 50)}...`
+                                    part.type === 'text' ? part.text
                                         : part.type === 'tool-call'
                                           ? `[tool-call: ${part.toolName}]`
                                           : part.type === 'tool-result'
@@ -72,7 +55,7 @@ export class ChatMessageService {
                           : '[complex content]';
 
                 this.outputChannel.appendLine(
-                    `  [${index}] ${msg.role}: "${content.substring(0, 100)}..."`
+                    `  [${index}] ${msg.role}: ${content}`
                 );
             });
 
@@ -214,8 +197,8 @@ export class ChatMessageService {
         }
     }
 
-    private handleStreamMessage(message: CoreMessage, webview: vscode.Webview): void {
-        Logger.debug(`Handling CoreMessage: ${JSON.stringify(message, null, 2)}`);
+    private handleStreamMessage(message: ModelMessage, webview: vscode.Webview): void {
+        Logger.debug(`Handling ModelMessage: ${JSON.stringify(message, null, 2)}`);
 
         // Check if this is an update to existing message
         const isUpdate = (message as any)._isUpdate;
@@ -286,7 +269,7 @@ export class ChatMessageService {
                             : JSON.stringify(part.result, null, 2);
 
                     Logger.debug(
-                        `Tool result for ${part.toolCallId}: "${content.substring(0, 200)}..."`
+                        `Tool result for ${part.toolCallId}: ${content}`
                     );
 
                     // Send tool result to frontend
@@ -401,7 +384,7 @@ export class ChatMessageService {
                 }
             }
 
-            Logger.debug(`Extracted result content: "${content.substring(0, 200)}..."`);
+            Logger.debug(`Extracted result content: ${content}`);
 
             if (content.trim()) {
                 webview.postMessage({

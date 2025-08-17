@@ -8,11 +8,12 @@ import Welcome from '../Welcome';
 import ThemePreviewCard from './ThemePreviewCard';
 import ModelSelector from './ModelSelector';
 import chatStyles from './ChatInterface.css';
+
 import welcomeStyles from '../Welcome/Welcome.css';
 
 interface ChatInterfaceProps {
     layout: WebviewLayout;
-    vscode: any;
+    vscode: VsCodeApi;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
@@ -1254,30 +1255,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                 }));
             };
 
-            // Determine if content needs truncation
-            const MAX_PREVIEW = 300;
-
-            // Result truncation
-            const resultNeedsTruncation = toolResult.length > MAX_PREVIEW;
-            const displayResult =
-                resultNeedsTruncation && !showFullResult
-                    ? `${toolResult.substring(0, MAX_PREVIEW)}...`
-                    : toolResult;
-
-            // Input truncation
-            const inputString = JSON.stringify(toolInput, null, 2);
-            const inputNeedsTruncation = inputString.length > MAX_PREVIEW;
-            const displayInput =
-                inputNeedsTruncation && !showFullInput
-                    ? `${inputString.substring(0, MAX_PREVIEW)}...`
-                    : inputString;
-
-            // Prompt truncation
-            const promptNeedsTruncation = prompt.length > MAX_PREVIEW;
-            const displayPrompt =
-                promptNeedsTruncation && !showFullPrompt
-                    ? `${prompt.substring(0, MAX_PREVIEW)}...`
-                    : prompt;
+            // Input truncation with safe handling
+            const inputString: string = (() => {
+                try {
+                    return JSON.stringify(toolInput, null, 2);
+                } catch (error) {
+                    console.error('❌ Error: Failed to stringify tool input for tool:', toolCallPart.toolName, error);
+                    return '[Tool input serialization failed]';
+                }
+            })();
 
             return (
                 <div
@@ -1351,18 +1337,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                                 <div className='tool-detail'>
                                     <span className='tool-detail__label'>Input:</span>
                                     <div className='tool-detail__value tool-detail__value--result'>
-                                        <pre className='tool-result-content'>{displayInput}</pre>
-                                        {inputNeedsTruncation && (
-                                            <button
-                                                className='tool-result__show-more'
-                                                onClick={e => {
-                                                    e.stopPropagation();
-                                                    toggleShowFullInput();
-                                                }}
-                                            >
-                                                {showFullInput ? 'Show Less' : 'Show More'}
-                                            </button>
-                                        )}
+                                        <pre className='tool-result-content'>{inputString}</pre>
                                     </div>
                                 </div>
                             )}
@@ -1370,18 +1345,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                                 <div className='tool-detail'>
                                     <span className='tool-detail__label'>Prompt:</span>
                                     <div className='tool-detail__value tool-detail__value--result'>
-                                        <pre className='tool-result-content'>{displayPrompt}</pre>
-                                        {promptNeedsTruncation && (
-                                            <button
-                                                className='tool-result__show-more'
-                                                onClick={e => {
-                                                    e.stopPropagation();
-                                                    toggleShowFullPrompt();
-                                                }}
-                                            >
-                                                {showFullPrompt ? 'Show Less' : 'Show More'}
-                                            </button>
-                                        )}
+                                        <pre className='tool-result-content'>{prompt}</pre>
                                     </div>
                                 </div>
                             )}
@@ -1393,18 +1357,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                                     <div
                                         className={`tool-detail__value tool-detail__value--result ${resultIsError ? 'tool-detail__value--error' : ''}`}
                                     >
-                                        <pre className='tool-result-content'>{displayResult}</pre>
-                                        {resultNeedsTruncation && (
-                                            <button
-                                                className='tool-result__show-more'
-                                                onClick={e => {
-                                                    e.stopPropagation();
-                                                    toggleShowFullResult();
-                                                }}
-                                            >
-                                                {showFullResult ? 'Show Less' : 'Show More'}
-                                            </button>
-                                        )}
+                                        <pre className='tool-result-content'>{toolResult}</pre>
                                     </div>
                                 </div>
                             )}
