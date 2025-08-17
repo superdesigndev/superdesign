@@ -6,7 +6,9 @@
       "WebFetch(domain:vercel.com)",
       "WebFetch(domain:sdk.vercel.ai)",
       "WebFetch(domain:ai-sdk.dev)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(npm run compile:*)",
+      "WebSearch"
     ],
     "deny": []
   }
