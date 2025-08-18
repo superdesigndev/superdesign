@@ -6,10 +6,27 @@
 import type * as vscode from 'vscode';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 
+export type Brand<T, B> = T & { readonly __brand: B };
+
+/**
+ * Provider ID mapping for compile-time extensibility via declaration merging
+ */
+declare global {
+    interface ProviderIdMap {
+        anthropic: true;
+        openai: true;
+        openrouter: true;
+        google: true;
+        bedrock: true;
+        moonshot: true;
+    }
+}
+
 /**
  * Supported AI provider identifiers
+ * Combines compile-time known providers with runtime extensible branded strings
  */
-export type ProviderId = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'bedrock' | 'moonshot';
+export type ProviderId = keyof ProviderIdMap | Brand<string, 'ProviderId'>;
 
 /**
  * Configuration for a specific AI model
@@ -27,6 +44,10 @@ export interface ModelConfig {
     supportsVision?: boolean;
     /** Additional model-specific configuration */
     metadata?: Record<string, any>;
+}
+
+export interface ModelConfigWithProvider extends ModelConfig {
+    providerId: ProviderId;
 }
 
 /**
@@ -59,8 +80,6 @@ export interface ProviderMetadata {
     id: ProviderId;
     /** Human-readable provider name */
     name: string;
-    /** VS Code setting key for the primary API key */
-    apiKeyConfigKey: string;
     /** VS Code command to configure this provider */
     configureCommand: string;
     /** Additional configuration keys this provider requires */
@@ -69,6 +88,21 @@ export interface ProviderMetadata {
     description?: string;
     /** Provider documentation URL */
     documentationUrl?: string;
+}
+
+export interface ProviderMetadataWithApiKey extends ProviderMetadata {
+    apiKeyConfigKey: string;
+}
+
+/**
+ * Type guard to check if provider metadata has an API key configuration
+ * @param metadata Provider metadata to check
+ * @returns true if metadata has apiKeyConfigKey property
+ */
+export function isProviderMetadataWithApiKey(
+    metadata: ProviderMetadata
+): metadata is ProviderMetadataWithApiKey {
+    return 'apiKeyConfigKey' in metadata && typeof (metadata as any).apiKeyConfigKey === 'string';
 }
 
 /**
@@ -99,9 +133,9 @@ export abstract class AIProvider {
      * @returns Default model configuration
      */
     getDefaultModel(): ModelConfig {
-        const defaultModel = this.models.find(m => m.isDefault);
-        const metadata = (this.constructor as typeof AIProvider).metadata;
+        const defaultModel = this.models.find(m => m.isDefault === true);
         if (!defaultModel) {
+            const metadata = (this.constructor as typeof AIProvider).metadata;
             throw new Error(`No default model defined for provider ${metadata.id}`);
         }
         return defaultModel;
@@ -133,8 +167,16 @@ export abstract class AIProvider {
      */
     hasCredentials(config: VsCodeConfiguration): boolean {
         const metadata = (this.constructor as typeof AIProvider).metadata;
+        // For cases where no credentials are required for the provider i.e. local models
+        if (!isProviderMetadataWithApiKey(metadata)) {
+            return true;
+        }
         const primaryKey = config.config.get<string>(metadata.apiKeyConfigKey);
-        if (!primaryKey) {
+        if (
+            primaryKey === undefined ||
+            typeof primaryKey !== 'string' ||
+            primaryKey.trim().length === 0
+        ) {
             return false;
         }
 
@@ -198,51 +240,5 @@ export interface IProviderRegistry {
      * Get all available models across all providers
      * @returns Array of all model configurations
      */
-    getAllModels(): ModelConfig[];
-}
-
-/**
- * Provider service interface for high-level operations
- */
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export interface IProviderService {
-    /**
-     * Create a model instance for the given model string
-     * @param model Model identifier
-     * @param providerId Provider identifier
-     * @param config Provider configuration
-     * @returns AI SDK model instance
-     */
-    createModel(model: string, providerId: ProviderId, config: VsCodeConfiguration): LanguageModelV2;
-
-    /**
-     * Validate credentials for a specific provider
-     * @param providerId Provider identifier
-     * @param config Provider configuration
-     * @returns Validation result
-     */
-    validateCredentialsForProvider(
-        providerId: ProviderId,
-        config: VsCodeConfiguration
-    ): ValidationResult;
-
-    /**
-     * Get display name for a model from a specific provider
-     * @param model Model identifier
-     * @param providerId Provider identifier
-     * @returns Human-readable model name
-     */
-    getModelDisplayName(model: string, providerId: ProviderId): string;
-
-    /**
-     * Get all available providers
-     * @returns Array of provider metadata
-     */
-    getAvailableProviders(): ProviderMetadata[];
-
-    /**
-     * Get all available models
-     * @returns Array of model configurations with provider info
-     */
-    getAvailableModels(): Array<ModelConfig & { providerId: ProviderId }>;
+    getAllModels(): ModelConfigWithProvider[];
 }

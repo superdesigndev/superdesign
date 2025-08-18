@@ -81,7 +81,7 @@ function applySingleEdit(content: string, edit: SingleEdit): EditResult {
             edit,
             success: false,
             occurrences: 0,
-            error: `Text not found: "${edit.old_string.substring(0, 50)}${edit.old_string.length > 50 ? '...' : ''}"`,
+            error: `Text not found: "${edit.old_string}${edit.old_string.length > 50 ? '...' : ''}"`,
         };
     }
 
@@ -146,9 +146,7 @@ export function createMultieditTool(context: ExecutionContext) {
                 for (let i = 0; i < edits.length; i++) {
                     const edit = edits[i];
 
-                    console.log(
-                        `Applying edit ${i + 1}/${edits.length}: "${edit.old_string.substring(0, 30)}..." => "${edit.new_string.substring(0, 30)}..."`
-                    );
+                    console.log(`Applying edit ${i + 1}/${edits.length}`);
 
                     const editResult = applySingleEdit(currentContent, edit);
                     editResults.push(editResult);

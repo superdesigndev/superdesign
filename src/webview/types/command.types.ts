@@ -12,6 +12,6 @@ export function ChangeProvider(providerId: string, model: string): ChangeProvide
     return {
         command: 'changeProvider',
         model,
-        providerId
+        providerId,
     };
 }

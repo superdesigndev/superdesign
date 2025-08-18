@@ -6,7 +6,7 @@
 import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 import {
     AIProvider,
-    type ProviderMetadata,
+    type ProviderMetadataWithApiKey,
     type ModelConfig,
     type VsCodeConfiguration,
     type ValidationResult,
@@ -15,7 +15,7 @@ import {
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 
 export class BedrockProvider extends AIProvider {
-    static readonly metadata: ProviderMetadata = {
+    static readonly metadata: ProviderMetadataWithApiKey = {
         id: 'bedrock',
         name: 'AWS Bedrock',
         apiKeyConfigKey: 'awsAccessKeyId',

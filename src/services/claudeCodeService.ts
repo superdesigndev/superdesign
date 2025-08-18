@@ -211,7 +211,7 @@ export class ClaudeCodeService {
         }
 
         Logger.info('=== QUERY FUNCTION CALLED ===');
-        Logger.info(`Query prompt: ${prompt.substring(0, 200)}...`);
+        Logger.info(`Query prompt: ${prompt}...`);
         Logger.info(`Query options: ${JSON.stringify(options, null, 2)}`);
         Logger.info(`Streaming enabled: ${!!onMessage}`);
 

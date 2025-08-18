@@ -6,7 +6,7 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
 import {
     AIProvider,
-    type ProviderMetadata,
+    type ProviderMetadataWithApiKey,
     type ModelConfig,
     type VsCodeConfiguration,
     type ValidationResult,
@@ -15,7 +15,7 @@ import {
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 
 export class AnthropicProvider extends AIProvider {
-    static readonly metadata: ProviderMetadata = {
+    static readonly metadata: ProviderMetadataWithApiKey = {
         id: 'anthropic',
         name: 'Anthropic',
         apiKeyConfigKey: 'anthropicApiKey',

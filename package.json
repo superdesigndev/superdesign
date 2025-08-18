@@ -37,18 +37,12 @@
     "automation"
   ],
   "activationEvents": [
-    "onCommand:securedesign.helloWorld",
     "onCommand:securedesign.openSettings",
     "onView:securedesign.chatView"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
-      {
-        "command": "securedesign.helloWorld",
-        "title": "Hello World",
-        "category": "Securedesign"
-      },
       {
         "command": "securedesign.configureApiKey",
         "title": "Configure Anthropic API Key",
@@ -77,12 +71,12 @@
       {
         "command": "securedesign.configureAWSBedrock",
         "title": "Configure AWS Bedrock",
-        "category": "Superdesign"
+        "category": "Securedesign"
       },
       {
         "command": "securedesign.configureMoonshotApiKey",
         "title": "Configure Moonshot API Key",
-        "category": "Superdesign"
+        "category": "Securedesign"
       },
       {
         "command": "securedesign.showChatSidebar",
@@ -186,15 +180,6 @@
         },
         "securedesign.aiModelProvider": {
           "type": "string",
-          "enum": [
-            "openai",
-            "anthropic",
-            "openrouter",
-            "google",
-            "bedrock",
-            "moonshot"
-          ],
-          "default": "anthropic",
           "description": "AI model provider for custom agent",
           "scope": "application"
         },
@@ -229,7 +214,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
-    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "compile": "npm run check-types && npm run lint -- --quiet && node esbuild.js",
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
@@ -256,8 +241,8 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "22.17.0",
     "@types/vscode": "1.99.1",
-    "@typescript-eslint/eslint-plugin": "^8.39.1",
-    "@typescript-eslint/parser": "^8.39.1",
+    "@typescript-eslint/eslint-plugin": "^8.40.0",
+    "@typescript-eslint/parser": "^8.40.0",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
     "esbuild": "^0.25.9",

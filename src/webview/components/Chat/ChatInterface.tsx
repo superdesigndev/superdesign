@@ -68,20 +68,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         const handleMessage = (event: MessageEvent) => {
             const message = event.data;
             if (message.command === 'currentProviderResponse') {
-                let fallbackModel: string;
-                switch (message.provider) {
-                    case 'openai':
-                        fallbackModel = 'gpt-4o';
-                        break;
-                    case 'openrouter':
-                        fallbackModel = 'anthropic/claude-3-7-sonnet-20250219';
-                        break;
-                    case 'anthropic':
-                    default:
-                        fallbackModel = 'claude-3-5-sonnet-20241022';
-                        break;
-                }
-                setSelectedModel(message.model || fallbackModel);
+                setSelectedModel(message.model);
             } else if (message.command === 'providerChanged') {
                 setSelectedModel(message.model);
             }

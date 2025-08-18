@@ -1289,15 +1289,6 @@ export function activate(context: vscode.ExtensionContext) {
     const customAgent = new CustomAgentService(Logger.getOutputChannel());
     Logger.info('CustomAgentService created');
 
-    // The command has been defined in the package.json file
-    // Now provide the implementation of the command with registerCommand
-    // The commandId parameter must match the command field in package.json
-    const helloWorldDisposable = vscode.commands.registerCommand('securedesign.helloWorld', () => {
-        // The code you place here will be executed every time your command is executed
-        // Display a message box to the user
-        vscode.window.showInformationMessage('Hello World from SecureDesign!');
-    });
-
     // Register API key configuration commands
     const configureApiKeyDisposable = vscode.commands.registerCommand(
         'securedesign.configureApiKey',
@@ -1479,7 +1470,6 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     context.subscriptions.push(
-        helloWorldDisposable,
         configureApiKeyDisposable,
         configureOpenAIApiKeyDisposable,
         configureOpenRouterApiKeyDisposable,

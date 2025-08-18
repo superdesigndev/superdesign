@@ -165,7 +165,7 @@ async function processTextFile(
     const processedLines = selectedLines.map(line => {
         if (line.length > MAX_LINE_LENGTH) {
             linesWereTruncated = true;
-            return `${line.substring(0, MAX_LINE_LENGTH)}... [line truncated]`;
+            return `${line}... [line truncated]`;
         }
         return line;
     });

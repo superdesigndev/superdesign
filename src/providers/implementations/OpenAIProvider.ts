@@ -6,7 +6,7 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import {
     AIProvider,
-    type ProviderMetadata,
+    type ProviderMetadataWithApiKey,
     type ModelConfig,
     type VsCodeConfiguration,
     type ValidationResult,
@@ -15,7 +15,7 @@ import {
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 
 export class OpenAIProvider extends AIProvider {
-    static readonly metadata: ProviderMetadata = {
+    static readonly metadata: ProviderMetadataWithApiKey = {
         id: 'openai',
         name: 'OpenAI',
         apiKeyConfigKey: 'openaiApiKey',
@@ -91,7 +91,7 @@ export class OpenAIProvider extends AIProvider {
             params.config.outputChannel.appendLine(`Using custom OpenAI base URL: ${baseURL}`);
         }
 
-        const openai = createOpenAI({apiKey, baseURL});
+        const openai = createOpenAI({ apiKey, baseURL });
 
         params.config.outputChannel.appendLine(`Using OpenAI model: ${params.model}`);
         return openai(params.model);

@@ -3,7 +3,13 @@
  * Central registry for managing AI providers using the Strategy pattern
  */
 
-import type { AIProvider, IProviderRegistry, ProviderId, ModelConfig } from './types';
+import type {
+    AIProvider,
+    IProviderRegistry,
+    ProviderId,
+    ModelConfig,
+    ModelConfigWithProvider,
+} from './types';
 
 /**
  * Central registry for AI providers
@@ -17,26 +23,23 @@ export class ProviderRegistry implements IProviderRegistry {
      * @param provider The provider instance to register
      * @throws Error if provider ID is already registered
      */
-    register(provider: AIProvider): void {
+    register(provider: AIProvider): ProviderId {
         const metadata = (provider.constructor as typeof AIProvider).metadata;
         const providerId = metadata.id;
-
-        if (this.providers.has(providerId)) {
-            throw new Error(`Provider with ID '${providerId}' is already registered`);
-        }
-
         this.providers.set(providerId, provider);
+        return providerId;
     }
 
     /**
      * Get provider by its ID
      * @param providerId The provider identifier
      * @returns Provider instance or undefined if not found
+     * @throws Error if provider is not found
      */
     getProvider(providerId: ProviderId): AIProvider {
-        const provider = this.providers.get(providerId)
+        const provider = this.providers.get(providerId);
         if (provider === undefined) {
-          throw new Error(`Could not find ${providerId} in the registry`);
+            throw new Error(`Could not find ${providerId} in the registry`);
         }
         return provider;
     }
@@ -53,20 +56,13 @@ export class ProviderRegistry implements IProviderRegistry {
      * Get all available models across all providers
      * @returns Array of all model configurations with provider info
      */
-    getAllModels(): Array<ModelConfig & { providerId: ProviderId }> {
-        const allModels: Array<ModelConfig & { providerId: ProviderId }> = [];
-
-        for (const provider of this.providers.values()) {
-            const metadata = (provider.constructor as typeof AIProvider).metadata;
-            for (const model of provider.models) {
-                allModels.push({
-                    ...model,
-                    providerId: metadata.id,
-                });
-            }
-        }
-
-        return allModels;
+    getAllModels(): Array<ModelConfigWithProvider> {
+        return Array.from(this.providers.entries()).flatMap(([providerId, provider]) =>
+            provider.models.map(model => ({
+                ...model,
+                providerId: providerId,
+            }))
+        );
     }
 
     /**

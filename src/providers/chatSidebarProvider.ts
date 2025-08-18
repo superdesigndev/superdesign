@@ -6,6 +6,7 @@ import type { WebviewContext } from '../types/context';
 import type { AgentService } from '../types/agent';
 import type { VsCodeConfiguration, ProviderId } from './types';
 import { ProviderService } from './ProviderService';
+import { getModel } from './VsCodeConfiguration';
 
 export class ChatSidebarProvider implements vscode.WebviewViewProvider {
     public static readonly VIEW_TYPE = 'securedesign.chatView';
@@ -62,7 +63,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
         webviewView.webview.html = html;
 
         // Handle messages from the webview
-        webviewView.webview.onDidReceiveMessage(async message => {
+        const messageListener = webviewView.webview.onDidReceiveMessage(async message => {
             // First try custom message handler for auto-canvas functionality
             if (this.customMessageHandler) {
                 this.customMessageHandler(message);
@@ -96,37 +97,39 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                     await this.handleGetCurrentProvider(webviewView.webview);
                     break;
                 case 'changeProvider':
-                    await this.handleChangeProvider(message.providerId, message.model, webviewView.webview);
+                    await this.handleChangeProvider(
+                        message.providerId,
+                        message.model,
+                        webviewView.webview
+                    );
                     break;
                 case 'showContextPicker':
                     await this.handleShowContextPicker(webviewView.webview);
                     break;
             }
         });
-    }
 
-    private async handleGetCurrentProvider(webview: vscode.Webview) {
-        const config = vscode.workspace.getConfiguration('securedesign');
-        const currentProvider = config.get<string>('aiModelProvider', 'anthropic') as ProviderId;
-        const currentModel = config.get<string>('aiModel');
-
-        // If no specific model is set, get default from provider service
-        let modelToUse: string;
-        if (currentModel) {
-            modelToUse = currentModel;
-        } else {
-            const defaultModel = this.providerService.getDefaultModelForProvider(currentProvider);
-            modelToUse = defaultModel?.id || 'claude-3-5-sonnet-20241022';
-        }
-
-        await webview.postMessage({
-            command: 'currentProviderResponse',
-            provider: currentProvider,
-            model: modelToUse,
+        // Dispose of the message listener when webview is disposed
+        webviewView.onDidDispose(() => {
+            messageListener.dispose();
         });
     }
 
-    private async handleChangeProvider(providerId: ProviderId, model: string, webview: vscode.Webview) {
+    private async handleGetCurrentProvider(webview: vscode.Webview) {
+        const modelToUse = getModel();
+
+        await webview.postMessage({
+            command: 'currentProviderResponse',
+            provider: modelToUse?.providerId,
+            model: modelToUse?.id,
+        });
+    }
+
+    private async handleChangeProvider(
+        providerId: ProviderId,
+        model: string,
+        webview: vscode.Webview
+    ) {
         try {
             const config = vscode.workspace.getConfiguration('securedesign');
 

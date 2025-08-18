@@ -6,37 +6,44 @@ import { GoogleProvider } from './implementations/GoogleProvider';
 import { BedrockProvider } from './implementations/BedrockProvider';
 import { MoonshotProvider } from './implementations/MoonshotProvider';
 import type {
-    IProviderService,
     VsCodeConfiguration,
     ProviderMetadata,
     ValidationResult,
     ModelConfig,
+    ModelConfigWithProvider,
     ProviderId,
     AIProvider,
 } from './types';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 
-export class ProviderService implements IProviderService {
-    private static instance: ProviderService | undefined;
-    private readonly registry: ProviderRegistry;
+export abstract class BaseProviderService {
+    protected readonly registry: ProviderRegistry;
+    abstract readonly configPrefix: string;
 
-    private constructor() {
+    protected constructor() {
         this.registry = new ProviderRegistry();
         this.initializeProviders();
     }
 
     /**
      * Get singleton instance
+     * This method should be overridden by concrete subclasses
+     * @deprecated Use ProviderService.getInstance() directly
      */
-    public static getInstance(): ProviderService {
-        ProviderService.instance ??= new ProviderService();
-        return ProviderService.instance;
+    public static getInstance(): BaseProviderService {
+        throw new Error(
+            'ProviderService.getInstance() must be implemented by concrete subclasses. Use ProviderService.getInstance() instead.'
+        );
     }
 
     /**
      * Create a model instance for the given model and provider
      */
-    createModel(model: string, providerId: ProviderId, config: VsCodeConfiguration): LanguageModelV2 {
+    createModel(
+        model: string,
+        providerId: ProviderId,
+        config: VsCodeConfiguration
+    ): LanguageModelV2 {
         const provider = this.registry.getProvider(providerId);
 
         const validation = provider.validateCredentials(config);
@@ -76,7 +83,7 @@ export class ProviderService implements IProviderService {
     /**
      * Get all available models
      */
-    getAvailableModels(): Array<ModelConfig & { providerId: ProviderId }> {
+    getAvailableModels(): Array<ModelConfigWithProvider> {
         return this.registry.getAllModels();
     }
 
@@ -96,11 +103,21 @@ export class ProviderService implements IProviderService {
         return provider?.models ?? [];
     }
 
+    getModelForProvider(providerId: ProviderId, model: string): ModelConfigWithProvider {
+        const models = this.getModelsForProvider(providerId);
+        const found = models.find(m => m.id === model);
+        if (found === undefined) {
+            throw new Error(`Could not find ${model} for ${providerId}.`);
+        }
+        return { ...found, providerId: providerId };
+    }
+
     /**
      * Get default model for a provider
      */
-    getDefaultModelForProvider(providerId: ProviderId): ModelConfig | undefined {
-        return this.registry.getDefaultModelForProvider(providerId);
+    getDefaultModelForProvider(providerId: ProviderId): ModelConfigWithProvider | undefined {
+        const found = this.registry.getDefaultModelForProvider(providerId);
+        return found !== undefined ? { ...found, providerId: providerId } : undefined;
     }
 
     /**
@@ -123,11 +140,7 @@ export class ProviderService implements IProviderService {
      * Get error message for missing credentials
      */
     getCredentialsErrorMessage(providerId: ProviderId): string {
-        const provider = this.registry.getProvider(providerId);
-        if (!provider) {
-            return `Provider ${providerId} not found`;
-        }
-        return provider.getCredentialsErrorMessage();
+        return this.registry.getProvider(providerId).getCredentialsErrorMessage();
     }
 
     /**
@@ -175,8 +188,31 @@ export class ProviderService implements IProviderService {
 
     /**
      * Initialize all available providers
+     * This method must be implemented by concrete subclasses
      */
-    private initializeProviders(): void {
+    protected abstract initializeProviders(): void;
+}
+
+/**
+ * Default implementation of ProviderService with all standard providers
+ */
+export class ProviderService extends BaseProviderService {
+    static defaultProvider: ProviderId = 'anthropic';
+    private static instance: ProviderService | undefined;
+    configPrefix = 'securedesign';
+
+    /**
+     * Get singleton instance
+     */
+    public static getInstance(): ProviderService {
+        ProviderService.instance ??= new ProviderService();
+        return ProviderService.instance;
+    }
+
+    /**
+     * Initialize all available providers
+     */
+    protected initializeProviders(): void {
         try {
             // Register all provider implementations
             this.registry.register(new AnthropicProvider());

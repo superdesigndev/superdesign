@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrainIcon } from '../Icons';
-import type { ModelConfig, ProviderId } from '../../../providers/types';
+import type { ModelConfigWithProvider, ProviderId } from '../../../providers/types';
 
 interface ModelSelectorProps {
     selectedModel: string;
     onModelChange: (providerId: ProviderId, model: string) => void;
     disabled?: boolean;
-    models: (ModelConfig & { providerId: ProviderId })[];
+    models: ModelConfigWithProvider[];
 }
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({
@@ -27,7 +27,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             model.providerId.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const selectedModelName = models.find(m => m.id === selectedModel)?.displayName ?? selectedModel;
+    const selectedModelName =
+        models.find(m => m.id === selectedModel)?.displayName ?? selectedModel;
 
     const calculateDropdownPosition = () => {
         if (!triggerRef.current) {
@@ -100,8 +101,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         };
     }, [isOpen]);
 
-    const handleModelSelect = (providerId: string, modelId: string) => {
-        onModelChange(providerId as ProviderId, modelId);
+    const handleModelSelect = (providerId: ProviderId, modelId: string) => {
+        onModelChange(providerId, modelId);
         setIsOpen(false);
     };
 
@@ -381,7 +382,9 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                                     <button
                                         key={model.id}
                                         className={`model-option ${model.id === selectedModel ? 'selected' : ''}`}
-                                        onClick={() => handleModelSelect(model.providerId, model.id)}
+                                        onClick={() =>
+                                            handleModelSelect(model.providerId, model.id)
+                                        }
                                     >
                                         <div className='model-icon'>
                                             <BrainIcon />
