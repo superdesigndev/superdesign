@@ -4,10 +4,10 @@ import ColorPalette from './ColorPalette';
 import ThemePreview from './ThemePreview';
 import ModeToggle from './ModeToggle';
 import { parseThemeCSS, extractColorPalette, type ParsedTheme } from '../../utils/themeParser';
+import type { GroupedColors } from './types';
 
 interface ThemePreviewCardProps {
     themeName: string;
-    reasoning?: string;
     cssSheet?: string | null;
     cssFilePath?: string | null;
     isLoading?: boolean;
@@ -16,7 +16,6 @@ interface ThemePreviewCardProps {
 
 const ThemePreviewCard: React.FC<ThemePreviewCardProps> = ({
     themeName,
-    reasoning,
     cssSheet,
     cssFilePath,
     isLoading = false,
@@ -113,7 +112,7 @@ const ThemePreviewCard: React.FC<ThemePreviewCardProps> = ({
                 } catch (error) {
                     console.warn('Failed to load CSS from file, falling back to cssSheet:', error);
                     setCssLoadError(error instanceof Error ? error.message : 'Failed to load CSS');
-                    setCurrentCssContent(cssSheet || '');
+                    setCurrentCssContent(cssSheet ?? '');
                 } finally {
                     setIsLoadingCss(false);
                 }
@@ -150,7 +149,7 @@ const ThemePreviewCard: React.FC<ThemePreviewCardProps> = ({
     };
 
     // Convert parsed theme to grouped colors format
-    const getGroupedColors = (theme: ParsedTheme) => {
+    const getGroupedColors = (theme: ParsedTheme): GroupedColors => {
         const palette = extractColorPalette(theme);
         return palette.reduce(
             (acc, color) => {
@@ -432,10 +431,7 @@ const ThemePreviewCard: React.FC<ThemePreviewCardProps> = ({
                                             </div>
 
                                             {/* Color Palette */}
-                                            <ColorPalette
-                                                colors={getGroupedColors(parsedTheme)}
-                                                isDarkMode={isDarkMode}
-                                            />
+                                            <ColorPalette colors={getGroupedColors(parsedTheme)} />
                                         </>
                                     )}
 

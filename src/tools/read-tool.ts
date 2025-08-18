@@ -154,8 +154,8 @@ async function processTextFile(
     const originalLineCount = lines.length;
 
     // Handle line range
-    const actualStartLine = Math.max((startLine || 1) - 1, 0); // Convert to 0-based
-    const actualLineCount = lineCount || Math.min(DEFAULT_MAX_LINES, originalLineCount);
+    const actualStartLine = Math.max((startLine ?? 1) - 1, 0); // Convert to 0-based
+    const actualLineCount = lineCount ?? Math.min(DEFAULT_MAX_LINES, originalLineCount);
     const endLine = Math.min(actualStartLine + actualLineCount, originalLineCount);
 
     const selectedLines = lines.slice(actualStartLine, endLine);
@@ -200,10 +200,8 @@ async function processMediaFile(
     fileType: 'image' | 'pdf'
 ): Promise<{ content: string; metadata: Partial<FileReadResult> }> {
     const buffer = await fs.promises.readFile(filePath);
-    const base64Data = buffer.toString('base64');
     const mimeType = mime.lookup(filePath) || 'application/octet-stream';
 
-    // For SuperDesign, we'll return a descriptive message rather than raw base64
     // The actual file handling would be done by the VS Code webview
     const fileName = path.basename(filePath);
     const fileSize = (buffer.length / 1024).toFixed(1);

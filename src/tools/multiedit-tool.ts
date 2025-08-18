@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { tool } from 'ai';
 import * as fs from 'fs';
-import * as path from 'path';
 import type { ExecutionContext } from '../types/agent';
 import {
     handleToolError,
@@ -72,7 +71,7 @@ function applySingleEdit(content: string, edit: SingleEdit): EditResult {
 
     // Count occurrences
     const regex = new RegExp(escapeRegExp(edit.old_string), 'g');
-    const matches = content.match(regex) || [];
+    const matches = content.match(regex) ?? [];
     const occurrences = matches.length;
 
     // Validate occurrence count
@@ -181,7 +180,6 @@ export function createMultieditTool(context: ExecutionContext) {
 
                 const newLines = currentContent.split('\n').length;
                 const newSize = Buffer.byteLength(currentContent, 'utf8');
-                const hasErrors = editResults.some(r => !r.success);
 
                 console.log(
                     `Multi-edit completed: ${successCount}/${edits.length} edits successful, ${totalReplacements} total replacements`

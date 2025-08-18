@@ -46,6 +46,9 @@ export class Logger {
                 case LogLevel.INFO:
                     vscode.window.showInformationMessage(message);
                     break;
+                case LogLevel.DEBUG:
+                    // Debug messages don't show notifications
+                    break;
                 default:
                     // No notification for debug
                     break;

@@ -6,9 +6,6 @@ import {
 } from 'react-zoom-pan-pinch';
 import DesignFrame from './DesignFrame';
 import {
-    calculateGridPosition,
-    calculateFitToView,
-    getGridMetrics,
     generateResponsiveConfig,
     buildHierarchyTree,
     calculateHierarchyPositions,
@@ -28,7 +25,6 @@ import type {
     LayoutMode,
     HierarchyTree,
     ConnectionLine,
-    CanvasState,
 } from '../types/canvas.types';
 import ConnectionLines from './ConnectionLines';
 import {
@@ -118,9 +114,9 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
     ): GridPosition => {
         // Get current transform state from the TransformWrapper
         const transformState = transformRef.current?.instance?.transformState;
-        const currentScale = transformState?.scale || 1;
-        const currentTranslateX = transformState?.positionX || 0;
-        const currentTranslateY = transformState?.positionY || 0;
+        const currentScale = transformState?.scale ?? 1;
+        const currentTranslateX = transformState?.positionX ?? 0;
+        const currentTranslateY = transformState?.positionY ?? 0;
 
         // Calculate mouse position relative to canvas, then adjust for zoom and pan
         const rawMouseX = clientX - canvasRect.left;
@@ -165,8 +161,11 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                 let totalHeight = 0;
                 let frameCount = 0;
 
-                designFiles.forEach(file => {
-                    const viewportDimensions = currentConfig.viewports[viewport];
+                designFiles.forEach(_file => {
+                    const viewportDimensions = currentConfig.viewports[viewport] ?? {
+                        width: currentConfig.frameSize.width,
+                        height: currentConfig.frameSize.height,
+                    };
                     totalWidth += viewportDimensions.width;
                     totalHeight += viewportDimensions.height + 50; // Add header space
                     frameCount++;

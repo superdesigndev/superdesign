@@ -72,7 +72,7 @@ export class AnthropicProvider extends AIProvider {
 
     createInstance(params: ProviderInstanceParams): LanguageModelV2 {
         const apiKey = params.config.config.get<string>(AnthropicProvider.metadata.apiKeyConfigKey);
-        if (apiKey === undefined) {
+        if (apiKey === undefined || apiKey.trim() === '') {
             throw new Error(this.getCredentialsErrorMessage());
         }
 
@@ -89,7 +89,7 @@ export class AnthropicProvider extends AIProvider {
     validateCredentials(config: VsCodeConfiguration): ValidationResult {
         const apiKey = config.config.get<string>(AnthropicProvider.metadata.apiKeyConfigKey);
 
-        if (apiKey === undefined) {
+        if (apiKey === undefined || apiKey.trim() === '') {
             return {
                 isValid: false,
                 error: 'Anthropic API key is not configured',

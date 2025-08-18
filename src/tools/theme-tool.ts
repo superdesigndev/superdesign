@@ -8,7 +8,6 @@ import {
     validateWorkspacePath,
     resolveWorkspacePath,
     createSuccessResponse,
-    validateFileExists,
     type ToolResponse,
 } from './tool-utils';
 

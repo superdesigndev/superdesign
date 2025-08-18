@@ -6,7 +6,7 @@ interface DesignPanelProps {
 
 const DesignPanel: React.FC<DesignPanelProps> = ({ vscode }) => {
     const [activeTab, setActiveTab] = useState('colors');
-    const [colors, setColors] = useState([
+    const [colors, _setColors] = useState([
         { name: 'Primary', value: '#007ACC' },
         { name: 'Secondary', value: '#1E1E1E' },
         { name: 'Success', value: '#4CAF50' },

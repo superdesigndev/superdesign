@@ -54,7 +54,7 @@ export class MoonshotProvider extends AIProvider {
 
     createInstance(params: ProviderInstanceParams): LanguageModelV2 {
         const apiKey = params.config.config.get<string>(MoonshotProvider.metadata.apiKeyConfigKey);
-        if (apiKey === undefined) {
+        if (apiKey === undefined || apiKey.trim() === '') {
             throw new Error(this.getCredentialsErrorMessage());
         }
 
@@ -75,7 +75,7 @@ export class MoonshotProvider extends AIProvider {
     validateCredentials(config: VsCodeConfiguration): ValidationResult {
         const apiKey = config.config.get<string>(MoonshotProvider.metadata.apiKeyConfigKey);
 
-        if (apiKey === undefined) {
+        if (apiKey === undefined || apiKey.trim() === '') {
             return {
                 isValid: false,
                 error: 'Moonshot API key is not configured',

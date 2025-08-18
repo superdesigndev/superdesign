@@ -11,14 +11,14 @@ interface MarkdownRendererProps {
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className }) => {
     return (
-        <div className={`markdown-content ${className || ''}`}>
+        <div className={`markdown-content ${className ?? ''}`}>
             <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeHighlight]}
                 components={{
                     // Custom rendering for code blocks
-                    code: ({ node, className, children, ...props }: any) => {
-                        const match = /language-(\w+)/.exec(className || '');
+                    code: ({ className, children, ...props }: any) => {
+                        const match = /language-(\w+)/.exec(className ?? '');
                         const inline = !className?.includes('language-');
                         return !inline && match ? (
                             <pre className={`language-${match[1]} hljs`}>
@@ -27,25 +27,25 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
                                 </code>
                             </pre>
                         ) : (
-                            <code className={`inline-code ${className || ''}`} {...props}>
+                            <code className={`inline-code ${className ?? ''}`} {...props}>
                                 {children}
                             </code>
                         );
                     },
                     // Custom rendering for links to open externally
-                    a: ({ node, children, href, ...props }) => (
+                    a: ({ children, href, ...props }) => (
                         <a href={href} target='_blank' rel='noopener noreferrer' {...props}>
                             {children}
                         </a>
                     ),
                     // Custom rendering for tables
-                    table: ({ node, children, ...props }) => (
+                    table: ({ children, ...props }) => (
                         <div className='table-wrapper'>
                             <table {...props}>{children}</table>
                         </div>
                     ),
                     // Custom rendering for blockquotes
-                    blockquote: ({ node, children, ...props }) => (
+                    blockquote: ({ children, ...props }) => (
                         <blockquote className='markdown-blockquote' {...props}>
                             {children}
                         </blockquote>

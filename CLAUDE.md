@@ -189,6 +189,8 @@ The project includes comprehensive Cursor rules in `.cursor/rules/`:
 
 # VSCode Extension Development Best Practices
 
+## Important: You have access to VSCode API docs in the vscode-docs folder
+
 ## Project Setup & Structure
 
 - Keep `package.json` manifest accurate with all contributions

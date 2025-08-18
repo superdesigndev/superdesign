@@ -1,16 +1,16 @@
 import React from 'react';
+import type { GroupedColors } from './types';
 
 interface ColorPaletteProps {
-    colors: any;
-    isDarkMode: boolean;
+    colors: GroupedColors;
 }
 
-const ColorPalette: React.FC<ColorPaletteProps> = ({ colors, isDarkMode }) => {
+const ColorPalette: React.FC<ColorPaletteProps> = ({ colors }) => {
     const handleColorCopy = (color: string) => {
         void navigator.clipboard.writeText(color);
     };
 
-    const renderColorGroup = (groupName: string, colorGroup: any) => {
+    const renderColorGroup = (groupName: string, colorGroup: GroupedColors[string]) => {
         if (!colorGroup || Object.keys(colorGroup).length === 0) {
             return null;
         }
@@ -23,16 +23,13 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({ colors, isDarkMode }) => {
                         <div
                             key={name}
                             className='color-swatch'
-                            onClick={() => handleColorCopy(color as string)}
+                            onClick={() => handleColorCopy(color)}
                             title={`${name}: ${color}`}
                         >
-                            <div
-                                className='color-preview'
-                                style={{ backgroundColor: color as string }}
-                            />
+                            <div className='color-preview' style={{ backgroundColor: color }} />
                             <div className='color-info'>
                                 <span className='color-name'>{name}</span>
-                                <span className='color-value'>{color as string}</span>
+                                <span className='color-value'>{color}</span>
                             </div>
                         </div>
                     ))}

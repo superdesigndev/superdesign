@@ -2,7 +2,7 @@ import { streamText, type ModelMessage } from 'ai';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 import * as vscode from 'vscode';
 import type { AgentService, ExecutionContext } from '../types/agent';
-import type { VsCodeConfiguration, ProviderId } from '../providers/types';
+import type { VsCodeConfiguration } from '../providers/types';
 import { ProviderService } from '../providers/ProviderService';
 import { createReadTool } from '../tools/read-tool';
 import { createWriteTool } from '../tools/write-tool';
@@ -13,7 +13,6 @@ import { createGrepTool } from '../tools/grep-tool';
 import { createThemeTool } from '../tools/theme-tool';
 import { createLsTool } from '../tools/ls-tool';
 import { createMultieditTool } from '../tools/multiedit-tool';
-import { AnthropicProvider } from '../providers/implementations/AnthropicProvider';
 import { getModel, getProvider } from '../providers/VsCodeConfiguration';
 import * as os from 'os';
 
@@ -60,7 +59,9 @@ export class CustomAgentService implements AgentService {
                         );
                     } else {
                         // Log and rethrow other unexpected errors
-                        this.outputChannel.appendLine(`Error setting up working directory at ${superdesignUri.fsPath}: ${error}`);
+                        this.outputChannel.appendLine(
+                            `Error setting up working directory at ${superdesignUri.fsPath}: ${error}`
+                        );
                         throw error;
                     }
                 }
@@ -612,6 +613,7 @@ I've created the html design, please reveiw and let me know if you need any chan
 
                 this.outputChannel.appendLine(`Received chunk type: ${chunk.type}`);
 
+                // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
                 switch (chunk.type) {
                     case 'text-delta':
                         // Handle streaming text (assistant message chunks) - CoreMessage format
@@ -648,7 +650,7 @@ I've created the html design, please reveiw and let me know if you need any chan
 
                     case 'error':
                         // Error handling - CoreMessage format
-                        const errorMsg = (chunk as any).error?.message || 'Unknown error occurred';
+                        const errorMsg = (chunk as any).error?.message ?? 'Unknown error occurred';
                         this.outputChannel.appendLine(`Stream error: ${errorMsg}`);
 
                         const errorMessage: ModelMessage = {
@@ -717,7 +719,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                                 };
 
                                 onMessage?.(updateMessage);
-                            } catch (parseError) {
+                            } catch {
                                 // JSON not complete yet, continue buffering
                                 if (toolCallBuffer.length % 100 === 0) {
                                     this.outputChannel.appendLine(

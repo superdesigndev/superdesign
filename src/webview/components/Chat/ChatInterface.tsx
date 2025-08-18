@@ -3,7 +3,7 @@ import { useChat, type ChatMessage } from '../../hooks/useChat';
 import { useFirstTimeUser } from '../../hooks/useFirstTimeUser';
 import type { WebviewLayout } from '../../../types/context';
 import MarkdownRenderer from '../MarkdownRenderer';
-import { TaskIcon, ClockIcon, CheckIcon, LightBulbIcon, GroupIcon, BrainIcon } from '../Icons';
+import { TaskIcon, ClockIcon, CheckIcon, LightBulbIcon } from '../Icons';
 import Welcome from '../Welcome';
 import ThemePreviewCard from './ThemePreviewCard';
 import ModelSelector from './ModelSelector';
@@ -29,7 +29,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
     const [inputMessage, setInputMessage] = useState('');
     const [selectedModel, setSelectedModel] = useState<string>('claude-3-5-sonnet-20241022');
     const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({});
-    const [showFullContent, setShowFullContent] = useState<{ [key: string]: boolean }>({});
     const [currentContext, setCurrentContext] = useState<{ fileName: string; type: string } | null>(
         null
     );
@@ -552,7 +551,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                                 (resultPart as any).toolCallId === toolCallId
                         )
                 );
-            return !hasResult || toolCallPart.metadata?.is_loading || false;
+            return !hasResult || (toolCallPart.metadata?.is_loading ?? false);
         },
         [chatHistory]
     );
@@ -580,8 +579,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                         setToolTimers(prev => {
                             if (!(uniqueKey in prev)) {
                                 const estimatedDuration =
-                                    toolCallPart.metadata?.estimated_duration || 90;
-                                const elapsedTime = toolCallPart.metadata?.elapsed_time || 0;
+                                    toolCallPart.metadata?.estimated_duration ?? 90;
+                                const elapsedTime = toolCallPart.metadata?.elapsed_time ?? 0;
                                 const initialRemaining = Math.max(
                                     0,
                                     estimatedDuration - elapsedTime
@@ -599,7 +598,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                         if (!timerIntervals.current[uniqueKey]) {
                             timerIntervals.current[uniqueKey] = setInterval(() => {
                                 setToolTimers(current => {
-                                    const newTime = Math.max(0, (current[uniqueKey] || 0) - 1);
+                                    const newTime = Math.max(0, (current[uniqueKey] ?? 0) - 1);
                                     return {
                                         ...current,
                                         [uniqueKey]: newTime,
@@ -614,6 +613,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                             delete timerIntervals.current[uniqueKey];
                         }
                         setToolTimers(prev => {
+                            // eslint-disable-next-line unused-imports/no-unused-vars
                             const { [uniqueKey]: removed, ...rest } = prev;
                             return rest;
                         });
@@ -917,10 +917,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                                     } else {
                                         // Single image - show just filename
                                         displayFileName = contextFile.includes('.superdesign')
-                                            ? contextFile.split('.superdesign/')[1] ||
-                                              contextFile.split('/').pop() ||
-                                              contextFile
-                                            : contextFile.split('/').pop() || contextFile;
+                                            ? (contextFile.split('.superdesign/')[1] ??
+                                              contextFile.split('/').pop() ??
+                                              contextFile)
+                                            : (contextFile.split('/').pop() ?? contextFile);
                                     }
 
                                     return (
@@ -985,8 +985,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         findToolResult: (toolCallId: string) => any
     ) => {
         try {
-            const toolName = toolCallPart.toolName || 'Unknown Tool';
-            const toolInput = toolCallPart.args || {};
+            const toolName = toolCallPart.toolName ?? 'Unknown Tool';
+            const toolInput = toolCallPart.args ?? {};
             const uniqueKey = `${messageIndex}_${subIndex}`;
 
             // Special handling for generateTheme tool calls
@@ -995,21 +995,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                 const toolCallId = toolCallPart.toolCallId;
                 const toolResultPart = findToolResult(toolCallId);
                 const hasResult = !!toolResultPart;
-                const resultIsError = toolResultPart?.isError || false;
+                const resultIsError = toolResultPart?.isError ?? false;
 
                 // Tool is loading if we don't have a result yet, or if metadata indicates loading
-                const isLoading = !hasResult || toolCallPart.metadata?.is_loading || false;
+                const isLoading = !hasResult || (toolCallPart.metadata?.is_loading ?? false);
 
                 // Extract theme data from tool input
-                const themeName = toolInput.theme_name || 'Untitled Theme';
-                const reasoning = toolInput.reasoning_reference || '';
-                const cssSheet = toolInput.cssSheet || '';
+                const themeName = toolInput.theme_name ?? 'Untitled Theme';
+                const cssSheet = toolInput.cssSheet ?? '';
 
                 // Try to get CSS file path from metadata or result
                 let cssFilePath = null;
                 if (hasResult && !resultIsError) {
                     // Check both input and result for cssFilePath
-                    cssFilePath = toolInput.cssFilePath || toolResultPart?.result?.cssFilePath;
+                    cssFilePath = toolInput.cssFilePath ?? toolResultPart?.result?.cssFilePath;
                 }
 
                 return (
@@ -1019,7 +1018,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                     >
                         <ThemePreviewCard
                             themeName={themeName}
-                            reasoning={reasoning}
                             cssSheet={cssFilePath ? null : cssSheet}
                             cssFilePath={cssFilePath}
                             isLoading={isLoading}
@@ -1046,23 +1044,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             }
 
             // Continue with existing generic tool rendering for other tools
-            const isExpanded = expandedTools[uniqueKey] || false;
-            const showFullResult = showFullContent[uniqueKey] || false;
-            const showFullInput = showFullContent[`${uniqueKey}_input`] || false;
-            const showFullPrompt = showFullContent[`${uniqueKey}_prompt`] || false;
+            const isExpanded = expandedTools[uniqueKey] ?? false;
 
-            const description = toolInput.description || '';
-            const command = toolInput.command || '';
-            const prompt = toolInput.prompt || '';
+            const description = toolInput.description ?? '';
+            const command = toolInput.command ?? '';
+            const prompt = toolInput.prompt ?? '';
 
             // Tool result data - find from separate tool message
             const toolCallId = toolCallPart.toolCallId;
             const toolResultPart = findToolResult(toolCallId);
             const hasResult = !!toolResultPart;
-            const resultIsError = toolResultPart?.isError || false;
+            const resultIsError = toolResultPart?.isError ?? false;
 
             // Tool is loading if we don't have a result yet, or if metadata indicates loading
-            const isLoading = !hasResult || toolCallPart.metadata?.is_loading || false;
+            const isLoading = !hasResult || (toolCallPart.metadata?.is_loading ?? false);
 
             const toolResult = toolResultPart
                 ? typeof toolResultPart.result === 'string'
@@ -1074,12 +1069,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             const toolComplete = hasResult && !isLoading;
 
             // Get the countdown timer for this specific tool
-            const timerRemaining = toolTimers[uniqueKey] || 0;
+            const timerRemaining = toolTimers[uniqueKey] ?? 0;
 
             // Enhanced loading data
-            const estimatedDuration = toolCallPart.metadata?.estimated_duration || 90;
-            const elapsedTime = toolCallPart.metadata?.elapsed_time || 0;
-            const progressPercentage = toolCallPart.metadata?.progress_percentage || 0;
+            const estimatedDuration = toolCallPart.metadata?.estimated_duration ?? 90;
+            const elapsedTime = toolCallPart.metadata?.elapsed_time ?? 0;
             // Use timer state for remaining time, fallback to calculated if timer not started yet
             const remainingTime = isLoading
                 ? timerRemaining > 0
@@ -1218,27 +1212,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                 }));
             };
 
-            const toggleShowFullResult = () => {
-                setShowFullContent(prev => ({
-                    ...prev,
-                    [uniqueKey]: !prev[uniqueKey],
-                }));
-            };
-
-            const toggleShowFullInput = () => {
-                setShowFullContent(prev => ({
-                    ...prev,
-                    [`${uniqueKey}_input`]: !prev[`${uniqueKey}_input`],
-                }));
-            };
-
-            const toggleShowFullPrompt = () => {
-                setShowFullContent(prev => ({
-                    ...prev,
-                    [`${uniqueKey}_prompt`]: !prev[`${uniqueKey}_prompt`],
-                }));
-            };
-
             // Input truncation with safe handling
             const inputString: string = (() => {
                 try {
@@ -1365,7 +1338,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                             <span className='tool-icon'>⚠️</span>
                             <div className='tool-info'>
                                 <span className='tool-name'>
-                                    Error rendering tool: {toolCallPart.toolName || 'Unknown'}
+                                    Error rendering tool: {toolCallPart.toolName ?? 'Unknown'}
                                 </span>
                                 <span className='tool-description'>{errorMessage}</span>
                             </div>
@@ -1491,14 +1464,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                     {showWelcome ? (
                         <Welcome onGetStarted={handleWelcomeGetStarted} />
                     ) : hasConversationMessages() ? (
-                        <>
-                            {chatHistory
-                                .filter(msg => {
-                                    // All messages are now displayed since we use CoreMessage format
-                                    return true;
-                                })
-                                .map(renderChatMessage)}
-                        </>
+                        <>{chatHistory.map(renderChatMessage)}</>
                     ) : (
                         renderPlaceholder()
                     )}
@@ -1525,11 +1491,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                                     {currentContext.type === 'images'
                                         ? `${currentContext.fileName.split(', ').length} images in moodboard`
                                         : currentContext.fileName.includes('.superdesign')
-                                          ? currentContext.fileName.split('.superdesign/')[1] ||
-                                            currentContext.fileName.split('/').pop() ||
-                                            currentContext.fileName
-                                          : currentContext.fileName.split('/').pop() ||
-                                            currentContext.fileName}
+                                          ? (currentContext.fileName.split('.superdesign/')[1] ??
+                                            currentContext.fileName.split('/').pop() ??
+                                            currentContext.fileName)
+                                          : (currentContext.fileName.split('/').pop() ??
+                                            currentContext.fileName)}
                                 </span>
                                 <button
                                     className='context-clear-btn'

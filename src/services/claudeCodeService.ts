@@ -44,7 +44,7 @@ export class ClaudeCodeService {
             const config = vscode.workspace.getConfiguration('securedesign');
             const apiKey = config.get<string>('anthropicApiKey');
 
-            if (!apiKey) {
+            if (apiKey === undefined || apiKey.trim() === '') {
                 Logger.warn('No API key found');
                 throw new Error('Missing API key');
             }
@@ -93,7 +93,7 @@ export class ClaudeCodeService {
                                 importSucceeded = true;
                                 break;
                             }
-                        } catch (pathError) {
+                        } catch {
                             continue;
                         }
                     }
@@ -101,7 +101,7 @@ export class ClaudeCodeService {
                     if (!importSucceeded) {
                         throw new Error('All local import paths failed');
                     }
-                } catch (localImportError) {
+                } catch {
                     // Fallback to standard import
                     try {
                         claudeCodeModule = await import('@anthropic-ai/claude-code');
@@ -350,7 +350,7 @@ Your goal is to extract a generalized and reusable design system from the screen
 
             const queryParams = {
                 prompt: prompt, // Non-null assertion since we checked above
-                abortController: abortController || new AbortController(),
+                abortController: abortController ?? new AbortController(),
                 options: finalOptions,
             };
 
@@ -423,7 +423,7 @@ Your goal is to extract a generalized and reusable design system from the screen
             const config = vscode.workspace.getConfiguration('securedesign');
             const apiKey = config.get<string>('anthropicApiKey');
 
-            if (!apiKey) {
+            if (apiKey === undefined || apiKey.trim() === '') {
                 Logger.warn('No API key found during refresh');
                 return false;
             }

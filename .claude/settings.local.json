@@ -8,8 +8,7 @@
       "WebFetch(domain:ai-sdk.dev)",
       "Bash(npm run lint:*)",
       "Bash(npm run compile:*)",
-      "WebSearch",
-      "Bash(npm run compile:*)"
+      "WebSearch"
     ],
     "deny": []
   }

@@ -1,8 +1,6 @@
 import * as vscode from 'vscode';
-import { ClaudeCodeService } from './claudeCodeService';
 import type { AgentService } from '../types/agent';
 import type { ModelMessage } from 'ai';
-import type { VsCodeConfiguration, ProviderId } from '../providers/types';
 import { ProviderService } from '../providers/ProviderService';
 import { Logger } from './logger';
 import { getProvider } from '../providers/VsCodeConfiguration';
@@ -20,9 +18,8 @@ export class ChatMessageService {
 
     async handleChatMessage(message: any, webview: vscode.Webview): Promise<void> {
         try {
-            const chatHistory: ModelMessage[] = message.chatHistory || [];
-            const latestMessage = message.message || '';
-            const messageContent = message.messageContent || latestMessage;
+            const chatHistory: ModelMessage[] = message.chatHistory ?? [];
+            const latestMessage = message.message ?? '';
 
             Logger.debug(`chatHistory size=${chatHistory.length}`);
 
@@ -175,7 +172,7 @@ export class ChatMessageService {
 
         // Check if this is an update to existing message
         const isUpdate = (message as any)._isUpdate;
-        const updateToolId = (message as any)._updateToolId;
+        const _updateToolId = (message as any)._updateToolId;
 
         // Handle assistant messages
         if (message.role === 'assistant') {
@@ -203,15 +200,16 @@ export class ChatMessageService {
                     } else if (part.type === 'tool-call') {
                         // Send tool call or update
                         const toolPart = part as any;
-                        const command = isUpdate ? 'chatToolUpdate' : 'chatResponseChunk';
-                        const messageType = isUpdate ? undefined : 'tool-call';
+                        const _command = isUpdate ? 'chatToolUpdate' : 'chatResponseChunk';
+                        const _messageType = isUpdate ? undefined : 'tool-call';
 
+                        const toolInput = toolPart.args ?? toolPart.input ?? toolPart.params;
                         if (isUpdate) {
                             // Send tool parameter update
                             webview.postMessage({
                                 command: 'chatToolUpdate',
                                 tool_use_id: toolPart.toolCallId,
-                                tool_input: toolPart.args,
+                                tool_input: toolInput,
                             });
                         } else {
                             // Send new tool call message
@@ -222,7 +220,7 @@ export class ChatMessageService {
                                 metadata: {
                                     tool_name: toolPart.toolName,
                                     tool_id: toolPart.toolCallId,
-                                    tool_input: toolPart.args,
+                                    tool_input: toolInput,
                                 },
                             });
                         }
@@ -251,7 +249,7 @@ export class ChatMessageService {
                         metadata: {
                             tool_id: part.toolCallId,
                             tool_name: part.toolName,
-                            is_error: part.isError || false,
+                            is_error: part.isError ?? false,
                         },
                     });
 
@@ -260,7 +258,7 @@ export class ChatMessageService {
                         command: 'chatToolResult',
                         tool_use_id: part.toolCallId,
                         content: content,
-                        is_error: part.isError || false,
+                        is_error: part.isError ?? false,
                     });
                 }
             }

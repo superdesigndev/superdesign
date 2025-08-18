@@ -3,6 +3,7 @@ import tsParser from '@typescript-eslint/parser';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
+import unusedImports from 'eslint-plugin-unused-imports';
 import prettierConfig from 'eslint-config-prettier';
 
 export default [
@@ -23,6 +24,7 @@ export default [
         files: ['**/*.ts', '**/*.tsx'],
         plugins: {
             '@typescript-eslint': typescriptEslint,
+            'unused-imports': unusedImports,
         },
         languageOptions: {
             parser: tsParser,
@@ -79,12 +81,16 @@ export default [
             '@typescript-eslint/strict-boolean-expressions': 'error',
             '@typescript-eslint/switch-exhaustiveness-check': 'error',
 
-            // Code quality
-            '@typescript-eslint/no-unused-vars': [
+            // Code quality - use unused-imports instead of @typescript-eslint/no-unused-vars
+            '@typescript-eslint/no-unused-vars': 'off',
+            'unused-imports/no-unused-imports': 'error',
+            'unused-imports/no-unused-vars': [
                 'error',
                 {
-                    argsIgnorePattern: '^_',
+                    vars: 'all',
                     varsIgnorePattern: '^_',
+                    args: 'after-used',
+                    argsIgnorePattern: '^_',
                 },
             ],
             '@typescript-eslint/no-floating-promises': 'error',
@@ -129,6 +135,7 @@ export default [
             'no-unused-expressions': 'error',
             'no-useless-constructor': 'error',
             'no-useless-return': 'error',
+            'no-unused-private-class-members': 'error',
             'require-atomic-updates': 'error',
 
             // VS Code extension specific
@@ -168,6 +175,7 @@ export default [
             react: react,
             'react-hooks': reactHooks,
             'jsx-a11y': jsxA11y,
+            'unused-imports': unusedImports,
         },
         languageOptions: {
             parser: tsParser,
@@ -221,6 +229,19 @@ export default [
             'react-hooks/rules-of-hooks': 'error',
             'react-hooks/exhaustive-deps': 'error',
 
+            // Unused imports for React files
+            '@typescript-eslint/no-unused-vars': 'off',
+            'unused-imports/no-unused-imports': 'error',
+            'unused-imports/no-unused-vars': [
+                'error',
+                {
+                    vars: 'all',
+                    varsIgnorePattern: '^_',
+                    args: 'after-used',
+                    argsIgnorePattern: '^_',
+                },
+            ],
+
             // Relaxed rules for React components
             '@typescript-eslint/no-explicit-any': 'warn',
             '@typescript-eslint/strict-boolean-expressions': 'warn',
@@ -258,11 +279,21 @@ export default [
             '@typescript-eslint/no-unsafe-call': 'warn',
             '@typescript-eslint/no-unsafe-member-access': 'warn',
             '@typescript-eslint/no-unsafe-return': 'warn',
-            '@typescript-eslint/no-unused-vars': 'warn',
-            '@typescript-eslint/prefer-nullish-coalescing': 'warn',
+            '@typescript-eslint/no-unused-vars': 'off',
+            'unused-imports/no-unused-imports': 'error',
+            'unused-imports/no-unused-vars': [
+                'error',
+                {
+                    vars: 'all',
+                    varsIgnorePattern: '^_',
+                    args: 'after-used',
+                    argsIgnorePattern: '^_',
+                },
+            ],
+            '@typescript-eslint/prefer-nullish-coalescing': 'error',
             '@typescript-eslint/restrict-template-expressions': 'warn',
             '@typescript-eslint/strict-boolean-expressions': 'warn',
-            '@typescript-eslint/switch-exhaustiveness-check': 'warn',
+            '@typescript-eslint/switch-exhaustiveness-check': 'error',
             'no-restricted-globals': 'warn',
             'prefer-template': 'warn',
         },

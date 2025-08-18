@@ -42,48 +42,6 @@ export interface ChatHookResult {
     setChatHistory: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 }
 
-// Tool time estimation map (in seconds)
-const TOOL_TIME_ESTIMATES: { [key: string]: number } = {
-    'mcp_taskmaster-ai_initialize_project': 45,
-    'mcp_taskmaster-ai_parse_prd': 180,
-    'mcp_taskmaster-ai_analyze_project_complexity': 120,
-    'mcp_taskmaster-ai_expand_task': 90,
-    'mcp_taskmaster-ai_expand_all': 200,
-    'mcp_taskmaster-ai_update_task': 60,
-    'mcp_taskmaster-ai_update_subtask': 45,
-    'mcp_taskmaster-ai_add_task': 75,
-    'mcp_taskmaster-ai_research': 150,
-    codebase_search: 30,
-    read_file: 15,
-    edit_file: 45,
-    run_terminal_cmd: 60,
-    default: 90,
-};
-
-function getToolTimeEstimate(toolName: string): number {
-    if (TOOL_TIME_ESTIMATES[toolName]) {
-        return TOOL_TIME_ESTIMATES[toolName];
-    }
-
-    for (const [key, value] of Object.entries(TOOL_TIME_ESTIMATES)) {
-        if (toolName.includes(key) || key.includes(toolName)) {
-            return value;
-        }
-    }
-
-    if (toolName.includes('taskmaster') || toolName.includes('task')) {
-        return 120;
-    }
-    if (toolName.includes('search') || toolName.includes('grep')) {
-        return 30;
-    }
-    if (toolName.includes('file') || toolName.includes('read') || toolName.includes('write')) {
-        return 25;
-    }
-
-    return TOOL_TIME_ESTIMATES.default;
-}
-
 export function useChat(vscode: any): ChatHookResult {
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>(() => {
         // Initialize with persisted chat history from localStorage
@@ -179,9 +137,9 @@ export function useChat(vscode: any): ChatHookResult {
                             // Handle tool calls - append to existing assistant message
                             const toolCallPart = {
                                 type: 'tool-call' as const,
-                                toolCallId: message.metadata?.tool_id || 'unknown',
-                                toolName: message.metadata?.tool_name || 'unknown',
-                                input: message.metadata?.tool_input || {},
+                                toolCallId: message.metadata?.tool_id ?? 'unknown',
+                                toolName: message.metadata?.tool_name ?? 'unknown',
+                                input: message.metadata?.tool_input ?? {},
                             };
 
                             // Find the last assistant message and append tool call to it
@@ -235,9 +193,9 @@ export function useChat(vscode: any): ChatHookResult {
                             // Add separate tool result message (correct CoreMessage structure)
                             const toolResultPart = {
                                 type: 'tool-result' as const,
-                                toolCallId: message.metadata?.tool_id || 'unknown',
-                                toolName: message.metadata?.tool_name || 'unknown',
-                                output: message.content || '',
+                                toolCallId: message.metadata?.tool_id ?? 'unknown',
+                                toolName: message.metadata?.tool_name ?? 'unknown',
+                                output: message.content ?? '',
                             };
 
                             newHistory.push({
@@ -317,7 +275,7 @@ export function useChat(vscode: any): ChatHookResult {
                                             ...msg.metadata,
                                             is_loading: false,
                                             progress_percentage: 100,
-                                            elapsed_time: msg.metadata.estimated_duration || 90,
+                                            elapsed_time: msg.metadata.estimated_duration ?? 90,
                                         },
                                     };
                                     break;
@@ -345,7 +303,7 @@ export function useChat(vscode: any): ChatHookResult {
                         metadata: {
                             timestamp: Date.now(),
                             is_error: true,
-                            actions: message.actions || [],
+                            actions: message.actions ?? [],
                         },
                     };
 

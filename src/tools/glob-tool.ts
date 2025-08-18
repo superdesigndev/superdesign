@@ -169,7 +169,7 @@ async function findMatches(
                             modifiedTime: stats.mtime,
                             extension: isDirectory ? undefined : path.extname(entry.name).slice(1),
                         });
-                    } catch (error) {
+                    } catch {
                         // Ignore stat errors and continue
                     }
                 }
@@ -179,7 +179,7 @@ async function findMatches(
                     await scanDirectory(fullPath);
                 }
             }
-        } catch (error) {
+        } catch {
             // Ignore permission errors and continue
         }
     };

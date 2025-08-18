@@ -163,7 +163,7 @@ export class BedrockProvider extends AIProvider {
     createInstance(params: ProviderInstanceParams): LanguageModelV2 {
         const awsAccessKeyId = params.config.config.get<string>('awsAccessKeyId');
         const awsSecretAccessKey = params.config.config.get<string>('awsSecretAccessKey');
-        const awsRegion = params.config.config.get<string>('awsRegion') || 'us-east-1';
+        const awsRegion = params.config.config.get<string>('awsRegion') ?? 'us-east-1';
 
         if (!awsAccessKeyId || !awsSecretAccessKey) {
             throw new Error(this.getCredentialsErrorMessage());

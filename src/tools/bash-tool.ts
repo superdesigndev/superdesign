@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { tool } from 'ai';
 import { spawn, type ChildProcess } from 'child_process';
-import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import type { ExecutionContext } from '../types/agent';
@@ -139,13 +138,13 @@ async function executeCommand(
                         if (child.pid && !child.killed) {
                             try {
                                 process.kill(-child.pid, 'SIGKILL');
-                            } catch (e) {
+                            } catch {
                                 // Process might already be dead
                             }
                         }
                     }, 1000);
                 }
-            } catch (error) {
+            } catch {
                 // Process might already be dead
             }
         }
@@ -199,7 +198,7 @@ export function createBashTool(context: ExecutionContext) {
                 }
 
                 // Resolve execution directory
-                const workingDir = directory || '.';
+                const workingDir = directory ?? '.';
 
                 // Security check for workspace boundary
                 const pathError = validateWorkspacePath(workingDir, context);

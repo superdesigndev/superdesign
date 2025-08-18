@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { ClaudeCodeService } from '../services/claudeCodeService';
 import { ChatMessageService } from '../services/chatMessageService';
 import { generateWebviewHtml } from '../templates/webviewTemplate';
 import type { WebviewContext } from '../types/context';

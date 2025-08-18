@@ -6,34 +6,6 @@ interface ThemePreviewProps {
     cssSheet: string;
 }
 
-// Google Fonts that we support
-const SUPPORTED_GOOGLE_FONTS = [
-    'JetBrains Mono',
-    'Fira Code',
-    'Source Code Pro',
-    'IBM Plex Mono',
-    'Roboto Mono',
-    'Space Mono',
-    'Geist Mono',
-    'Inter',
-    'Roboto',
-    'Open Sans',
-    'Poppins',
-    'Montserrat',
-    'Outfit',
-    'Plus Jakarta Sans',
-    'DM Sans',
-    'Geist',
-    'Oxanium',
-    'Architects Daughter',
-    'Merriweather',
-    'Playfair Display',
-    'Lora',
-    'Source Serif Pro',
-    'Libre Baskerville',
-    'Space Grotesk',
-];
-
 // System fonts that should not be loaded from Google Fonts
 const SYSTEM_FONTS = [
     'system-ui',

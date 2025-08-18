@@ -181,7 +181,7 @@ export class OpenRouterProvider extends AIProvider {
         const apiKey = params.config.config.get<string>(
             OpenRouterProvider.metadata.apiKeyConfigKey
         );
-        if (apiKey === undefined) {
+        if (apiKey === undefined || apiKey.trim() === '') {
             throw new Error(this.getCredentialsErrorMessage());
         }
 
@@ -198,7 +198,7 @@ export class OpenRouterProvider extends AIProvider {
     validateCredentials(config: VsCodeConfiguration): ValidationResult {
         const apiKey = config.config.get<string>(OpenRouterProvider.metadata.apiKeyConfigKey);
 
-        if (apiKey === undefined) {
+        if (apiKey === undefined || apiKey.trim() === '') {
             return {
                 isValid: false,
                 error: 'OpenRouter API key is not configured',

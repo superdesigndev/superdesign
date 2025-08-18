@@ -72,7 +72,7 @@ export class GoogleProvider extends AIProvider {
 
     createInstance(params: ProviderInstanceParams): LanguageModelV2 {
         const apiKey = params.config.config.get<string>(GoogleProvider.metadata.apiKeyConfigKey);
-        if (!apiKey) {
+        if (apiKey === undefined || apiKey.trim() === '') {
             throw new Error(this.getCredentialsErrorMessage());
         }
 
@@ -89,7 +89,7 @@ export class GoogleProvider extends AIProvider {
     validateCredentials(config: VsCodeConfiguration): ValidationResult {
         const apiKey = config.config.get<string>(GoogleProvider.metadata.apiKeyConfigKey);
 
-        if (apiKey === undefined) {
+        if (apiKey === undefined || apiKey.trim() === '') {
             return {
                 isValid: false,
                 error: 'Google API key is not configured',

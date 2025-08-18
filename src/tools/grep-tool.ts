@@ -208,7 +208,7 @@ async function findFilesToSearch(
                     }
                 }
             }
-        } catch (error) {
+        } catch {
             // Ignore permission errors and continue
         }
     };
@@ -259,7 +259,7 @@ async function searchInFile(
                 }
             }
         }
-    } catch (error) {
+    } catch {
         // Ignore files that can't be read (binary files, permission issues, etc.)
     }
 
