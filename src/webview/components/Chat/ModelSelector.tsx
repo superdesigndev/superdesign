@@ -1,23 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrainIcon } from '../Icons';
+import type { ModelConfig, ProviderId } from '../../../providers/types';
 
 interface ModelSelectorProps {
     selectedModel: string;
-    onModelChange: (model: string) => void;
+    onModelChange: (providerId: ProviderId, model: string) => void;
     disabled?: boolean;
-}
-
-interface ModelOption {
-    id: string;
-    name: string;
-    provider: string;
-    category: string;
+    models: (ModelConfig & { providerId: ProviderId })[];
 }
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({
     selectedModel,
     onModelChange,
     disabled,
+    models,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -25,173 +21,13 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     const triggerRef = useRef<HTMLButtonElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
 
-    const models: ModelOption[] = [
-        // Anthropic
-        {
-            id: 'claude-4-opus-20250514',
-            name: 'Claude 4 Opus',
-            provider: 'Anthropic',
-            category: 'Premium',
-        },
-        {
-            id: 'claude-4-sonnet-20250514',
-            name: 'Claude 4 Sonnet',
-            provider: 'Anthropic',
-            category: 'Balanced',
-        },
-        {
-            id: 'claude-3-7-sonnet-20250219',
-            name: 'Claude 3.7 Sonnet',
-            provider: 'Anthropic',
-            category: 'Balanced',
-        },
-        {
-            id: 'claude-3-5-sonnet-20241022',
-            name: 'Claude 3.5 Sonnet',
-            provider: 'Anthropic',
-            category: 'Balanced',
-        },
-        // Google (Direct)
-        { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'Google', category: 'Balanced' },
-        { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'Google', category: 'Fast' },
-        {
-            id: 'gemini-2.5-flash-lite',
-            name: 'Gemini 2.5 Flash Lite',
-            provider: 'Google',
-            category: 'Fast',
-        },
-        // Google (OpenRouter)
-        {
-            id: 'google/gemini-2.5-pro',
-            name: 'Gemini 2.5 Pro',
-            provider: 'OpenRouter (Google)',
-            category: 'Balanced',
-        },
-        // Meta (OpenRouter)
-        {
-            id: 'meta-llama/llama-4-maverick-17b-128e-instruct',
-            name: 'Llama 4 Maverick 17B',
-            provider: 'OpenRouter (Meta)',
-            category: 'Balanced',
-        },
-        // DeepSeek (OpenRouter)
-        {
-            id: 'deepseek/deepseek-r1',
-            name: 'DeepSeek R1',
-            provider: 'OpenRouter (DeepSeek)',
-            category: 'Balanced',
-        },
-        // Mistral (OpenRouter)
-        {
-            id: 'mistralai/mistral-small-3.2-24b-instruct-2506',
-            name: 'Mistral Small 3.2 24B',
-            provider: 'OpenRouter (Mistral)',
-            category: 'Balanced',
-        },
-        // xAI (OpenRouter)
-        { id: 'x-ai/grok-3', name: 'Grok 3', provider: 'OpenRouter (xAI)', category: 'Balanced' },
-        // Qwen (OpenRouter)
-        {
-            id: 'qwen/qwen3-235b-a22b-04-28',
-            name: 'Qwen3 235B',
-            provider: 'OpenRouter (Qwen)',
-            category: 'Balanced',
-        },
-        // Perplexity (OpenRouter)
-        {
-            id: 'perplexity/sonar-reasoning-pro',
-            name: 'Sonar Reasoning Pro',
-            provider: 'OpenRouter (Perplexity)',
-            category: 'Balanced',
-        },
-        // Microsoft (OpenRouter)
-        {
-            id: 'microsoft/phi-4-reasoning-plus-04-30',
-            name: 'Phi-4 Reasoning Plus',
-            provider: 'OpenRouter (Microsoft)',
-            category: 'Balanced',
-        },
-        // NVIDIA (OpenRouter)
-        {
-            id: 'nvidia/llama-3.3-nemotron-super-49b-v1',
-            name: 'Llama 3.3 Nemotron Super 49B',
-            provider: 'OpenRouter (NVIDIA)',
-            category: 'Balanced',
-        },
-        // Cohere (OpenRouter)
-        {
-            id: 'cohere/command-a-03-2025',
-            name: 'Command A',
-            provider: 'OpenRouter (Cohere)',
-            category: 'Balanced',
-        },
-        // Amazon (OpenRouter)
-        {
-            id: 'amazon/nova-pro-v1',
-            name: 'Nova Pro',
-            provider: 'OpenRouter (Amazon)',
-            category: 'Balanced',
-        },
-        // Inflection (OpenRouter)
-        {
-            id: 'inflection/inflection-3-productivity',
-            name: 'Inflection 3 Productivity',
-            provider: 'OpenRouter (Inflection)',
-            category: 'Balanced',
-        },
-        // Reka (OpenRouter)
-        {
-            id: 'rekaai/reka-flash-3',
-            name: 'Reka Flash 3',
-            provider: 'OpenRouter (Reka)',
-            category: 'Balanced',
-        },
-        // Existing OpenAI (direct)
-        { id: 'gpt-4.1', name: 'GPT-4.1', provider: 'OpenAI', category: 'Balanced' },
-        { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', provider: 'OpenAI', category: 'Fast' },
-        // AWS Bedrock - Anthropic (Claude 4)
-        {
-            id: 'us.anthropic.claude-opus-4-20250514-v1:0',
-            name: 'Claude 4 Opus',
-            provider: 'AWS Bedrock (Anthropic)',
-            category: 'Premium',
-        },
-        {
-            id: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
-            name: 'Claude 4 Sonnet',
-            provider: 'AWS Bedrock (Anthropic)',
-            category: 'Balanced',
-        },
-        // AWS Bedrock - Anthropic (Claude 3)
-        {
-            id: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
-            name: 'Claude 3.5 Sonnet v2',
-            provider: 'AWS Bedrock (Anthropic)',
-            category: 'Balanced',
-        },
-        {
-            id: 'anthropic.claude-3-opus-20240229-v1:0',
-            name: 'Claude 3 Opus',
-            provider: 'AWS Bedrock (Anthropic)',
-            category: 'Premium',
-        },
-        {
-            id: 'anthropic.claude-3-haiku-20240307-v1:0',
-            name: 'Claude 3 Haiku',
-            provider: 'AWS Bedrock (Anthropic)',
-            category: 'Fast',
-        },
-        // Moonshot AI
-        { id: 'kimi-k2-0711-preview', name: 'Kimi K2', provider: 'Moonshot', category: 'Balanced' },
-    ];
-
     const filteredModels = models.filter(
         model =>
-            model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            model.provider.toLowerCase().includes(searchTerm.toLowerCase())
+            model.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            model.providerId.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const selectedModelName = models.find(m => m.id === selectedModel)?.name || selectedModel;
+    const selectedModelName = models.find(m => m.id === selectedModel)?.displayName ?? selectedModel;
 
     const calculateDropdownPosition = () => {
         if (!triggerRef.current) {
@@ -264,8 +100,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         };
     }, [isOpen]);
 
-    const handleModelSelect = (modelId: string) => {
-        onModelChange(modelId);
+    const handleModelSelect = (providerId: string, modelId: string) => {
+        onModelChange(providerId as ProviderId, modelId);
         setIsOpen(false);
     };
 
@@ -545,14 +381,14 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                                     <button
                                         key={model.id}
                                         className={`model-option ${model.id === selectedModel ? 'selected' : ''}`}
-                                        onClick={() => handleModelSelect(model.id)}
+                                        onClick={() => handleModelSelect(model.providerId, model.id)}
                                     >
                                         <div className='model-icon'>
                                             <BrainIcon />
                                         </div>
                                         <div className='model-info'>
-                                            <div className='model-name'>{model.name}</div>
-                                            <div className='model-provider'>{model.provider}</div>
+                                            <div className='model-name'>{model.displayName}</div>
+                                            <div className='model-provider'>{model.providerId}</div>
                                         </div>
                                         {model.id === selectedModel && (
                                             <div className='model-check'>✓</div>

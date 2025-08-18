@@ -10,6 +10,8 @@ import ModelSelector from './ModelSelector';
 import chatStyles from './ChatInterface.css';
 
 import welcomeStyles from '../Welcome/Welcome.css';
+import { ChangeProvider } from '../../types/command.types';
+import { ProviderService } from '../../../providers';
 
 interface ChatInterfaceProps {
     layout: WebviewLayout;
@@ -89,12 +91,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         return () => window.removeEventListener('message', handleMessage);
     }, [vscode]);
 
-    const handleModelChange = (model: string) => {
-        // Send model change request to extension
-        vscode.postMessage({
-            command: 'changeProvider',
-            model: model,
-        });
+    const handleModelChange = (providerId: string, model: string) => {
+        vscode.postMessage(ChangeProvider(providerId, model));
     };
 
     const handleNewConversation = useCallback(() => {
@@ -406,7 +404,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         // TODO: Implement context addition functionality
         console.log('Add Context clicked');
     };
-
 
     const handleWelcomeGetStarted = () => {
         setShowWelcome(false);
@@ -1260,7 +1257,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                 try {
                     return JSON.stringify(toolInput, null, 2);
                 } catch (error) {
-                    console.error('❌ Error: Failed to stringify tool input for tool:', toolCallPart.toolName, error);
+                    console.error(
+                        '❌ Error: Failed to stringify tool input for tool:',
+                        toolCallPart.toolName,
+                        error
+                    );
                     return '[Tool input serialization failed]';
                 }
             })();
@@ -1611,6 +1612,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                                         selectedModel={selectedModel}
                                         onModelChange={handleModelChange}
                                         disabled={isLoading || showWelcome}
+                                        models={ProviderService.getInstance().getAvailableModels()}
                                     />
                                 </div>
                             </div>

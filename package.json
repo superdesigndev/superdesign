@@ -75,17 +75,17 @@
         "category": "Securedesign"
       },
       {
-        "command": "superdesign.configureAWSBedrock",
+        "command": "securedesign.configureAWSBedrock",
         "title": "Configure AWS Bedrock",
         "category": "Superdesign"
       },
       {
-        "command": "superdesign.configureMoonshotApiKey",
+        "command": "securedesign.configureMoonshotApiKey",
         "title": "Configure Moonshot API Key",
         "category": "Superdesign"
       },
       {
-        "command": "superdesign.showChatSidebar",
+        "command": "securedesign.showChatSidebar",
         "title": "Show Chat Sidebar",
         "category": "Securedesign"
       },
@@ -198,7 +198,7 @@
           "description": "AI model provider for custom agent",
           "scope": "application"
         },
-        "superdesign.moonshotApiKey": {
+        "securedesign.moonshotApiKey": {
           "type": "string",
           "description": "Moonshot AI API key for Kimi K2 integration",
           "scope": "application"
@@ -208,17 +208,17 @@
           "description": "Specific AI model to use (e.g., gpt-4o, claude-3-5-sonnet-20241022)",
           "scope": "application"
         },
-        "superdesign.awsAccessKeyId": {
+        "securedesign.awsAccessKeyId": {
           "type": "string",
           "description": "AWS Access Key ID for Bedrock integration",
           "scope": "application"
         },
-        "superdesign.awsSecretAccessKey": {
+        "securedesign.awsSecretAccessKey": {
           "type": "string",
           "description": "AWS Secret Access Key for Bedrock integration",
           "scope": "application"
         },
-        "superdesign.awsRegion": {
+        "securedesign.awsRegion": {
           "type": "string",
           "default": "us-east-1",
           "description": "AWS region for Bedrock services",

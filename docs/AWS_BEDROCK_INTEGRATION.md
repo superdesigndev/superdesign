@@ -88,10 +88,10 @@ AWS Bedrock integration allows SuperDesign to use various AI models available th
 
 ### Configuration Settings
 
-- `superdesign.awsAccessKeyId`: AWS Access Key ID
-- `superdesign.awsSecretAccessKey`: AWS Secret Access Key
-- `superdesign.awsRegion`: AWS region (default: us-east-1)
-- `superdesign.aiModelProvider`: Set to "bedrock" for Bedrock models
+- `securedesign.awsAccessKeyId`: AWS Access Key ID
+- `securedesign.awsSecretAccessKey`: AWS Secret Access Key
+- `securedesign.awsRegion`: AWS region (default: us-east-1)
+- `securedesign.aiModelProvider`: Set to "bedrock" for Bedrock models
 
 ### Security Considerations
 

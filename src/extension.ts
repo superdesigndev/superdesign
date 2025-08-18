@@ -1328,13 +1328,20 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     const configureAWSBedrockDisposable = vscode.commands.registerCommand(
-        'superdesign.configureAWSBedrock',
+        'securedesign.configureAWSBedrock',
         async () => {
             await configureAWSBedrock();
         }
     );
+    const configureGoogleApiKeyDisposable = vscode.commands.registerCommand(
+        'securedesign.configureGoogleApiKey',
+        async () => {
+            await configureGoogleApiKey();
+        }
+    );
+
     const configureMoonshotApiKeyDisposable = vscode.commands.registerCommand(
-        'superdesign.configureMoonshotApiKey',
+        'securedesign.configureMoonshotApiKey',
         async () => {
             await configureMoonshotApiKey();
         }
@@ -1478,6 +1485,8 @@ export function activate(context: vscode.ExtensionContext) {
         configureOpenRouterApiKeyDisposable,
         configureOpenAIUrlDisposable,
         configureAWSBedrockDisposable,
+        configureGoogleApiKeyDisposable,
+        configureMoonshotApiKeyDisposable,
         sidebarDisposable,
         showSidebarDisposable,
         openCanvasDisposable,

@@ -2,15 +2,20 @@ import * as vscode from 'vscode';
 import { ClaudeCodeService } from './claudeCodeService';
 import type { AgentService } from '../types/agent';
 import type { ModelMessage } from 'ai';
+import type { VsCodeConfiguration, ProviderId } from '../providers/types';
+import { ProviderService } from '../providers/ProviderService';
 import { Logger } from './logger';
 
 export class ChatMessageService {
     private currentRequestController?: AbortController;
+    private readonly providerService: ProviderService;
 
     constructor(
         private readonly agentService: AgentService,
         private readonly outputChannel: vscode.OutputChannel
-    ) {}
+    ) {
+        this.providerService = ProviderService.getInstance();
+    }
 
     async handleChatMessage(message: any, webview: vscode.Webview): Promise<void> {
         try {
@@ -44,7 +49,8 @@ export class ChatMessageService {
                         : Array.isArray(msg.content)
                           ? msg.content
                                 .map(part =>
-                                    part.type === 'text' ? part.text
+                                    part.type === 'text'
+                                        ? part.text
                                         : part.type === 'tool-call'
                                           ? `[tool-call: ${part.toolName}]`
                                           : part.type === 'tool-result'
@@ -54,9 +60,7 @@ export class ChatMessageService {
                                 .join(', ')
                           : '[complex content]';
 
-                this.outputChannel.appendLine(
-                    `  [${index}] ${msg.role}: ${content}`
-                );
+                this.outputChannel.appendLine(`  [${index}] ${msg.role}: ${content}`);
             });
 
             this.outputChannel.appendLine('=== END CHAT HISTORY DEBUG ===');
@@ -125,57 +129,33 @@ export class ChatMessageService {
                 this.agentService.isApiKeyAuthError(errorMessage) ||
                 !this.agentService.hasApiKey()
             ) {
-                // Determine which provider is currently selected to show specific error
+                // Get current provider information
                 const config = vscode.workspace.getConfiguration('securedesign');
                 const specificModel = config.get<string>('aiModel');
-                const provider = config.get<string>('aiModelProvider', 'anthropic');
+                const provider = config.get<string>('aiModelProvider', 'anthropic') as ProviderId;
 
-                // Determine provider from model name if specific model is set
-                let effectiveProvider = provider;
-                let providerName = 'AI';
-                let configureCommand = 'securedesign.configureApiKey';
+                // Determine which model we're working with
+                const modelToCheck =
+                    specificModel ||
+                    this.providerService.getDefaultModelForProvider(provider)?.id ||
+                    'claude-3-5-sonnet-20241022';
 
-                if (specificModel) {
-                    if (specificModel.includes('/')) {
-                        effectiveProvider = 'openrouter';
-                    } else if (specificModel.startsWith('claude-')) {
-                        effectiveProvider = 'anthropic';
-                    } else if (specificModel.startsWith('gemini-')) {
-                        effectiveProvider = 'google';
-                    } else {
-                        effectiveProvider = 'openai';
-                    }
-                }
-
-                switch (effectiveProvider) {
-                    case 'openrouter':
-                        providerName = 'OpenRouter';
-                        configureCommand = 'securedesign.configureOpenRouterApiKey';
-                        break;
-                    case 'anthropic':
-                        providerName = 'Anthropic';
-                        configureCommand = 'securedesign.configureApiKey';
-                        break;
-                    case 'google':
-                        providerName = 'Google';
-                        configureCommand = 'securedesign.configureGoogleApiKey';
-                        break;
-                    case 'openai':
-                        providerName = 'OpenAI';
-                        configureCommand = 'securedesign.configureOpenAIApiKey';
-                        break;
-                }
+                // Get provider metadata
+                const providerMetadata = this.providerService.getProviderMetadata(provider);
 
                 const hasApiKey = this.agentService.hasApiKey();
                 const displayMessage = hasApiKey
-                    ? `Invalid ${providerName} API key. Please check your configuration.`
-                    : `${providerName} API key not configured. Please set up your API key to use this AI model.`;
+                    ? `Invalid ${providerMetadata.name} API key. Please check your configuration.`
+                    : `${providerMetadata.name} API key not configured. Please set up your API key to use this AI model.`;
 
                 webview.postMessage({
                     command: 'chatErrorWithActions',
                     error: displayMessage,
                     actions: [
-                        { text: `Configure ${providerName} API Key`, command: configureCommand },
+                        {
+                            text: `Configure ${providerMetadata.name} API Key`,
+                            command: providerMetadata.configureCommand,
+                        },
                         {
                             text: 'Open Settings',
                             command: 'workbench.action.openSettings',
@@ -268,9 +248,7 @@ export class ChatMessageService {
                             ? part.result
                             : JSON.stringify(part.result, null, 2);
 
-                    Logger.debug(
-                        `Tool result for ${part.toolCallId}: ${content}`
-                    );
+                    Logger.debug(`Tool result for ${part.toolCallId}: ${content}`);
 
                     // Send tool result to frontend
                     webview.postMessage({
