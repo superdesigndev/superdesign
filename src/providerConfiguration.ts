@@ -6,6 +6,56 @@ import { BedrockProvider } from './providers/implementations/BedrockProvider';
 import { GoogleProvider } from './providers/implementations/GoogleProvider';
 import { MoonshotProvider } from './providers/implementations/MoonshotProvider';
 
+interface ApiKeyConfig {
+    configKey: string;
+    title: string;
+    prompt: string;
+    placeHolder: string;
+    successMessage: string;
+    validateInput?: (value: string) => string | null;
+}
+
+async function configureApiKeyHelper(options: ApiKeyConfig) {
+    const currentKey = vscode.workspace
+        .getConfiguration('securedesign')
+        .get<string>(options.configKey);
+
+    const input = await vscode.window.showInputBox({
+        title: options.title,
+        prompt: options.prompt,
+        value: currentKey ? '••••••••••••••••' : '',
+        password: true,
+        placeHolder: options.placeHolder,
+        validateInput: value => {
+            if (!value || value.trim().length === 0) {
+                return 'API key cannot be empty';
+            }
+            if (value === '••••••••••••••••') {
+                return null; // User didn't change the masked value, that's OK
+            }
+            return options.validateInput ? options.validateInput(value) : null;
+        },
+    });
+
+    if (input !== undefined) {
+        // Only update if user didn't just keep the masked value
+        if (input !== '••••••••••••••••') {
+            try {
+                await vscode.workspace
+                    .getConfiguration('securedesign')
+                    .update(options.configKey, input.trim(), vscode.ConfigurationTarget.Global);
+                vscode.window.showInformationMessage(options.successMessage);
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
+            }
+        } else if (currentKey) {
+            vscode.window.showInformationMessage('API key unchanged (already configured)');
+        } else {
+            vscode.window.showWarningMessage('No API key was set');
+        }
+    }
+}
+
 export function registerProviderCommands(): vscode.Disposable[] {
     const disposables: vscode.Disposable[] = [];
     disposables.push(
@@ -39,141 +89,51 @@ export function registerProviderCommands(): vscode.Disposable[] {
 }
 
 async function configureAnthropicApiKey() {
-    const currentKey = vscode.workspace
-        .getConfiguration('securedesign')
-        .get<string>('anthropicApiKey');
-
-    const input = await vscode.window.showInputBox({
+    return configureApiKeyHelper({
+        configKey: 'anthropicApiKey',
         title: 'Configure Anthropic API Key',
         prompt: 'Enter your Anthropic API key (get one from https://console.anthropic.com/)',
-        value: currentKey ? '••••••••••••••••' : '',
-        password: true,
         placeHolder: 'sk-ant-...',
+        successMessage: '✅ Anthropic API key configured successfully!',
         validateInput: value => {
-            if (!value || value.trim().length === 0) {
-                return 'API key cannot be empty';
-            }
-            if (value === '••••••••••••••••') {
-                return null; // User didn't change the masked value, that's OK
-            }
             if (!value.startsWith('sk-ant-')) {
                 return 'Anthropic API keys should start with "sk-ant-"';
             }
             return null;
         },
     });
-
-    if (input !== undefined) {
-        // Only update if user didn't just keep the masked value
-        if (input !== '••••••••••••••••') {
-            try {
-                await vscode.workspace
-                    .getConfiguration('securedesign')
-                    .update('anthropicApiKey', input.trim(), vscode.ConfigurationTarget.Global);
-                vscode.window.showInformationMessage(
-                    '✅ Anthropic API key configured successfully!'
-                );
-            } catch (error) {
-                vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
-            }
-        } else if (currentKey) {
-            vscode.window.showInformationMessage('API key unchanged (already configured)');
-        } else {
-            vscode.window.showWarningMessage('No API key was set');
-        }
-    }
 }
 
-// Function to configure OpenAI API key
 async function configureOpenAIApiKey() {
-    const currentKey = vscode.workspace
-        .getConfiguration('securedesign')
-        .get<string>('openaiApiKey');
-
-    const input = await vscode.window.showInputBox({
+    return configureApiKeyHelper({
+        configKey: 'openaiApiKey',
         title: 'Configure OpenAI API Key',
         prompt: 'Enter your OpenAI API key (get one from https://platform.openai.com/api-keys)',
-        value: currentKey ? '••••••••••••••••' : '',
-        password: true,
         placeHolder: 'sk-...',
+        successMessage: '✅ OpenAI API key configured successfully!',
         validateInput: value => {
-            if (!value || value.trim().length === 0) {
-                return 'API key cannot be empty';
-            }
-            if (value === '••••••••••••••••') {
-                return null; // User didn't change the masked value, that's OK
-            }
             if (!value.startsWith('sk-')) {
                 return 'OpenAI API keys should start with "sk-"';
             }
             return null;
         },
     });
-
-    if (input !== undefined) {
-        // Only update if user didn't just keep the masked value
-        if (input !== '••••••••••••••••') {
-            try {
-                await vscode.workspace
-                    .getConfiguration('securedesign')
-                    .update('openaiApiKey', input.trim(), vscode.ConfigurationTarget.Global);
-                vscode.window.showInformationMessage('✅ OpenAI API key configured successfully!');
-            } catch (error) {
-                vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
-            }
-        } else if (currentKey) {
-            vscode.window.showInformationMessage('API key unchanged (already configured)');
-        } else {
-            vscode.window.showWarningMessage('No API key was set');
-        }
-    }
 }
 
-// Function to configure OpenRouter API key
 async function configureOpenRouterApiKey() {
-    const currentKey = vscode.workspace
-        .getConfiguration('securedesign')
-        .get<string>('openrouterApiKey');
-
-    const input = await vscode.window.showInputBox({
+    return configureApiKeyHelper({
+        configKey: 'openrouterApiKey',
         title: 'Configure OpenRouter API Key',
         prompt: 'Enter your OpenRouter API key (get one from https://openrouter.ai/)',
-        value: currentKey ? '••••••••••••••••' : '',
-        password: true,
         placeHolder: 'sk-...',
+        successMessage: '✅ OpenRouter API key configured successfully!',
         validateInput: value => {
-            if (!value || value.trim().length === 0) {
-                return 'API key cannot be empty';
-            }
-            if (value === '••••••••••••••••') {
-                return null; // User didn't change the masked value, that's OK
-            }
             if (!value.startsWith('sk-')) {
                 return 'OpenRouter API keys should start with "sk-"';
             }
             return null;
         },
     });
-
-    if (input !== undefined) {
-        // Only update if user didn't just keep the masked value
-        if (input !== '••••••••••••••••') {
-            try {
-                await vscode.workspace
-                    .getConfiguration('securedesign')
-                    .update('openrouterApiKey', input.trim(), vscode.ConfigurationTarget.Global);
-                vscode.window.showInformationMessage(
-                    '✅ OpenRouter API key configured successfully!'
-                );
-            } catch (error) {
-                vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
-            }
-        } else if (currentKey) {
-            vscode.window.showInformationMessage('API key unchanged (already configured)');
-        } else {
-            vscode.window.showWarningMessage('No API key was set');
-        }
-    }
 }
 
 // Function to configure OpenAI url
@@ -216,43 +176,13 @@ async function configureOpenAIUrl() {
 }
 
 async function configureGoogleApiKey() {
-    const config = vscode.workspace.getConfiguration('securedesign');
-    const currentKey = config.get<string>('googleApiKey');
-
-    const input = await vscode.window.showInputBox({
+    return configureApiKeyHelper({
+        configKey: 'googleApiKey',
         title: 'Configure Google API Key',
         prompt: 'Enter your Google API key',
-        value: currentKey ? '••••••••••••••••' : '',
-        password: true,
         placeHolder: 'Enter your Google API Key',
-        validateInput: value => {
-            if (!value || value.trim().length === 0) {
-                return 'API key cannot be empty';
-            }
-            if (value === '••••••••••••••••') {
-                return null; // User didn't change the masked value, that's OK
-            }
-            return null;
-        },
+        successMessage: '✅ Google API key configured successfully!',
     });
-
-    if (input !== undefined) {
-        // Only update if user didn't just keep the masked value
-        if (input !== '••••••••••••••••') {
-            try {
-                await vscode.workspace
-                    .getConfiguration('securedesign')
-                    .update('googleApiKey', input.trim(), vscode.ConfigurationTarget.Global);
-                vscode.window.showInformationMessage('✅ Google API key configured successfully!');
-            } catch (error) {
-                vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
-            }
-        } else if (currentKey) {
-            vscode.window.showInformationMessage('API key unchanged (already configured)');
-        } else {
-            vscode.window.showWarningMessage('No API key was set');
-        }
-    }
 }
 
 // Function to configure AWS Bedrock credentials
@@ -379,47 +309,17 @@ async function configureAWSBedrock() {
     }
 }
 async function configureMoonshotApiKey() {
-    const currentKey = vscode.workspace
-        .getConfiguration('securedesign')
-        .get<string>('moonshotApiKey');
-
-    const input = await vscode.window.showInputBox({
+    return configureApiKeyHelper({
+        configKey: 'moonshotApiKey',
         title: 'Configure Moonshot API Key',
         prompt: 'Enter your Moonshot AI API key (get one from https://platform.moonshot.cn/)',
-        value: currentKey ? '••••••••••••••••' : '',
-        password: true,
         placeHolder: 'sk-...',
+        successMessage: '✅ Moonshot API key configured successfully!',
         validateInput: value => {
-            if (!value || value.trim().length === 0) {
-                return 'API key cannot be empty';
-            }
-            if (value === '••••••••••••••••') {
-                return null; // User didn't change the masked value, that's OK
-            }
             if (!value.startsWith('sk-')) {
                 return 'Moonshot API keys should start with "sk-"';
             }
             return null;
         },
     });
-
-    if (input !== undefined) {
-        // Only update if user didn't just keep the masked value
-        if (input !== '••••••••••••••••') {
-            try {
-                await vscode.workspace
-                    .getConfiguration('securedesign')
-                    .update('moonshotApiKey', input.trim(), vscode.ConfigurationTarget.Global);
-                vscode.window.showInformationMessage(
-                    '✅ Moonshot API key configured successfully!'
-                );
-            } catch (error) {
-                vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
-            }
-        } else if (currentKey) {
-            vscode.window.showInformationMessage('API key unchanged (already configured)');
-        } else {
-            vscode.window.showWarningMessage('No API key was set');
-        }
-    }
 }
