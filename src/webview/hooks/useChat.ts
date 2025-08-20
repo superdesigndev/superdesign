@@ -83,6 +83,70 @@ function getToolTimeEstimate(toolName: string): number {
     return TOOL_TIME_ESTIMATES.default;
 }
 
+function cleanIncompleteToolCalls(history: ChatMessage[]): ChatMessage[] {
+    const cleanedHistory: ChatMessage[] = [];
+    
+    for (let i = 0; i < history.length; i++) {
+        const message = history[i];
+        
+        if (message.role === 'assistant' && Array.isArray(message.content)) {
+            // Check if this assistant message contains tool calls
+            const toolCalls = message.content.filter(part => part.type === 'tool-call');
+            
+            if (toolCalls.length > 0) {
+                // Check if all tool calls have corresponding tool results
+                const hasIncompleteTools = toolCalls.some(toolCall => {
+                    const toolCallId = (toolCall as any).toolCallId;
+                    
+                    // Look for tool result in subsequent messages
+                    for (let j = i + 1; j < history.length; j++) {
+                        const laterMsg = history[j];
+                        if (laterMsg.role === 'tool' && Array.isArray(laterMsg.content)) {
+                            const hasMatchingResult = laterMsg.content.some(
+                                part => part.type === 'tool-result' && (part as any).toolCallId === toolCallId
+                            );
+                            if (hasMatchingResult) {
+                                return false; // Tool call has result
+                            }
+                        }
+                        // Stop looking if we hit another assistant message
+                        if (laterMsg.role === 'assistant') {
+                            break;
+                        }
+                    }
+                    return true; // No matching tool result found
+                });
+                
+                if (hasIncompleteTools) {
+                    // Remove incomplete tool calls from content
+                    const filteredContent = message.content.filter(part => part.type !== 'tool-call');
+                    
+                    if (filteredContent.length > 0) {
+                        // Keep the message but without tool calls
+                        cleanedHistory.push({
+                            ...message,
+                            content: filteredContent.length === 1 && filteredContent[0].type === 'text' 
+                                ? (filteredContent[0] as any).text 
+                                : filteredContent,
+                            metadata: {
+                                ...message.metadata,
+                                is_loading: false
+                            }
+                        });
+                    }
+                    // Skip the rest of this iteration to avoid adding incomplete tools
+                    continue;
+                }
+            }
+        }
+        
+        // Add message normally if no incomplete tool calls
+        cleanedHistory.push(message);
+    }
+    
+    return cleanedHistory;
+}
+
 export function useChat(vscode: any): ChatHookResult {
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>(() => {
         // Initialize with persisted chat history from localStorage
@@ -118,6 +182,9 @@ export function useChat(vscode: any): ChatHookResult {
     const sendMessage = useCallback((message: string) => {
         setIsLoading(true);
         
+        // Clean incomplete tool calls from existing history
+        const cleanedHistory = cleanIncompleteToolCalls(chatHistory);
+        
         // Add user message to history
         const userMessage: ChatMessage = {
             role: 'user',
@@ -127,13 +194,14 @@ export function useChat(vscode: any): ChatHookResult {
             }
         };
         
-        setChatHistory(prev => [...prev, userMessage]);
+        const newHistory = [...cleanedHistory, userMessage];
+        setChatHistory(newHistory);
         
-        // Send to extension
+        // Send to extension with cleaned history
         vscode.postMessage({
             command: 'chatMessage',
             message: message,
-            chatHistory: [...chatHistory, userMessage]
+            chatHistory: newHistory
         });
     }, [chatHistory, vscode]);
 
@@ -224,22 +292,16 @@ export function useChat(vscode: any): ChatHookResult {
                                 });
                             }
                         } else if (message.messageType === 'tool-result') {
-                            // Add separate tool result message (correct CoreMessage structure)
-                            const toolResultPart = {
-                                type: 'tool-result' as const,
-                                toolCallId: message.metadata?.tool_id || 'unknown',
-                                toolName: message.metadata?.tool_name || 'unknown',
-                                result: message.content || '',
-                                isError: message.metadata?.is_error || false
-                            };
-                            
+                            // Create tool result message matching the tool call ID
                             newHistory.push({
                                 role: 'tool',
-                                content: [toolResultPart],
-                                metadata: {
-                                    timestamp: Date.now(),
-                                    session_id: message.metadata?.session_id
-                                }
+                                content: [{
+                                    type: 'tool-result',
+                                    toolCallId: message.metadata?.tool_id || 'unknown',
+                                    toolName: message.metadata?.tool_name || 'unknown',
+                                    result: message.content || '',
+                                    isError: false
+                                }]
                             });
                         }
                         

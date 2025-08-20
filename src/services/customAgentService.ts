@@ -628,7 +628,7 @@ I've created the html design, please reveiw and let me know if you need any chan
                 tools: tools,
                 toolCallStreaming: true,
                 maxSteps: 10, // Enable multi-step reasoning with tools
-                maxTokens: 8192 // Increase token limit to prevent truncation
+                maxTokens: 32000 // Increased from 8192 to prevent truncation issues
             };
             
             if (usingConversationHistory) {
@@ -686,9 +686,17 @@ I've created the html design, please reveiw and let me know if you need any chan
                         this.outputChannel.appendLine(`${JSON.stringify(chunk)}`);
                         this.outputChannel.appendLine(`========================================`);
                         
+                        let finishMessage = 'Response completed';
+                        if (chunk.finishReason === 'stop') {
+                            finishMessage = 'Response completed successfully';
+                        } else if (chunk.finishReason === 'length') {
+                            finishMessage = 'Response completed (reached maximum length)';
+                            this.outputChannel.appendLine('WARNING: Response was truncated due to token limit');
+                        }
+                        
                         const resultMessage: CoreMessage = {
                             role: 'assistant',
-                            content: chunk.finishReason === 'stop' ? 'Response completed successfully' : 'Response completed'
+                            content: finishMessage
                         };
                         
                         onMessage?.(resultMessage);
