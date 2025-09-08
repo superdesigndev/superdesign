@@ -71,6 +71,9 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                     case 'stopChat':
                         await this.messageHandler.stopCurrentChat(webviewView.webview);
                         break;
+                    case 'getVsCodeLMModels':
+                        await this.handleGetVsCodeLMModels(webviewView.webview);
+                        break;
                     case 'executeAction':
                         // Execute command from error action buttons
                         console.log('Executing action:', message.actionCommand, message.actionArgs);
@@ -95,6 +98,28 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
         );
     }
 
+    private async handleGetVsCodeLMModels(webview: vscode.Webview) {
+        try {
+            const lm: any = (vscode as any).lm;
+            if (!lm || typeof lm.selectChatModels !== 'function') {
+                throw new Error('VS Code LM API 不可用');
+            }
+            const models: any[] = await lm.selectChatModels({} as any);
+            const items = (models || []).map((m: any) => {
+                const vendor = m.vendor || 'unknown';
+                const family = m.family || '';
+                const name = m.name || '';
+                const idPart = family || name || 'model';
+                const id = `vscodelm/${vendor}/${idPart}`;
+                const label = `${vendor}${family ? ' / ' + family : (name ? ' / ' + name : '')}`;
+                return { id, label, vendor, family, name };
+            });
+            webview.postMessage({ command: 'vsCodeLmModels', models: items });
+        } catch (error) {
+            webview.postMessage({ command: 'vsCodeLmModels', models: [], error: String(error) });
+        }
+    }
+
     private async handleGetCurrentProvider(webview: vscode.Webview) {
         const config = vscode.workspace.getConfiguration('superdesign');
         const currentProvider = config.get<string>('aiModelProvider', 'anthropic');
@@ -105,6 +130,9 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
         switch (currentProvider) {
             case 'openai':
                 defaultModel = 'gpt-4o';
+                break;
+            case 'vscodelm':
+                defaultModel = 'vscodelm/auto';
                 break;
             case 'openrouter':
                 defaultModel = 'anthropic/claude-3-7-sonnet-20250219';
@@ -132,7 +160,12 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             let configureCommand: string;
             let displayName: string;
             
-            if (model.includes('/')) {
+            if (model === 'vscodelm' || model.startsWith('vscodelm')) {
+                provider = 'vscodelm';
+                apiKeyKey = '';
+                configureCommand = '';
+                displayName = `VS Code LM API (${this.getModelDisplayName(model)})`;
+            } else if (model.includes('/')) {
                 // OpenRouter model (contains slash like "openai/gpt-4o")
                 provider = 'openrouter';
                 apiKeyKey = 'openrouterApiKey';
@@ -154,18 +187,19 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             await config.update('aiModelProvider', provider, vscode.ConfigurationTarget.Global);
             await config.update('aiModel', model, vscode.ConfigurationTarget.Global);
             
-            // Check if the API key is configured for the selected provider
-            const apiKey = config.get<string>(apiKeyKey);
-            
-            if (!apiKey) {
-                const result = await vscode.window.showWarningMessage(
-                    `${displayName} selected, but API key is not configured. Would you like to configure it now?`,
-                    'Configure API Key',
-                    'Later'
-                );
-                
-                if (result === 'Configure API Key') {
-                    await vscode.commands.executeCommand(configureCommand);
+            // Check if the API key is configured for the selected provider (skip for vscodelm)
+            if (provider !== 'vscodelm') {
+                const apiKey = apiKeyKey ? config.get<string>(apiKeyKey) : undefined;
+                if (!apiKey) {
+                    const result = await vscode.window.showWarningMessage(
+                        `${displayName} selected, but API key is not configured. Would you like to configure it now?`,
+                        'Configure API Key',
+                        'Later'
+                    );
+                    
+                    if (result === 'Configure API Key' && configureCommand) {
+                        await vscode.commands.executeCommand(configureCommand);
+                    }
                 }
             }
 
@@ -183,6 +217,8 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
     
     private getModelDisplayName(model: string): string {
         const modelNames: { [key: string]: string } = {
+            // VS Code LM API
+            'vscodelm/auto': 'VS Code LM (Auto)',
             // OpenAI models
             'gpt-4.1': 'GPT-4.1',
             'gpt-4.1-mini': 'GPT-4.1 Mini',
