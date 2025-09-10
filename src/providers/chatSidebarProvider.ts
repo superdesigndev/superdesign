@@ -193,6 +193,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             'claude-4-opus-20250514': 'Claude 4 Opus',
             'claude-4-sonnet-20250514': 'Claude 4 Sonnet',
             'claude-3-7-sonnet-20250219': 'Claude 3.7 Sonnet',
+            'anthropic/claude-sonnet-4': 'Claude Sonnet 4',
             'claude-3-5-sonnet-20241022': 'Claude 3.5 Sonnet',
             'claude-3-opus-20240229': 'Claude 3 Opus',
             'claude-3-sonnet-20240229': 'Claude 3 Sonnet',
@@ -240,6 +241,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             'deepseek/deepseek-r1-distill-qwen-7b': 'DeepSeek R1 Distill Qwen 7B',
             'deepseek/deepseek-r1-distill-qwen-1.5b': 'DeepSeek R1 Distill Qwen 1.5B',
             'deepseek/deepseek-chat-v3': 'DeepSeek Chat V3',
+            'deepseek/deepseek-chat-v3.1:free': 'DeepSeek Chat V3.1 Free',
             'deepseek/deepseek-v3-base': 'DeepSeek V3 Base',
             'deepseek/deepseek-prover-v2': 'DeepSeek Prover V2',
             // OpenRouter - Mistral models
@@ -271,6 +273,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             'x-ai/grok-2-vision-1212': 'Grok 2 Vision',
             'x-ai/grok-2-1212': 'Grok 2',
             'x-ai/grok-vision-beta': 'Grok Vision Beta',
+            'x-ai/grok-code-fast-1': 'Grok Code Fast 1',
             // OpenRouter - Qwen models
             'qwen/qwen3-235b-a22b-04-28': 'Qwen3 235B',
             'qwen/qwen3-32b-04-28': 'Qwen3 32B',

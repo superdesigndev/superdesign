@@ -53,6 +53,10 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
         { id: 'inflection/inflection-3-productivity', name: 'Inflection 3 Productivity', provider: 'OpenRouter (Inflection)', category: 'Balanced' },
         // Reka (OpenRouter)
         { id: 'rekaai/reka-flash-3', name: 'Reka Flash 3', provider: 'OpenRouter (Reka)', category: 'Balanced' },
+        // Additional OpenRouter models
+        { id: 'x-ai/grok-code-fast-1', name: 'Grok Code Fast 1', provider: 'OpenRouter (xAI)', category: 'Fast' },
+        { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4', provider: 'OpenRouter (Anthropic)', category: 'Balanced' },
+        { id: 'deepseek/deepseek-chat-v3.1:free', name: 'DeepSeek Chat V3.1 Free', provider: 'OpenRouter (DeepSeek)', category: 'Balanced' },
         // Existing OpenAI (direct)
         { id: 'gpt-4.1', name: 'GPT-4.1', provider: 'OpenAI', category: 'Balanced' },
         { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', provider: 'OpenAI', category: 'Fast' }
