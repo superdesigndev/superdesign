@@ -143,9 +143,46 @@
     "configuration": {
       "title": "Superdesign",
       "properties": {
+        "superdesign.llmProvider": {
+          "type": "string",
+          "enum": [
+            "claude-api",
+            "claude-code"
+          ],
+          "enumDescriptions": [
+            "Use Anthropic API key to communicate with Claude via SDK",
+            "Use local claude binary for enhanced code execution capabilities"
+          ],
+          "default": "claude-api",
+          "description": "Choose the LLM provider to use for AI interactions",
+          "scope": "application"
+        },
         "superdesign.anthropicApiKey": {
           "type": "string",
-          "description": "Anthropic API key for Claude Code integration",
+          "description": "Anthropic API key for Claude Code integration (required for claude-api provider)",
+          "scope": "application"
+        },
+        "superdesign.claudeCodePath": {
+          "type": "string",
+          "description": "Path to claude binary (defaults to 'claude' for npm install, use 'claude-code' if installed via shell script)",
+          "scope": "application"
+        },
+        "superdesign.claudeCodeModelId": {
+          "type": "string",
+          "enum": [
+            "claude-sonnet-4-20250514",
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-haiku-20241022",
+            "claude-3-opus-20240229"
+          ],
+          "default": "claude-sonnet-4-20250514",
+          "description": "Model ID to use with claude binary",
+          "scope": "application"
+        },
+        "superdesign.claudeCodeThinkingBudget": {
+          "type": "number",
+          "default": 50000,
+          "description": "Thinking budget tokens for claude-code provider",
           "scope": "application"
         },
         "superdesign.openaiApiKey": {
@@ -168,10 +205,11 @@
           "enum": [
             "openai",
             "anthropic",
-            "openrouter"
+            "openrouter",
+            "claude-code"
           ],
           "default": "anthropic",
-          "description": "AI model provider for custom agent (OpenAI, Anthropic, or OpenRouter)",
+          "description": "AI model provider for custom agent (OpenAI, Anthropic, OpenRouter, or Claude Code - Note: Claude Code should be used via the main LLM Provider setting instead)",
           "scope": "application"
         },
         "superdesign.aiModel": {

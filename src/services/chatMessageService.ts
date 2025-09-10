@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ClaudeCodeService } from './claudeCodeService';
+import { ClaudeCodeService, LLMMessage } from './claudeCodeService';
 import { AgentService } from '../types/agent';
 import { CoreMessage } from 'ai';
 import { Logger } from './logger';
@@ -156,6 +156,10 @@ export class ChatMessageService {
                     case 'anthropic':
                         providerName = 'Anthropic';
                         configureCommand = 'superdesign.configureApiKey';
+                        break;
+                    case 'claude-code':
+                        providerName = 'Claude Code';
+                        configureCommand = 'workbench.action.openSettings';
                         break;
                     case 'openai':
                         providerName = 'OpenAI';
@@ -395,7 +399,7 @@ export class ChatMessageService {
         }
     }
 
-    private processClaudeResponse(response: any[]): string {
+    private processClaudeResponse(response: LLMMessage[]): string {
         let fullResponse = '';
         let assistantMessages: string[] = [];
         let toolResults: string[] = [];
@@ -455,4 +459,4 @@ export class ChatMessageService {
 
         return fullResponse;
     }
-} 
+}
