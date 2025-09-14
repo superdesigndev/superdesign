@@ -90,6 +90,26 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                     case 'changeProvider':
                         await this.handleChangeProvider(message.model, webviewView.webview);
                         break;
+                    case 'addContext':
+                        const options: vscode.OpenDialogOptions = {
+                            canSelectMany: false,
+                            openLabel: 'Select File',
+                            canSelectFiles: true,
+                            canSelectFolders: false
+                        };
+                
+                        vscode.window.showOpenDialog(options).then(fileUri => {
+                            if (fileUri && fileUri[0]) {
+                                webviewView.webview.postMessage({
+                                    command: 'contextFromCanvas',
+                                    data: {
+                                        fileName: fileUri[0].fsPath,
+                                        type: 'file'
+                                    }
+                                });
+                            }
+                        });
+                        break;
                 }
             }
         );
