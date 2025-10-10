@@ -1626,7 +1626,7 @@ class SuperdesignCanvasPanel {
 
 		// Handle messages from the webview
 		this._panel.webview.onDidReceiveMessage(
-			message => {
+			async message => {
 				switch (message.command) {
 					case 'loadDesignFiles':
 						this._loadDesignFiles();
@@ -1647,6 +1647,9 @@ class SuperdesignCanvasPanel {
 							command: 'setChatPrompt',
 							data: message.data
 						});
+						break;
+					case 'deleteDesignFile':
+						await this._deleteDesignFile(message.fileName);
 						break;
 				}
 			},
@@ -1872,6 +1875,48 @@ class SuperdesignCanvasPanel {
 			this._panel.webview.postMessage({
 				command: 'error',
 				data: { error: `Failed to load design files: ${error}` }
+			});
+		}
+	}
+
+	private async _deleteDesignFile(fileName: string) {
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+		if (!workspaceFolder) {
+			Logger.error('No workspace folder found for deleting file');
+			return;
+		}
+
+		try {
+			const filePath = vscode.Uri.joinPath(
+				workspaceFolder.uri,
+				'.superdesign',
+				'design_iterations',
+				fileName
+			);
+
+			// Check if file exists
+			try {
+				await vscode.workspace.fs.stat(filePath);
+			} catch {
+				Logger.warn(`File not found for deletion: ${fileName}`);
+				return;
+			}
+
+			// Delete the file
+			await vscode.workspace.fs.delete(filePath);
+			Logger.info(`Deleted design file: ${fileName}`);
+
+			// Notify webview of successful deletion
+			this._panel.webview.postMessage({
+				command: 'fileDeleted',
+				data: { fileName }
+			});
+
+		} catch (error) {
+			Logger.error(`Failed to delete file ${fileName}: ${error}`);
+			this._panel.webview.postMessage({
+				command: 'error',
+				data: { error: `Failed to delete file: ${error}` }
 			});
 		}
 	}
