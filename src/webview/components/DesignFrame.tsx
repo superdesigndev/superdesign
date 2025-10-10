@@ -840,7 +840,6 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     e.preventDefault();
-                                    console.log('🗑️ Delete button clicked for:', file.name);
                                     setShowDeleteConfirm(true);
                                 }}
                                 onMouseDown={(e) => {
@@ -877,7 +876,6 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                                                 className="delete-confirm-cancel"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    console.log('❌ Delete cancelled');
                                                     setShowDeleteConfirm(false);
                                                 }}
                                             >
@@ -887,7 +885,6 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                                                 className="delete-confirm-delete"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    console.log('✅ Delete confirmed');
                                                     setShowDeleteConfirm(false);
                                                     onDelete(file.name);
                                                 }}

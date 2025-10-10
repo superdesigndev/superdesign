@@ -545,17 +545,13 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
 
     // Handle design file deletion
     const handleDeleteDesign = (fileName: string) => {
-        console.log('🗑️ CanvasView: handleDeleteDesign called for:', fileName);
-
         // Send delete request to backend
-        console.log('📤 Sending deleteDesignFile message to backend');
         vscode.postMessage({
             command: 'deleteDesignFile',
             fileName: fileName
         });
 
         // Optimistically remove from UI
-        console.log('🔄 Optimistically updating UI');
         setDesignFiles(prev => prev.filter(file => file.name !== fileName));
         setSelectedFrames(prev => prev.filter(name => name !== fileName));
 
@@ -565,8 +561,6 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
             delete updated[fileName];
             return updated;
         });
-
-        console.log('✅ UI updated, file removed from canvas');
     };
 
     // Keyboard shortcuts for zoom
