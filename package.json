@@ -1,13 +1,13 @@
 {
-  "name": "superdesign",
-  "displayName": "superdesign",
-  "description": "The 1st Design Agent lives inside your IDE",
-  "version": "0.0.11",
-  "publisher": "iganbold",
+  "name": "hjps-superdesign",
+  "displayName": "HJPS Superdesign",
+  "description": "AI-powered full-stack feature generator for HJPS - Unofficial local fork of Superdesign",
+  "version": "0.1.0",
+  "publisher": "hjps-local",
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/superdesigndev/superdesign"
+    "url": "local - D:\\code\\hjps-superdesign"
   },
   "engines": {
     "vscode": "^1.90.0"
@@ -36,10 +36,7 @@
     "generator",
     "automation"
   ],
-  "activationEvents": [
-    "onCommand:superdesign.helloWorld",
-    "onView:superdesign.chatView"
-  ],
+  "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
@@ -245,34 +242,34 @@
     "@types/mime-types": "^3.0.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
-    "@types/vscode": "^1.90.0",
-    "@typescript-eslint/eslint-plugin": "^8.31.1",
-    "@typescript-eslint/parser": "^8.31.1",
-    "@vscode/test-cli": "^0.0.10",
+    "@types/vscode": "^1.105.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.0",
+    "@typescript-eslint/parser": "^8.46.0",
+    "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
-    "esbuild": "^0.25.3",
-    "eslint": "^9.25.1",
+    "esbuild": "^0.25.10",
+    "eslint": "^9.37.0",
     "npm-run-all": "^4.1.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.2.12",
-    "@ai-sdk/google": "^1.2.19",
-    "@ai-sdk/openai": "^1.3.22",
-    "@anthropic-ai/claude-code": "^1.0.31",
-    "@openrouter/ai-sdk-provider": "^0.7.2",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "ai": "^4.3.16",
+    "@ai-sdk/anthropic": "^2.0.27",
+    "@ai-sdk/google": "^2.0.20",
+    "@ai-sdk/openai": "^2.0.50",
+    "@anthropic-ai/claude-code": "^2.0.14",
+    "@openrouter/ai-sdk-provider": "^1.2.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.1",
+    "ai": "^5.0.68",
     "execa": "^9.6.0",
     "glob": "^11.0.3",
     "highlight.js": "^11.11.1",
-    "lucide-react": "^0.522.0",
+    "lucide-react": "^0.545.0",
     "micromatch": "^4.0.8",
     "mime-types": "^3.0.1",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
     "react-zoom-pan-pinch": "^3.7.0",
     "rehype-highlight": "^7.0.2",
