@@ -111,7 +111,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 break;
             case 'anthropic':
             default:
-                defaultModel = 'claude-3-5-sonnet-20241022';
+                defaultModel = 'claude-4-sonnet-20250514';
                 break;
         }
         

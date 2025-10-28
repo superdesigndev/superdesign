@@ -1,8 +1,8 @@
 {
   "name": "superdesign",
-  "displayName": "superdesign",
-  "description": "The 1st Design Agent lives inside your IDE",
-  "version": "0.0.11",
+  "displayName": "superdesign (DEPRECATED)",
+  "description": "⚠️ DEPRECATED - Please install the new version: https://marketplace.visualstudio.com/items?itemName=SuperdesignDev.superdesign-official",
+  "version": "0.0.12",
   "publisher": "iganbold",
   "icon": "icon.png",
   "repository": {

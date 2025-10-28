@@ -184,13 +184,13 @@ async function submitEmailToSupabase(email: string, sidebarProvider: ChatSidebar
 		const postData = JSON.stringify({ email });
 
 		const options = {
-			hostname: 'uqofryalyuvdvlbbutvi.supabase.co',
+			hostname: 'egcidyvbkguhrjltyszr.supabase.co',
 			port: 443,
 			path: '/rest/v1/forms',
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxb2ZyeWFseXV2ZHZsYmJ1dHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NDUxMTUsImV4cCI6MjA2NjMyMTExNX0.xyIw5nMK_ltpU64Z95E5xsnl8Uw3P0Y0UZaJKiX65MI',
+				'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnY2lkeXZia2d1aHJqbHR5c3pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2MDU5MjMsImV4cCI6MjA3NzE4MTkyM30.88sJiWsp4AHW9cIFD9ghlfkxA1e2ph5J8XzARLCSLoo',
 				'Content-Length': Buffer.byteLength(postData)
 			}
 		};

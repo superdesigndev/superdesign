@@ -19,7 +19,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
     const { chatHistory, isLoading, sendMessage, clearHistory, setChatHistory } = useChat(vscode);
     const { isFirstTime, isLoading: isCheckingFirstTime, markAsReturningUser, resetFirstTimeUser } = useFirstTimeUser();
     const [inputMessage, setInputMessage] = useState('');
-    const [selectedModel, setSelectedModel] = useState<string>('claude-3-5-sonnet-20241022');
+    const [selectedModel, setSelectedModel] = useState<string>('claude-4-sonnet-20250514');
     const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({});
     const [showFullContent, setShowFullContent] = useState<{[key: string]: boolean}>({});
     const [currentContext, setCurrentContext] = useState<{fileName: string; type: string} | null>(null);
@@ -59,7 +59,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                         break;
                     case 'anthropic':
                     default:
-                        fallbackModel = 'claude-3-5-sonnet-20241022';
+                        fallbackModel = 'claude-4-sonnet-20250514';
                         break;
                 }
                 setSelectedModel(message.model || fallbackModel);

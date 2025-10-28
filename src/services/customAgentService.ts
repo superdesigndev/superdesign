@@ -137,8 +137,8 @@ export class CustomAgentService implements AgentService {
                     }
                 });
                 
-                // Use specific model if available, otherwise default to claude-3-5-sonnet
-                const anthropicModel = specificModel || 'claude-3-5-sonnet-20241022';
+                // Use specific model if available, otherwise default to claude-4-sonnet
+                const anthropicModel = specificModel || 'claude-4-sonnet-20250514';
                 this.outputChannel.appendLine(`Using Anthropic model: ${anthropicModel}`);
                 return anthropic(anthropicModel);
                 
@@ -194,7 +194,7 @@ export class CustomAgentService implements AgentService {
                     break;
                 case 'anthropic':
                 default:
-                    modelName = 'claude-3-5-sonnet-20241022';
+                    modelName = 'claude-4-sonnet-20250514';
                     break;
             }
         }
