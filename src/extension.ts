@@ -1324,7 +1324,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Register open settings command
 	const openSettingsDisposable = vscode.commands.registerCommand('superdesign.openSettings', () => {
-		vscode.commands.executeCommand('workbench.action.openSettings', '@ext:SuperdesignDev.superdesign-official');
+		vscode.commands.executeCommand('workbench.action.openSettings', '@ext:iganbold.superdesign');
 	});
 
 	// Register configure API key command (alternative to the existing one)
