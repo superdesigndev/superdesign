@@ -1,5 +1,9 @@
 # 🧠 SuperDesign — AI Design Agent for Your IDE
 
+**🆕 New:** [SuperDesign Chrome Extension](https://chromewebstore.google.com/detail/obpjaonipoaomjnokbimppohbpjibflm) - Clone any website & UI
+
+---
+
 ![SuperDesign Cover](cover.png)
 
 ### **By:** [AI Jason](https://x.com/jasonzhou1993)
@@ -10,11 +14,12 @@ Works seamlessly with Cursor, Windsurf, Claude Code, and plain VS Code.
 
 > ✨ "Why design one option when you can explore ten?" — SuperDesign
 
+
 [Join discord](https://discord.gg/FYr49d6cQ9)
 
 [Upvote on Hackernews](https://news.ycombinator.com/item?id=44376003)
 
-[Install guide](https://www.superdesign.dev/)
+[Install guide](https://www.superdesign.dev/ide-extension)
 
 ---
 
@@ -36,7 +41,7 @@ Works seamlessly with Cursor, Windsurf, Claude Code, and plain VS Code.
 
 ## 🧠 Works Great With Cursor, Windsurf, Claude Code, VS Code
 
-👉 [Install here](https://www.superdesign.dev/)
+👉 [Install here](https://www.superdesign.dev/ide-extension)
 
 ---
 
@@ -90,7 +95,7 @@ Pull requests are welcome. Star the repo and join us on [Discord](https://discor
 
 ## 🔗 Links
 
-- 🌐 Website: [https://superdesign.dev](https://superdesign.dev)
+- 🌐 Website: [https://superdesign.dev](https://superdesign.dev/ide-extension)
 - 📦 GitHub: [https://github.com/superdesigndev/superdesign](https://github.com/superdesigndev/superdesign)
 - 💬 Discord: [Join the Community](https://discord.gg/XYZ)
 - 🐦 Twitter / X: [@SuperDesignDev](https://x.com/SuperDesignDev)
