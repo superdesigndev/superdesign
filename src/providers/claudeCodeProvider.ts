@@ -343,10 +343,12 @@ Whenever there are UI implementation task, think deeply of the design style firs
 
             let buffer = '';
             const outputs: string[] = [];
+            let wasAborted = false;
 
             if (abortController) {
                 abortController.signal.addEventListener('abort', () => {
                     Logger.info('Aborting claude-code process');
+                    wasAborted = true;
                     child.kill('SIGTERM');
                 });
             }
@@ -389,12 +391,19 @@ Whenever there are UI implementation task, think deeply of the design style firs
             child.on('close', (code) => {
                 Logger.info(`Claude Code process closed with code: ${code}`);
                 Logger.info(`Process outputs collected: ${outputs.length} items`);
-                
+
                 // Process any remaining buffer
                 if (buffer.trim()) {
                     outputs.push(buffer.trim());
                 }
-                
+
+                // If aborted, always resolve successfully
+                if (wasAborted) {
+                    Logger.info('Process was aborted by user, resolving successfully');
+                    resolve(outputs);
+                    return;
+                }
+
                 if (code !== 0 && !abortController?.signal.aborted) {
                     let errorMessage = `Claude Code process exited with code ${code}`;
                     if (code === 2) {

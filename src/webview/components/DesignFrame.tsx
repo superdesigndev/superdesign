@@ -25,6 +25,7 @@ interface DesignFrameProps {
     isDragging?: boolean;
     nonce?: string | null;
     onSendToChat?: (fileName: string, prompt: string) => void;
+    onDelete?: (fileName: string) => void;
 }
 
 const DesignFrame: React.FC<DesignFrameProps> = ({
@@ -42,7 +43,8 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
     onDragStart,
     isDragging = false,
     nonce = null,
-    onSendToChat
+    onSendToChat,
+    onDelete
 }) => {
     const [isLoading, setIsLoading] = React.useState(renderMode === 'iframe');
     const [hasError, setHasError] = React.useState(false);
@@ -50,6 +52,7 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
     const [showCopyDropdown, setShowCopyDropdown] = React.useState(false);
     const [copyButtonState, setCopyButtonState] = React.useState<{ text: string; isSuccess: boolean }>({ text: 'Copy prompt', isSuccess: false });
     const [copyPathButtonState, setCopyPathButtonState] = React.useState<{ text: string; isSuccess: boolean }>({ text: 'Copy design path', isSuccess: false });
+    const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
     const handleClick = () => {
         onSelect(file.name);
@@ -828,6 +831,72 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                         </svg>
                         <span className="btn-text">{copyPathButtonState.text}</span>
                     </button>
+
+                    {/* Delete Button */}
+                    {onDelete && (
+                        <>
+                            <button
+                                className="floating-action-btn delete-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    setShowDeleteConfirm(true);
+                                }}
+                                onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                }}
+                                title="Delete design file"
+                            >
+                                <svg className="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M3 6h18"/>
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                                </svg>
+                                <span className="btn-text">Delete</span>
+                            </button>
+
+                            {/* Delete Confirmation Modal */}
+                            {showDeleteConfirm && (
+                                <div
+                                    className="delete-confirm-overlay"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowDeleteConfirm(false);
+                                    }}
+                                >
+                                    <div
+                                        className="delete-confirm-dialog"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <h3>Delete Design?</h3>
+                                        <p>Are you sure you want to delete "{file.name}"?</p>
+                                        <div className="delete-confirm-buttons">
+                                            <button
+                                                className="delete-confirm-cancel"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowDeleteConfirm(false);
+                                                }}
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                className="delete-confirm-delete"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowDeleteConfirm(false);
+                                                    onDelete(file.name);
+                                                }}
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
             )}
 
