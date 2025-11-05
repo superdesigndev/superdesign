@@ -147,11 +147,13 @@
           "type": "string",
           "enum": [
             "claude-api",
-            "claude-code"
+            "claude-code",
+            "codex-cli"
           ],
           "enumDescriptions": [
             "Use Anthropic API key to communicate with Claude via SDK",
-            "Use local claude binary for enhanced code execution capabilities"
+            "Use local claude binary for enhanced code execution capabilities",
+            "Use local Codex CLI via the official SDK with ChatGPT sign-in or API keys"
           ],
           "default": "claude-api",
           "description": "Choose the LLM provider to use for AI interactions",
@@ -185,6 +187,23 @@
           "description": "Thinking budget tokens for claude-code provider",
           "scope": "application"
         },
+        "superdesign.codexCliModel": {
+          "type": "string",
+          "default": "o4-mini",
+          "description": "Model ID to use with Codex CLI (e.g., o4-mini, gpt-5-codex)",
+          "scope": "application"
+        },
+        "superdesign.codexHome": {
+          "type": "string",
+          "description": "Override Codex home directory (defaults to '~/.codex')",
+          "scope": "application"
+        },
+        "superdesign.codexSkipGitRepoCheck": {
+          "type": "boolean",
+          "default": true,
+          "description": "Skip the Codex CLI git repository check when launching a thread",
+          "scope": "application"
+        },
         "superdesign.openaiApiKey": {
           "type": "string",
           "description": "OpenAI API key for custom agent",
@@ -200,16 +219,17 @@
           "description": "OpenRouter API key for custom agent",
           "scope": "application"
         },
-        "superdesign.aiModelProvider": {
+            "superdesign.aiModelProvider": {
           "type": "string",
           "enum": [
             "openai",
             "anthropic",
             "openrouter",
-            "claude-code"
+            "claude-code",
+            "codex-cli"
           ],
           "default": "anthropic",
-          "description": "AI model provider for custom agent (OpenAI, Anthropic, OpenRouter, or Claude Code - Note: Claude Code should be used via the main LLM Provider setting instead)",
+          "description": "AI model provider for custom agent (OpenAI, Anthropic, OpenRouter, Claude Code, or Codex CLI - note that local providers are managed via the LLM Provider setting)",
           "scope": "application"
         },
         "superdesign.aiModel": {
@@ -261,6 +281,7 @@
     "@ai-sdk/google": "^1.2.19",
     "@ai-sdk/openai": "^1.3.22",
     "@anthropic-ai/claude-code": "^1.0.31",
+    "@openai/codex-sdk": "^0.55.0",
     "@openrouter/ai-sdk-provider": "^0.7.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
