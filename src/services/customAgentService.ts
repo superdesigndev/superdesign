@@ -90,7 +90,6 @@ export class CustomAgentService implements AgentService {
         if (specificModel) {
             this.outputChannel.appendLine(`Using specific AI model: ${specificModel}`);
         }
-        
         // Determine provider from model name if specific model is set, ignore if custom openai url is used
         let effectiveProvider = provider;
         const localProviders = ['claude-code', 'codex-cli'];
@@ -100,7 +99,9 @@ export class CustomAgentService implements AgentService {
             !localProviders.includes(provider);
 
         if (shouldInferFromModel) {
-            if (specificModel.includes('/')) {
+            if (specificModel === 'vscodelm' || specificModel.startsWith('vscodelm')) {
+                effectiveProvider = 'vscodelm';
+            } else if (specificModel.includes('/')) {
                 effectiveProvider = 'openrouter';
             } else if (specificModel.startsWith('claude-')) {
                 effectiveProvider = 'anthropic';
@@ -110,6 +111,10 @@ export class CustomAgentService implements AgentService {
         }
         
         switch (effectiveProvider) {
+            case 'vscodelm':
+                // For VS Code LM, we do not return an AI SDK model; handled in query()
+                // Return a sentinel value to indicate vscodelm flow
+                return { _provider: 'vscodelm', _model: specificModel || 'vscodelm/auto' } as any;
             case 'openrouter':
                 const openrouterKey = config.get<string>('openrouterApiKey');
                 if (!openrouterKey) {
@@ -707,9 +712,26 @@ I've created the html design, please reveiw and let me know if you need any chan
                 generateTheme: createThemeTool(executionContext)
             };
 
+            // Prepare model/provider
+            const selectedModel = this.getModel();
+            
+            // VS Code LM API branch
+            if ((selectedModel as any)?._provider === 'vscodelm') {
+                this.outputChannel.appendLine('Using VS Code LM API provider flow');
+                await this.queryViaVsCodeLM(
+                    usingConversationHistory ? undefined : prompt,
+                    usingConversationHistory ? conversationHistory : undefined,
+                    abortController,
+                    onMessage
+                );
+                this.outputChannel.appendLine(`Query completed successfully. Total messages: ${responseMessages.length}`);
+                this.outputChannel.appendLine(`Complete response: "${messageBuffer}"`);
+                return responseMessages;
+            }
+
             // Prepare AI SDK input based on available data
             const streamTextConfig: any = {
-                model: this.getModel(),
+                model: selectedModel,
                 system: this.getSystemPrompt(),
                 tools: tools,
                 toolCallStreaming: true,
@@ -959,6 +981,85 @@ I've created the html design, please reveiw and let me know if you need any chan
             }
             
             throw error;
+        }
+    }
+
+    private async queryViaVsCodeLM(
+        prompt?: string,
+        conversationHistory?: CoreMessage[],
+        abortController?: AbortController,
+        onMessage?: (message: any) => void
+    ): Promise<void> {
+        // Minimal integration per VSCodeLMAPI.md guidance
+        // Note: VS Code LM API is experimental and available only in VS Code runtime
+        try {
+            const selector: any = {} as any; // use default selection
+            const models = await (vscode as any).lm.selectChatModels(selector);
+            if (!models || models.length === 0) {
+                throw new Error('No available VS Code language models found (please ensure you have installed and signed in to a provider extension).');
+            }
+            const client = models[0];
+
+            // Build messages: put system as Assistant (compatible approach), then history/prompt
+            const messages: any[] = [];
+            const systemPrompt = this.getSystemPrompt();
+            messages.push((vscode as any).LanguageModelChatMessage.Assistant(systemPrompt));
+
+            if (conversationHistory && conversationHistory.length > 0) {
+                for (const msg of conversationHistory) {
+                    if (msg.role === 'user') {
+                        if (typeof msg.content === 'string') {
+                            messages.push((vscode as any).LanguageModelChatMessage.User(msg.content));
+                        } else if (Array.isArray(msg.content)) {
+                            const textParts = msg.content
+                                .filter((p: any) => p.type === 'text' && typeof p.text === 'string')
+                                .map((p: any) => new (vscode as any).LanguageModelTextPart(p.text));
+                            if (textParts.length > 0) {
+                                messages.push((vscode as any).LanguageModelChatMessage.User(textParts));
+                            }
+                        }
+                    } else if (msg.role === 'assistant') {
+                        if (typeof msg.content === 'string') {
+                            messages.push((vscode as any).LanguageModelChatMessage.Assistant(msg.content));
+                        } else if (Array.isArray(msg.content)) {
+                            const textParts = msg.content
+                                .filter((p: any) => p.type === 'text' && typeof p.text === 'string')
+                                .map((p: any) => new (vscode as any).LanguageModelTextPart(p.text));
+                            if (textParts.length > 0) {
+                                messages.push((vscode as any).LanguageModelChatMessage.Assistant(textParts));
+                            }
+                        }
+                    }
+                }
+            } else if (prompt) {
+                messages.push((vscode as any).LanguageModelChatMessage.User(prompt));
+            }
+
+            const token = (abortController as any)?.token;
+            const response = await client.sendRequest(messages, { justification: 'Superdesign wants to use VS Code LM model' }, token);
+
+            for await (const chunk of response.stream) {
+                if (chunk instanceof (vscode as any).LanguageModelTextPart) {
+                    const text = chunk.value;
+                    const textMessage: CoreMessage = { role: 'assistant', content: text };
+                    onMessage?.(textMessage);
+                } else if (chunk instanceof (vscode as any).LanguageModelToolCallPart) {
+                    const toolCallMessage: CoreMessage = {
+                        role: 'assistant',
+                        content: [{
+                            type: 'tool-call',
+                            toolCallId: chunk.callId,
+                            toolName: chunk.name,
+                            args: chunk.input || {}
+                        }]
+                    } as any;
+                    onMessage?.(toolCallMessage);
+                }
+            }
+
+        } catch (err) {
+            this.outputChannel.appendLine(`VS Code LM flow error: ${err}`);
+            throw err;
         }
     }
 

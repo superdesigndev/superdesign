@@ -19,7 +19,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
     const { chatHistory, isLoading, sendMessage, clearHistory, setChatHistory } = useChat(vscode);
     const { isFirstTime, isLoading: isCheckingFirstTime, markAsReturningUser, resetFirstTimeUser } = useFirstTimeUser();
     const [inputMessage, setInputMessage] = useState('');
-    const [selectedModel, setSelectedModel] = useState<string>('claude-4-sonnet-20250514');
+    const [selectedModel, setSelectedModel] = useState<string>('claude-3-5-sonnet-20241022');
     const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({});
     const [showFullContent, setShowFullContent] = useState<{[key: string]: boolean}>({});
     const [currentContext, setCurrentContext] = useState<{fileName: string; type: string} | null>(null);
@@ -54,12 +54,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                     case 'openai':
                         fallbackModel = 'gpt-4o';
                         break;
+                    case 'vscodelm':
+                        fallbackModel = 'vscodelm/auto';
+                        break;
                     case 'openrouter':
                         fallbackModel = 'anthropic/claude-3-7-sonnet-20250219';
                         break;
                     case 'anthropic':
                     default:
-                        fallbackModel = 'claude-4-sonnet-20250514';
+                        fallbackModel = 'claude-3-5-sonnet-20241022';
                         break;
                 }
                 setSelectedModel(message.model || fallbackModel);
@@ -1445,6 +1448,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                                         selectedModel={selectedModel}
                                         onModelChange={handleModelChange}
                                         disabled={isLoading || showWelcome}
+                                        vscode={vscode}
                                     />
                                 </div>
                             </div>

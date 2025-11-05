@@ -137,7 +137,6 @@ export class ChatMessageService {
                 let effectiveProvider = provider;
                 let providerName = 'AI';
                 let configureCommand = 'superdesign.configureApiKey';
-                
                 const localProviders = ['claude-code', 'codex-cli'];
                 const shouldInferFromModel =
                     specificModel &&
@@ -145,7 +144,9 @@ export class ChatMessageService {
                     !localProviders.includes(provider);
 
                 if (shouldInferFromModel) {
-                    if (specificModel.includes('/')) {
+                    if (specificModel === 'vscodelm' || specificModel.startsWith('vscodelm')) {
+                        effectiveProvider = 'vscodelm';
+                    } else if (specificModel.includes('/')) {
                         effectiveProvider = 'openrouter';
                     } else if (specificModel.startsWith('claude-')) {
                         effectiveProvider = 'anthropic';
@@ -155,6 +156,13 @@ export class ChatMessageService {
                 }
                 
                 switch (effectiveProvider) {
+                    case 'vscodelm':
+                        // VS Code LM does not require an API Key. Show an English error message and return.
+                        webview.postMessage({
+                            command: 'chatError',
+                            error: 'VS Code LM is unavailable (no accessible language model or permission detected). Please ensure you have installed and signed in to the relevant provider extension (e.g., GitHub Copilot) in VS Code.'
+                        });
+                        return;
                     case 'openrouter':
                         providerName = 'OpenRouter';
                         configureCommand = 'superdesign.configureOpenRouterApiKey';

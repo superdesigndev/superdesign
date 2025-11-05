@@ -219,17 +219,18 @@
           "description": "OpenRouter API key for custom agent",
           "scope": "application"
         },
-            "superdesign.aiModelProvider": {
+        "superdesign.aiModelProvider": {
           "type": "string",
           "enum": [
             "openai",
             "anthropic",
             "openrouter",
             "claude-code",
-            "codex-cli"
+            "codex-cli",
+            "vscodelm"
           ],
           "default": "anthropic",
-          "description": "AI model provider for custom agent (OpenAI, Anthropic, OpenRouter, Claude Code, or Codex CLI - note that local providers are managed via the LLM Provider setting)",
+          "description": "AI model provider for custom agent (OpenAI, Anthropic, OpenRouter, VS Code LM, Claude Code, or Codex CLI - note that local providers are managed via the LLM Provider setting)",
           "scope": "application"
         },
         "superdesign.aiModel": {
@@ -248,6 +249,7 @@
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
     "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "build-vsix": "npm run package && vsce package",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",

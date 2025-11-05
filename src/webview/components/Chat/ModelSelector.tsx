@@ -5,6 +5,7 @@ interface ModelSelectorProps {
     selectedModel: string;
     onModelChange: (model: string) => void;
     disabled?: boolean;
+    vscode?: any;
 }
 
 interface ModelOption {
@@ -14,14 +15,18 @@ interface ModelOption {
     category: string;
 }
 
-const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelChange, disabled }) => {
+const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelChange, disabled, vscode }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
     const triggerRef = useRef<HTMLButtonElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
+    const [vsCodeLmModels, setVsCodeLmModels] = useState<ModelOption[]>([]);
+    const [vsCodeLmError, setVsCodeLmError] = useState<string | null>(null);
 
-    const models: ModelOption[] = [
+    const baseModels: ModelOption[] = [
+        // VS Code LM API (auto)
+        { id: 'vscodelm/auto', name: 'VS Code LM (Auto)', provider: 'VS Code LM API', category: 'Local' },
         // Anthropic
         { id: 'claude-4-opus-20250514', name: 'Claude 4 Opus', provider: 'Anthropic', category: 'Premium' },
         { id: 'claude-4-sonnet-20250514', name: 'Claude 4 Sonnet', provider: 'Anthropic', category: 'Balanced' },
@@ -65,12 +70,19 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
         { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', provider: 'OpenAI', category: 'Fast' }
     ];
 
-    const filteredModels = models.filter(model =>
+    // Merge dynamic VS Code LM models (if any), keeping auto option first
+    const allModels: ModelOption[] = [
+        ...baseModels,
+        ...vsCodeLmModels
+            .filter(m => m.id !== 'vscodelm/auto')
+    ];
+
+    const filteredModels = allModels.filter(model =>
         model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         model.provider.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const selectedModelName = models.find(m => m.id === selectedModel)?.name || selectedModel;
+    const selectedModelName = allModels.find(m => m.id === selectedModel)?.name || selectedModel;
 
     const calculateDropdownPosition = () => {
         if (!triggerRef.current) return;
@@ -128,6 +140,14 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
             document.addEventListener('mousedown', handleClickOutside);
             window.addEventListener('scroll', handleScroll, true);
             window.addEventListener('resize', handleResize);
+            // When opening, request VS Code LM models if possible
+            try {
+                if (vscode && typeof vscode.postMessage === 'function') {
+                    vscode.postMessage({ command: 'getVsCodeLMModels' });
+                }
+            } catch (e) {
+                // ignore
+            }
         }
 
         return () => {
@@ -136,6 +156,30 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
             window.removeEventListener('resize', handleResize);
         };
     }, [isOpen]);
+
+    // Listen for VS Code LM models
+    useEffect(() => {
+        const handler = (event: MessageEvent) => {
+            const message: any = event.data;
+            if (message?.command === 'vsCodeLmModels') {
+                if (Array.isArray(message.models)) {
+                    const mapped: ModelOption[] = message.models.map((m: any) => ({
+                        id: typeof m.id === 'string' ? m.id : `vscodelm/${m.vendor || 'unknown'}/${m.family || m.name || 'model'}`,
+                        name: typeof m.label === 'string' ? m.label : `${m.vendor || 'vendor'}${m.family ? ' / ' + m.family : (m.name ? ' / ' + m.name : '')}`,
+                        provider: 'VS Code LM API',
+                        category: 'Local'
+                    }));
+                    setVsCodeLmModels(mapped);
+                    setVsCodeLmError(null);
+                } else {
+                    setVsCodeLmModels([]);
+                    setVsCodeLmError(message.error || null);
+                }
+            }
+        };
+        window.addEventListener('message', handler);
+        return () => window.removeEventListener('message', handler);
+    }, []);
 
     const handleModelSelect = (modelId: string) => {
         onModelChange(modelId);
