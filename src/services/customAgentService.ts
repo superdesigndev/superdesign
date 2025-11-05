@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { AgentService, ExecutionContext } from '../types/agent';
-import { ClaudeCodeService } from './claudeCodeService';
+import { ClaudeCodeService, LLMProviderOptions } from './claudeCodeService';
 import { createReadTool } from '../tools/read-tool';
 import { createWriteTool } from '../tools/write-tool';
 import { createBashTool } from '../tools/bash-tool';
@@ -93,7 +93,13 @@ export class CustomAgentService implements AgentService {
         
         // Determine provider from model name if specific model is set, ignore if custom openai url is used
         let effectiveProvider = provider;
-        if (specificModel && !(!openaiUrl && provider === 'openai')) {
+        const localProviders = ['claude-code', 'codex-cli'];
+        const shouldInferFromModel =
+            specificModel &&
+            !(!openaiUrl && provider === 'openai') &&
+            !localProviders.includes(provider);
+
+        if (shouldInferFromModel) {
             if (specificModel.includes('/')) {
                 effectiveProvider = 'openrouter';
             } else if (specificModel.startsWith('claude-')) {
@@ -145,11 +151,13 @@ export class CustomAgentService implements AgentService {
             case 'claude-code':
                 // This case is handled in the query method before reaching this point
                 throw new Error('Claude Code provider should be handled before getModel() is called');
+            
+            case 'codex-cli':
+                throw new Error('Codex CLI provider should be handled before getModel() is called');
                 
             case 'openai':
             default:
                 const openaiKey = config.get<string>('openaiApiKey');
-                 const openaiUrl = config.get<string>('openaiUrl');
                 if (!openaiKey) {
                     throw new Error('OpenAI API key not configured. Please run "Configure OpenAI API Key" command.');
                 }
@@ -191,6 +199,9 @@ export class CustomAgentService implements AgentService {
                     break;
                 case 'claude-code':
                     modelName = 'claude-code';
+                    break;
+                case 'codex-cli':
+                    modelName = 'codex-cli';
                     break;
                 case 'anthropic':
                 default:
@@ -601,14 +612,25 @@ I've created the html design, please reveiw and let me know if you need any chan
             await this.setupWorkingDirectory();
         }
 
-        // Check if claude-code is selected and use ClaudeCodeService instead
+        // Check if local CLI providers are selected and use ClaudeCodeService (LLM provider bridge) instead
         const config = vscode.workspace.getConfiguration('superdesign');
         const aiModelProvider = config.get<string>('aiModelProvider', 'anthropic');
         const llmProvider = config.get<string>('llmProvider', 'claude-api');
+        const specificModel = config.get<string>('aiModel');
         
-        // If either setting is set to claude-code, use ClaudeCodeService
-        if (aiModelProvider === 'claude-code' || llmProvider === 'claude-code') {
-            this.outputChannel.appendLine('Using ClaudeCodeService for claude-code provider');
+        const localProviders = ['claude-code', 'codex-cli'];
+        const isUsingLocalProvider =
+            localProviders.includes(aiModelProvider) || localProviders.includes(llmProvider);
+
+        if (isUsingLocalProvider) {
+            const activeLocalProvider =
+                llmProvider === 'codex-cli' || aiModelProvider === 'codex-cli'
+                    ? 'codex-cli'
+                    : 'claude-code';
+
+            this.outputChannel.appendLine(
+                `Using ClaudeCodeService bridge for ${activeLocalProvider} provider`
+            );
             
             // Convert conversation history to prompt for ClaudeCodeService
             let queryPrompt = '';
@@ -624,17 +646,32 @@ I've created the html design, please reveiw and let me know if you need any chan
             }
             
             // Use ClaudeCodeService with streaming callback
+            const providerOptions: Partial<LLMProviderOptions> = {
+                streaming: true,
+                cwd: options?.cwd ?? this.workingDirectory
+            };
+
+            if (specificModel) {
+                providerOptions.modelId = specificModel;
+            }
+
+            if (options && typeof options === 'object') {
+                providerOptions.allowedTools = options.allowedTools ?? providerOptions.allowedTools;
+                providerOptions.permissionMode =
+                    options.permissionMode ?? providerOptions.permissionMode;
+            }
+
             const claudeMessages = await this.claudeCodeService.query(
                 queryPrompt,
-                { streaming: true },
+                providerOptions,
                 abortController,
                 onMessage
             );
             
             // Convert LLMMessages to expected format
             return claudeMessages.map(msg => ({
-                role: msg.role,
-                content: msg.content
+                role: (msg as any).role || msg.type || 'assistant',
+                content: msg.content ?? (msg as any).text ?? ''
             }));
         }
 

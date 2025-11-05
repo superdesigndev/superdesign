@@ -138,7 +138,13 @@ export class ChatMessageService {
                 let providerName = 'AI';
                 let configureCommand = 'superdesign.configureApiKey';
                 
-                if (specificModel && !(!openaiUrl && provider === 'openai')) {
+                const localProviders = ['claude-code', 'codex-cli'];
+                const shouldInferFromModel =
+                    specificModel &&
+                    !(!openaiUrl && provider === 'openai') &&
+                    !localProviders.includes(provider);
+
+                if (shouldInferFromModel) {
                     if (specificModel.includes('/')) {
                         effectiveProvider = 'openrouter';
                     } else if (specificModel.startsWith('claude-')) {
@@ -159,6 +165,10 @@ export class ChatMessageService {
                         break;
                     case 'claude-code':
                         providerName = 'Claude Code';
+                        configureCommand = 'workbench.action.openSettings';
+                        break;
+                    case 'codex-cli':
+                        providerName = 'Codex CLI';
                         configureCommand = 'workbench.action.openSettings';
                         break;
                     case 'openai':

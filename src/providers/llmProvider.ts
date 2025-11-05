@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 export interface LLMMessage {
     type: string;
+    role?: string;
     subtype?: string;
     message?: any;
     content?: string;
@@ -23,6 +24,7 @@ export interface LLMProviderOptions {
     customSystemPrompt?: string;
     thinkingBudgetTokens?: number;
     resume?: string;
+    modelId?: string;
     [key: string]: any;
 }
 
@@ -70,7 +72,8 @@ export abstract class LLMProvider {
 
 export enum LLMProviderType {
     CLAUDE_API = 'claude-api',
-    CLAUDE_CODE = 'claude-code'
+    CLAUDE_CODE = 'claude-code',
+    CODEX = 'codex-cli'
 }
 
 export interface LLMProviderConfig {

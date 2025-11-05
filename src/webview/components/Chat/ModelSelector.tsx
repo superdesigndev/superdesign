@@ -27,6 +27,9 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
         { id: 'claude-4-sonnet-20250514', name: 'Claude 4 Sonnet', provider: 'Anthropic', category: 'Balanced' },
         { id: 'claude-3-7-sonnet-20250219', name: 'Claude 3.7 Sonnet', provider: 'Anthropic', category: 'Balanced' },
         { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', category: 'Balanced' },
+        // Codex CLI
+        { id: 'o4-mini', name: 'Codex o4-mini', provider: 'Codex CLI', category: 'Local' },
+        { id: 'gpt-5-codex', name: 'Codex GPT-5', provider: 'Codex CLI', category: 'Premium' },
         // Google (OpenRouter)
         { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'OpenRouter (Google)', category: 'Balanced' },
         // Meta (OpenRouter)

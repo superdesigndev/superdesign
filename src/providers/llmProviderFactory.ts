@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { LLMProvider, LLMProviderType } from './llmProvider';
 import { ClaudeApiProvider } from './claudeApiProvider';
 import { ClaudeCodeProvider } from './claudeCodeProvider';
+import { CodexProvider } from './codexProvider';
 import { Logger } from '../services/logger';
 
 export class LLMProviderFactory {
@@ -56,6 +57,9 @@ export class LLMProviderFactory {
             case LLMProviderType.CLAUDE_CODE:
                 return new ClaudeCodeProvider(this.outputChannel);
             
+            case LLMProviderType.CODEX:
+                return new CodexProvider(this.outputChannel);
+            
             default:
                 throw new Error(`Unknown provider type: ${providerType}`);
         }
@@ -69,6 +73,8 @@ export class LLMProviderFactory {
         switch (providerType.toLowerCase()) {
             case 'claude-code':
                 return LLMProviderType.CLAUDE_CODE;
+            case 'codex-cli':
+                return LLMProviderType.CODEX;
             case 'claude-api':
             default:
                 return LLMProviderType.CLAUDE_API;
@@ -114,6 +120,11 @@ export class LLMProviderFactory {
                 type: LLMProviderType.CLAUDE_CODE,
                 name: 'Claude Code Binary',
                 description: 'Uses local claude-code binary for enhanced code execution capabilities'
+            },
+            {
+                type: LLMProviderType.CODEX,
+                name: 'Codex CLI',
+                description: 'Uses local Codex CLI via the official SDK with ChatGPT, Codex API, or OpenAI API authentication'
             }
         ];
     }
@@ -137,6 +148,9 @@ export class LLMProviderFactory {
                         break;
                     case LLMProviderType.CLAUDE_CODE:
                         errorMessage = 'Claude Code binary is not available. Please install claude-code CLI tool.';
+                        break;
+                    case LLMProviderType.CODEX:
+                        errorMessage = 'Codex CLI authentication is not configured. Run `codex` to sign in or provide CODEX/OpenAI API keys.';
                         break;
                 }
                 
