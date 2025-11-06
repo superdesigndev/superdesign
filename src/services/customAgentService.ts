@@ -92,7 +92,7 @@ export class CustomAgentService implements AgentService {
         }
         // Determine provider from model name if specific model is set, ignore if custom openai url is used
         let effectiveProvider = provider;
-        const localProviders = ['claude-code', 'codex-cli'];
+        const localProviders = ['claude-code', 'codex-cli', 'vscodelm'];
         const shouldInferFromModel =
             specificModel &&
             !(!openaiUrl && provider === 'openai') &&
@@ -112,9 +112,8 @@ export class CustomAgentService implements AgentService {
         
         switch (effectiveProvider) {
             case 'vscodelm':
-                // For VS Code LM, we do not return an AI SDK model; handled in query()
-                // Return a sentinel value to indicate vscodelm flow
-                return { _provider: 'vscodelm', _model: specificModel || 'vscodelm/auto' } as any;
+                // This case is handled in the query method before reaching this point
+                throw new Error('VS Code LM provider should be handled before getModel() is called');
             case 'openrouter':
                 const openrouterKey = config.get<string>('openrouterApiKey');
                 if (!openrouterKey) {
@@ -623,15 +622,19 @@ I've created the html design, please reveiw and let me know if you need any chan
         const llmProvider = config.get<string>('llmProvider', 'claude-api');
         const specificModel = config.get<string>('aiModel');
         
-        const localProviders = ['claude-code', 'codex-cli'];
+        const localProviders = ['claude-code', 'codex-cli', 'vscodelm'];
         const isUsingLocalProvider =
             localProviders.includes(aiModelProvider) || localProviders.includes(llmProvider);
 
         if (isUsingLocalProvider) {
-            const activeLocalProvider =
-                llmProvider === 'codex-cli' || aiModelProvider === 'codex-cli'
-                    ? 'codex-cli'
-                    : 'claude-code';
+            let activeLocalProvider: string;
+            if (llmProvider === 'codex-cli' || aiModelProvider === 'codex-cli') {
+                activeLocalProvider = 'codex-cli';
+            } else if (llmProvider === 'vscodelm' || aiModelProvider === 'vscodelm') {
+                activeLocalProvider = 'vscodelm';
+            } else {
+                activeLocalProvider = 'claude-code';
+            }
 
             this.outputChannel.appendLine(
                 `Using ClaudeCodeService bridge for ${activeLocalProvider} provider`
@@ -653,11 +656,14 @@ I've created the html design, please reveiw and let me know if you need any chan
             // Use ClaudeCodeService with streaming callback
             const providerOptions: Partial<LLMProviderOptions> = {
                 streaming: true,
-                cwd: options?.cwd ?? this.workingDirectory
+                cwd: options?.cwd ?? this.workingDirectory,
+                customSystemPrompt: this.getSystemPrompt()
             };
 
             if (specificModel) {
                 providerOptions.modelId = specificModel;
+            } else if (activeLocalProvider === 'vscodelm') {
+                providerOptions.modelId = 'vscodelm/auto';
             }
 
             if (options && typeof options === 'object') {
@@ -712,26 +718,9 @@ I've created the html design, please reveiw and let me know if you need any chan
                 generateTheme: createThemeTool(executionContext)
             };
 
-            // Prepare model/provider
-            const selectedModel = this.getModel();
-            
-            // VS Code LM API branch
-            if ((selectedModel as any)?._provider === 'vscodelm') {
-                this.outputChannel.appendLine('Using VS Code LM API provider flow');
-                await this.queryViaVsCodeLM(
-                    usingConversationHistory ? undefined : prompt,
-                    usingConversationHistory ? conversationHistory : undefined,
-                    abortController,
-                    onMessage
-                );
-                this.outputChannel.appendLine(`Query completed successfully. Total messages: ${responseMessages.length}`);
-                this.outputChannel.appendLine(`Complete response: "${messageBuffer}"`);
-                return responseMessages;
-            }
-
             // Prepare AI SDK input based on available data
             const streamTextConfig: any = {
-                model: selectedModel,
+                model: this.getModel(),
                 system: this.getSystemPrompt(),
                 tools: tools,
                 toolCallStreaming: true,
@@ -984,85 +973,6 @@ I've created the html design, please reveiw and let me know if you need any chan
         }
     }
 
-    private async queryViaVsCodeLM(
-        prompt?: string,
-        conversationHistory?: CoreMessage[],
-        abortController?: AbortController,
-        onMessage?: (message: any) => void
-    ): Promise<void> {
-        // Minimal integration per VSCodeLMAPI.md guidance
-        // Note: VS Code LM API is experimental and available only in VS Code runtime
-        try {
-            const selector: any = {} as any; // use default selection
-            const models = await (vscode as any).lm.selectChatModels(selector);
-            if (!models || models.length === 0) {
-                throw new Error('No available VS Code language models found (please ensure you have installed and signed in to a provider extension).');
-            }
-            const client = models[0];
-
-            // Build messages: put system as Assistant (compatible approach), then history/prompt
-            const messages: any[] = [];
-            const systemPrompt = this.getSystemPrompt();
-            messages.push((vscode as any).LanguageModelChatMessage.Assistant(systemPrompt));
-
-            if (conversationHistory && conversationHistory.length > 0) {
-                for (const msg of conversationHistory) {
-                    if (msg.role === 'user') {
-                        if (typeof msg.content === 'string') {
-                            messages.push((vscode as any).LanguageModelChatMessage.User(msg.content));
-                        } else if (Array.isArray(msg.content)) {
-                            const textParts = msg.content
-                                .filter((p: any) => p.type === 'text' && typeof p.text === 'string')
-                                .map((p: any) => new (vscode as any).LanguageModelTextPart(p.text));
-                            if (textParts.length > 0) {
-                                messages.push((vscode as any).LanguageModelChatMessage.User(textParts));
-                            }
-                        }
-                    } else if (msg.role === 'assistant') {
-                        if (typeof msg.content === 'string') {
-                            messages.push((vscode as any).LanguageModelChatMessage.Assistant(msg.content));
-                        } else if (Array.isArray(msg.content)) {
-                            const textParts = msg.content
-                                .filter((p: any) => p.type === 'text' && typeof p.text === 'string')
-                                .map((p: any) => new (vscode as any).LanguageModelTextPart(p.text));
-                            if (textParts.length > 0) {
-                                messages.push((vscode as any).LanguageModelChatMessage.Assistant(textParts));
-                            }
-                        }
-                    }
-                }
-            } else if (prompt) {
-                messages.push((vscode as any).LanguageModelChatMessage.User(prompt));
-            }
-
-            const token = (abortController as any)?.token;
-            const response = await client.sendRequest(messages, { justification: 'Superdesign wants to use VS Code LM model' }, token);
-
-            for await (const chunk of response.stream) {
-                if (chunk instanceof (vscode as any).LanguageModelTextPart) {
-                    const text = chunk.value;
-                    const textMessage: CoreMessage = { role: 'assistant', content: text };
-                    onMessage?.(textMessage);
-                } else if (chunk instanceof (vscode as any).LanguageModelToolCallPart) {
-                    const toolCallMessage: CoreMessage = {
-                        role: 'assistant',
-                        content: [{
-                            type: 'tool-call',
-                            toolCallId: chunk.callId,
-                            toolName: chunk.name,
-                            args: chunk.input || {}
-                        }]
-                    } as any;
-                    onMessage?.(toolCallMessage);
-                }
-            }
-
-        } catch (err) {
-            this.outputChannel.appendLine(`VS Code LM flow error: ${err}`);
-            throw err;
-        }
-    }
-
     get isReady(): boolean {
         return this.isInitialized;
     }
@@ -1102,7 +1012,9 @@ I've created the html design, please reveiw and let me know if you need any chan
             case 'anthropic':
                 return !!config.get<string>('anthropicApiKey');
             case 'claude-code':
-                return true; // Claude Code doesn't require an API key
+            case 'codex-cli':
+            case 'vscodelm':
+                return true; // Local providers rely on local authentication or binaries
             case 'openai':
             default:
                 return !!config.get<string>('openaiApiKey');

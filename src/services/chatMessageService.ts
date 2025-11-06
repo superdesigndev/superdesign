@@ -137,7 +137,7 @@ export class ChatMessageService {
                 let effectiveProvider = provider;
                 let providerName = 'AI';
                 let configureCommand = 'superdesign.configureApiKey';
-                const localProviders = ['claude-code', 'codex-cli'];
+                const localProviders = ['claude-code', 'codex-cli', 'vscodelm'];
                 const shouldInferFromModel =
                     specificModel &&
                     !(!openaiUrl && provider === 'openai') &&

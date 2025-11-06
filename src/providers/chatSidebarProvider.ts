@@ -122,7 +122,12 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
 
     private async handleGetCurrentProvider(webview: vscode.Webview) {
         const config = vscode.workspace.getConfiguration('superdesign');
-        const currentProvider = config.get<string>('aiModelProvider', 'anthropic');
+        const configuredModelProvider = config.get<string>('aiModelProvider', 'anthropic');
+        const configuredLlmProvider = config.get<string>('llmProvider', 'claude-api');
+        const localProviders = ['claude-code', 'codex-cli', 'vscodelm'];
+        const currentProvider = localProviders.includes(configuredLlmProvider)
+            ? configuredLlmProvider
+            : configuredModelProvider;
         const currentModel = config.get<string>('aiModel');
         
         // If no specific model is set, use defaults
@@ -133,6 +138,9 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                 break;
             case 'vscodelm':
                 defaultModel = 'vscodelm/auto';
+                break;
+            case 'codex-cli':
+                defaultModel = 'o4-mini';
                 break;
             case 'openrouter':
                 defaultModel = 'anthropic/claude-3-7-sonnet-20250219';
@@ -186,6 +194,13 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             // Update both provider and specific model
             await config.update('aiModelProvider', provider, vscode.ConfigurationTarget.Global);
             await config.update('aiModel', model, vscode.ConfigurationTarget.Global);
+
+            // Keep llmProvider (used by ClaudeCodeService bridge) in sync for local providers
+            const llmProviderValue =
+                provider === 'claude-code' || provider === 'codex-cli' || provider === 'vscodelm'
+                    ? (provider === 'claude-code' ? 'claude-code' : provider === 'codex-cli' ? 'codex-cli' : 'vscodelm')
+                    : 'claude-api';
+            await config.update('llmProvider', llmProviderValue, vscode.ConfigurationTarget.Global);
             
             // Check if the API key is configured for the selected provider (skip for vscodelm)
             if (provider !== 'vscodelm') {

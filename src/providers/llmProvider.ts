@@ -73,7 +73,8 @@ export abstract class LLMProvider {
 export enum LLMProviderType {
     CLAUDE_API = 'claude-api',
     CLAUDE_CODE = 'claude-code',
-    CODEX = 'codex-cli'
+    CODEX = 'codex-cli',
+    VSCODE_LM = 'vscodelm'
 }
 
 export interface LLMProviderConfig {

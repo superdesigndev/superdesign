@@ -148,12 +148,14 @@
           "enum": [
             "claude-api",
             "claude-code",
-            "codex-cli"
+            "codex-cli",
+            "vscodelm"
           ],
           "enumDescriptions": [
             "Use Anthropic API key to communicate with Claude via SDK",
             "Use local claude binary for enhanced code execution capabilities",
-            "Use local Codex CLI via the official SDK with ChatGPT sign-in or API keys"
+            "Use local Codex CLI via the official SDK with ChatGPT sign-in or API keys",
+            "Use the VS Code LM API (e.g., GitHub Copilot) available in the current VS Code session"
           ],
           "default": "claude-api",
           "description": "Choose the LLM provider to use for AI interactions",

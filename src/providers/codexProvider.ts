@@ -338,7 +338,14 @@ export class CodexProvider extends LLMProvider {
             typeof this.authStatus === 'object' &&
             this.authStatus.status === 'logged_in';
 
-        return Boolean(envConfigured || authFileExists || statusLoggedIn);
+        const chatgptSubscribed =
+            this.authStatus &&
+            typeof this.authStatus === 'object' &&
+            (this.authStatus.status === 'chatgpt_subscriber' ||
+                (typeof this.authStatus.plan === 'string' &&
+                    this.authStatus.plan.toLowerCase().includes('chatgpt')));
+
+        return Boolean(envConfigured || authFileExists || statusLoggedIn || chatgptSubscribed);
     }
 
     async refreshConfiguration(): Promise<boolean> {

@@ -3,6 +3,7 @@ import { LLMProvider, LLMProviderType } from './llmProvider';
 import { ClaudeApiProvider } from './claudeApiProvider';
 import { ClaudeCodeProvider } from './claudeCodeProvider';
 import { CodexProvider } from './codexProvider';
+import { VsCodeLmProvider } from './vscodeLmProvider';
 import { Logger } from '../services/logger';
 
 export class LLMProviderFactory {
@@ -59,6 +60,9 @@ export class LLMProviderFactory {
             
             case LLMProviderType.CODEX:
                 return new CodexProvider(this.outputChannel);
+
+            case LLMProviderType.VSCODE_LM:
+                return new VsCodeLmProvider(this.outputChannel);
             
             default:
                 throw new Error(`Unknown provider type: ${providerType}`);
@@ -75,6 +79,8 @@ export class LLMProviderFactory {
                 return LLMProviderType.CLAUDE_CODE;
             case 'codex-cli':
                 return LLMProviderType.CODEX;
+            case 'vscodelm':
+                return LLMProviderType.VSCODE_LM;
             case 'claude-api':
             default:
                 return LLMProviderType.CLAUDE_API;
@@ -125,6 +131,11 @@ export class LLMProviderFactory {
                 type: LLMProviderType.CODEX,
                 name: 'Codex CLI',
                 description: 'Uses local Codex CLI via the official SDK with ChatGPT, Codex API, or OpenAI API authentication'
+            },
+            {
+                type: LLMProviderType.VSCODE_LM,
+                name: 'VS Code LM',
+                description: 'Uses GitHub Copilot or other VS Code LM providers via the local VS Code LM API'
             }
         ];
     }
@@ -150,7 +161,10 @@ export class LLMProviderFactory {
                         errorMessage = 'Claude Code binary is not available. Please install claude-code CLI tool.';
                         break;
                     case LLMProviderType.CODEX:
-                        errorMessage = 'Codex CLI authentication is not configured. Run `codex` to sign in or provide CODEX/OpenAI API keys.';
+                        errorMessage = 'Codex CLI authentication is not configured. Run `codex` to sign in with a ChatGPT subscription (local projects only) or provide CODEX/OpenAI API keys.';
+                        break;
+                    case LLMProviderType.VSCODE_LM:
+                        errorMessage = 'VS Code LM provider is unavailable. Install and sign in to GitHub Copilot (or another LM provider) inside VS Code.';
                         break;
                 }
                 
