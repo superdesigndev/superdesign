@@ -6,6 +6,7 @@ import { Logger } from './logger';
 
 export class ChatMessageService {
     private currentRequestController?: AbortController;
+    private degradedToastShown = false;
 
     constructor(
         private agentService: AgentService,
@@ -14,6 +15,7 @@ export class ChatMessageService {
 
     async handleChatMessage(message: any, webview: vscode.Webview): Promise<void> {
         try {
+            this.degradedToastShown = false;
             const chatHistory: CoreMessage[] = message.chatHistory || [];
             const latestMessage = message.message || '';
             const messageContent = message.messageContent || latestMessage;
@@ -215,6 +217,20 @@ export class ChatMessageService {
     private handleStreamMessage(message: CoreMessage, webview: vscode.Webview): void {
         Logger.debug(`Handling CoreMessage: ${JSON.stringify(message, null, 2)}`);
         
+        const metadata = (message as any)?.metadata;
+
+        if (!this.degradedToastShown && metadata?.degraded) {
+            this.degradedToastShown = true;
+            vscode.window.showWarningMessage(
+                'VS Code LM is responding with limited functionality. Ensure GitHub Copilot access is enabled or adjust Superdesign VS Code LM settings.',
+                'Open Settings'
+            ).then((selection) => {
+                if (selection === 'Open Settings') {
+                    vscode.commands.executeCommand('workbench.action.openSettings', '@ext:iganbold.superdesign superdesign.aiModel');
+                }
+            });
+        }
+        
         // Check if this is an update to existing message
         const isUpdate = (message as any)._isUpdate;
         const updateToolId = (message as any)._updateToolId;
@@ -224,11 +240,11 @@ export class ChatMessageService {
             if (typeof message.content === 'string') {
                 // Simple text content
                 if (message.content.trim()) {
-                    webview.postMessage({
-                        command: 'chatResponseChunk',
-                        messageType: 'assistant',
-                        content: message.content,
-                        metadata: {}
+                        webview.postMessage({
+                            command: 'chatResponseChunk',
+                            messageType: 'assistant',
+                            content: message.content,
+                            metadata: metadata ?? {}
                     });
                 }
             } else if (Array.isArray(message.content)) {
@@ -240,7 +256,7 @@ export class ChatMessageService {
                             command: 'chatResponseChunk',
                             messageType: 'assistant',
                             content: (part as any).text,
-                            metadata: {}
+                            metadata: metadata ?? {}
                         });
                     } else if (part.type === 'tool-call') {
                         // Send tool call or update
@@ -262,6 +278,7 @@ export class ChatMessageService {
                                 messageType: 'tool-call',
                                 content: '',
                                 metadata: {
+                                    ...(metadata ?? {}),
                                     tool_name: toolPart.toolName,
                                     tool_id: toolPart.toolCallId,
                                     tool_input: toolPart.args
@@ -290,6 +307,7 @@ export class ChatMessageService {
                         messageType: 'tool-result',
                         content: content,
                         metadata: {
+                            ...(metadata ?? {}),
                             tool_id: part.toolCallId,
                             tool_name: part.toolName,
                             is_error: part.isError || false
@@ -314,7 +332,7 @@ export class ChatMessageService {
                     command: 'chatResponseChunk',
                     messageType: 'user',
                     content: message.content,
-                    metadata: {}
+                    metadata: metadata ?? {}
                 });
             }
         }

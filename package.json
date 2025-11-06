@@ -237,7 +237,7 @@
         },
         "superdesign.aiModel": {
           "type": "string",
-          "description": "Specific AI model to use (e.g., gpt-4o, claude-3-5-sonnet-20241022)",
+          "description": "Specific AI model to use (e.g., gpt-4o, claude-3-5-sonnet-20241022, vscodelm/auto, vscodelm/github-copilot/gpt-4o)",
           "scope": "application"
         }
       }
