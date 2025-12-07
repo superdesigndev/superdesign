@@ -162,6 +162,11 @@
           "description": "Anthropic API key for Claude Code integration (required for claude-api provider)",
           "scope": "application"
         },
+        "superdesign.anthropicUrl": {
+          "type": "string",
+          "description": "Custom Anthropic API URL (for local proxies like localhost:4000)",
+          "scope": "application"
+        },
         "superdesign.claudeCodePath": {
           "type": "string",
           "description": "Path to claude binary (defaults to 'claude' for npm install, use 'claude-code' if installed via shell script)",
