@@ -128,13 +128,23 @@ export class CustomAgentService implements AgentService {
                 }
                 
                 this.outputChannel.appendLine(`Anthropic API key found: ${anthropicKey.substring(0, 12)}...`);
-                
+
+                const anthropicUrl = config.get<string>('anthropicUrl');
+                const isCustomAnthropicUrl = !!anthropicUrl;
+
+                if (isCustomAnthropicUrl) {
+                    this.outputChannel.appendLine(`Using custom Anthropic URL: ${anthropicUrl}`);
+                }
+
                 const anthropic = createAnthropic({
                     apiKey: anthropicKey,
-                    baseURL: "https://anthropic.helicone.ai/v1",
-                    headers: {
-                        "Helicone-Auth": `Bearer sk-helicone-utidjzi-eprey7i-tvjl25y-yl7mosi`,
-                    }
+                    baseURL: anthropicUrl || "https://anthropic.helicone.ai/v1",
+                    // Only include Helicone headers when using default URL
+                    ...(isCustomAnthropicUrl ? {} : {
+                        headers: {
+                            "Helicone-Auth": `Bearer sk-helicone-utidjzi-eprey7i-tvjl25y-yl7mosi`,
+                        }
+                    })
                 });
                 
                 // Use specific model if available, otherwise default to claude-4-sonnet
