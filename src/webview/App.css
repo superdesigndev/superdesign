@@ -1417,6 +1417,102 @@
     }
 }
 
+/* Delete Confirmation Modal */
+.delete-confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease;
+}
+
+.delete-confirm-dialog {
+    background: var(--vscode-editorWidget-background);
+    border: 1px solid var(--vscode-editorWidget-border);
+    border-radius: 6px;
+    padding: 20px;
+    min-width: 300px;
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.2s ease;
+}
+
+.delete-confirm-dialog h3 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--vscode-foreground);
+}
+
+.delete-confirm-dialog p {
+    margin: 0 0 20px 0;
+    font-size: 0.9rem;
+    color: var(--vscode-descriptionForeground);
+    line-height: 1.4;
+}
+
+.delete-confirm-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.delete-confirm-cancel,
+.delete-confirm-delete {
+    padding: 6px 16px;
+    border-radius: 4px;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-confirm-cancel {
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+}
+
+.delete-confirm-cancel:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.delete-confirm-delete {
+    background: var(--vscode-errorForeground);
+    color: white;
+}
+
+.delete-confirm-delete:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Copied Notification */
 .copied-notification {
     position: absolute;
