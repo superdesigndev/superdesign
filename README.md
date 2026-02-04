@@ -89,7 +89,7 @@ Absolutely — select a component, describe the change, and let the agent do the
 
 
 **How can I contribute?**  
-Pull requests are welcome. Star the repo and join us on [Discord](https://discord.gg/XYZ)!
+Pull requests are welcome. Star the repo and join us on [Discord](https://discord.gg/FYr49d6cQ9)!
 
 ---
 
@@ -97,6 +97,6 @@ Pull requests are welcome. Star the repo and join us on [Discord](https://discor
 
 - 🌐 Website: [https://superdesign.dev/ide-extension](https://superdesign.dev/ide-extension)
 - 📦 GitHub: [https://github.com/superdesigndev/superdesign](https://github.com/superdesigndev/superdesign)
-- 💬 Discord: [Join the Community](https://discord.gg/XYZ)
+- 💬 Discord: [Join the Community](https://discord.gg/FYr49d6cQ9)
 - 🐦 Twitter / X: [@SuperDesignDev](https://x.com/SuperDesignDev)
 
