@@ -543,6 +543,26 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
         });
     };
 
+    // Handle design file deletion
+    const handleDeleteDesign = (fileName: string) => {
+        // Send delete request to backend
+        vscode.postMessage({
+            command: 'deleteDesignFile',
+            fileName: fileName
+        });
+
+        // Optimistically remove from UI
+        setDesignFiles(prev => prev.filter(file => file.name !== fileName));
+        setSelectedFrames(prev => prev.filter(name => name !== fileName));
+
+        // Clean up custom positions
+        setCustomPositions(prev => {
+            const updated = { ...prev };
+            delete updated[fileName];
+            return updated;
+        });
+    };
+
     // Keyboard shortcuts for zoom
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -847,6 +867,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                                     isDragging={dragState.isDragging && dragState.draggedFrame === file.name}
                                     nonce={nonce}
                                     onSendToChat={handleSendToChat}
+                                    onDelete={handleDeleteDesign}
                                 />
                             );
                         })}

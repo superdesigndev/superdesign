@@ -1481,10 +1481,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                                     </svg>
                                 </button>
                                 {isLoading ? (
-                                    <button 
+                                    <button
                                         onClick={() => {
-                                            // Stop functionality can be added later
                                             console.log('Stop requested');
+                                            vscode.postMessage({
+                                                command: 'stopChat'
+                                            });
                                         }}
                                         className="send-btn stop-btn"
                                         title="Stop response"
