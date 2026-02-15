@@ -352,8 +352,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
     }, [inputMessage]);
 
     const handleAddContext = () => {
-        // TODO: Implement context addition functionality
-        console.log('Add Context clicked');
+        vscode.postMessage({
+            command: 'addContext'
+        });
     };
 
     const handleNewConversation = () => {
