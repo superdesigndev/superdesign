@@ -33,8 +33,13 @@ export class CustomAgentService implements AgentService {
 
     private async setupWorkingDirectory(): Promise<void> {
         try {
-            // Try to get workspace root first
-            const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+            // Try to get workspace root first from the active text editor
+            let workspaceRoot = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)?.uri.fsPath : undefined;
+
+            if (!workspaceRoot) {
+                workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+            }
+
             this.outputChannel.appendLine(`Workspace root detected: ${workspaceRoot}`);
             
             if (workspaceRoot) {
@@ -50,7 +55,7 @@ export class CustomAgentService implements AgentService {
                     this.outputChannel.appendLine(`.superdesign directory already exists: ${superdesignDir}`);
                 }
                 
-                this.workingDirectory = superdesignDir;
+                this.workingDirectory = workspaceRoot;
                 this.outputChannel.appendLine(`Working directory set to: ${this.workingDirectory}`);
             } else {
                 this.outputChannel.appendLine('No workspace root found, using fallback');
