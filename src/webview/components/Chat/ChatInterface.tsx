@@ -72,11 +72,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         return () => window.removeEventListener('message', handleMessage);
     }, []);
 
-    const handleModelChange = (model: string) => {
+    const handleModelChange = (model: string, provider: string) => {
         // Send model change request to extension
         vscode.postMessage({
             command: 'changeProvider',
-            model: model
+            model: model,
+            provider: provider
         });
     };
 

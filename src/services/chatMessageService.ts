@@ -138,7 +138,7 @@ export class ChatMessageService {
                 let providerName = 'AI';
                 let configureCommand = 'superdesign.configureApiKey';
                 
-                if (specificModel && !(!openaiUrl && provider === 'openai')) {
+                if (specificModel && !(!openaiUrl && provider === 'openai') && provider !== 'vercel-ai-gateway') {
                     if (specificModel.includes('/')) {
                         effectiveProvider = 'openrouter';
                     } else if (specificModel.startsWith('claude-')) {
@@ -147,7 +147,7 @@ export class ChatMessageService {
                         effectiveProvider = 'openai';
                     }
                 }
-                
+
                 switch (effectiveProvider) {
                     case 'openrouter':
                         providerName = 'OpenRouter';
@@ -160,6 +160,10 @@ export class ChatMessageService {
                     case 'claude-code':
                         providerName = 'Claude Code';
                         configureCommand = 'workbench.action.openSettings';
+                        break;
+                    case 'vercel-ai-gateway':
+                        providerName = 'Vercel AI Gateway';
+                        configureCommand = 'superdesign.configureVercelAiGatewayApiKey';
                         break;
                     case 'openai':
                         providerName = 'OpenAI';

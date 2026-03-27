@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import { AgentService, ExecutionContext } from '../types/agent';
 import { ClaudeCodeService } from './claudeCodeService';
+import { resolveVercelModelId } from './vercelGatewayModelsService';
 import { createReadTool } from '../tools/read-tool';
 import { createWriteTool } from '../tools/write-tool';
 import { createBashTool } from '../tools/bash-tool';
@@ -80,7 +81,7 @@ export class CustomAgentService implements AgentService {
         }
     }
 
-    private getModel() {
+    private async getModel() {
         const config = vscode.workspace.getConfiguration('superdesign');
         const specificModel = config.get<string>('aiModel');
         const provider = config.get<string>('aiModelProvider', 'anthropic');
@@ -93,7 +94,7 @@ export class CustomAgentService implements AgentService {
         
         // Determine provider from model name if specific model is set, ignore if custom openai url is used
         let effectiveProvider = provider;
-        if (specificModel && !(!openaiUrl && provider === 'openai')) {
+        if (specificModel && !(!openaiUrl && provider === 'openai') && provider !== 'vercel-ai-gateway') {
             if (specificModel.includes('/')) {
                 effectiveProvider = 'openrouter';
             } else if (specificModel.startsWith('claude-')) {
@@ -155,7 +156,25 @@ export class CustomAgentService implements AgentService {
             case 'claude-code':
                 // This case is handled in the query method before reaching this point
                 throw new Error('Claude Code provider should be handled before getModel() is called');
-                
+
+            case 'vercel-ai-gateway':
+                const vercelKey = config.get<string>('vercelAiGatewayApiKey');
+                if (!vercelKey) {
+                    throw new Error('Vercel AI Gateway API key not configured. Please run "Configure Vercel AI Gateway API Key" command.');
+                }
+
+                this.outputChannel.appendLine(`Vercel AI Gateway key found: ${vercelKey.substring(0, 12)}...`);
+
+                const vercelGateway = createOpenAI({
+                    apiKey: vercelKey,
+                    baseURL: 'https://ai-gateway.vercel.sh/v1',
+                });
+
+                const rawVercelModel = specificModel || 'anthropic/claude-sonnet-4.5';
+                const vercelModel = await resolveVercelModelId(rawVercelModel);
+                this.outputChannel.appendLine(`Using Vercel AI Gateway model: ${vercelModel}`);
+                return vercelGateway(vercelModel);
+
             case 'openai':
             default:
                 const openaiKey = config.get<string>('openaiApiKey');
@@ -198,6 +217,9 @@ export class CustomAgentService implements AgentService {
                     break;
                 case 'openrouter':
                     modelName = 'anthropic/claude-3-7-sonnet-20250219';
+                    break;
+                case 'vercel-ai-gateway':
+                    modelName = 'anthropic/claude-sonnet-4.5';
                     break;
                 case 'claude-code':
                     modelName = 'claude-code';
@@ -682,7 +704,7 @@ I've created the html design, please reveiw and let me know if you need any chan
 
             // Prepare AI SDK input based on available data
             const streamTextConfig: any = {
-                model: this.getModel(),
+                model: await this.getModel(),
                 system: this.getSystemPrompt(),
                 tools: tools,
                 toolCallStreaming: true,
@@ -975,6 +997,8 @@ I've created the html design, please reveiw and let me know if you need any chan
                 return !!config.get<string>('anthropicApiKey');
             case 'claude-code':
                 return true; // Claude Code doesn't require an API key
+            case 'vercel-ai-gateway':
+                return !!config.get<string>('vercelAiGatewayApiKey');
             case 'openai':
             default:
                 return !!config.get<string>('openaiApiKey');
