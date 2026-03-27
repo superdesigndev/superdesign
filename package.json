@@ -69,6 +69,11 @@
         "category": "Superdesign"
       },
       {
+        "command": "superdesign.configureVercelAiGatewayApiKey",
+        "title": "Configure Vercel AI Gateway API Key",
+        "category": "Superdesign"
+      },
+      {
         "command": "superdesign.showChatSidebar",
         "title": "Show Chat Sidebar",
         "category": "Superdesign"
@@ -205,12 +210,18 @@
           "description": "OpenRouter API key for custom agent",
           "scope": "application"
         },
+        "superdesign.vercelAiGatewayApiKey": {
+          "type": "string",
+          "description": "Vercel AI Gateway API key",
+          "scope": "application"
+        },
         "superdesign.aiModelProvider": {
           "type": "string",
           "enum": [
             "openai",
             "anthropic",
             "openrouter",
+            "vercel-ai-gateway",
             "claude-code"
           ],
           "default": "anthropic",

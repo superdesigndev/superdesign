@@ -88,7 +88,7 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
                         await this.handleGetCurrentProvider(webviewView.webview);
                         break;
                     case 'changeProvider':
-                        await this.handleChangeProvider(message.model, webviewView.webview);
+                        await this.handleChangeProvider(message.model, message.provider, webviewView.webview);
                         break;
                 }
             }
@@ -109,6 +109,9 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
             case 'openrouter':
                 defaultModel = 'anthropic/claude-3-7-sonnet-20250219';
                 break;
+            case 'vercel-ai-gateway':
+                defaultModel = 'anthropic/claude-sonnet-4.5';
+                break;
             case 'anthropic':
             default:
                 defaultModel = 'claude-4-sonnet-20250514';
@@ -122,17 +125,21 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
         });
     }
 
-    private async handleChangeProvider(model: string, webview: vscode.Webview) {
+    private async handleChangeProvider(model: string, uiProvider: string, webview: vscode.Webview) {
         try {
             const config = vscode.workspace.getConfiguration('superdesign');
-            
-            // Determine provider and API key based on model
+
             let provider: string;
             let apiKeyKey: string;
             let configureCommand: string;
             let displayName: string;
-            
-            if (model.includes('/')) {
+
+            if (uiProvider === 'Vercel AI Gateway') {
+                provider = 'vercel-ai-gateway';
+                apiKeyKey = 'vercelAiGatewayApiKey';
+                configureCommand = 'superdesign.configureVercelAiGatewayApiKey';
+                displayName = `Vercel AI Gateway (${this.getModelDisplayName(model)})`;
+            } else if (model.includes('/')) {
                 // OpenRouter model (contains slash like "openai/gpt-4o")
                 provider = 'openrouter';
                 apiKeyKey = 'openrouterApiKey';

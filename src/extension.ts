@@ -1274,6 +1274,10 @@ export function activate(context: vscode.ExtensionContext) {
 		await configureOpenRouterApiKey();
 	});
 
+	const configureVercelAiGatewayApiKeyDisposable = vscode.commands.registerCommand('superdesign.configureVercelAiGatewayApiKey', async () => {
+		await configureVercelAiGatewayApiKey();
+	});
+
   const configureOpenAIUrlDisposable = vscode.commands.registerCommand('superdesign.configureOpenAIUrl', async () => {
     await configureOpenAIUrl();
   });
@@ -1395,6 +1399,7 @@ export function activate(context: vscode.ExtensionContext) {
 		configureApiKeyDisposable,
 		configureOpenAIApiKeyDisposable,
 		configureOpenRouterApiKeyDisposable,
+		configureVercelAiGatewayApiKeyDisposable,
     configureOpenAIUrlDisposable,
 		sidebarDisposable,
 		showSidebarDisposable,
@@ -1531,6 +1536,45 @@ async function configureOpenRouterApiKey() {
 					vscode.ConfigurationTarget.Global
 				);
 				vscode.window.showInformationMessage('✅ OpenRouter API key configured successfully!');
+			} catch (error) {
+				vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
+			}
+		} else if (currentKey) {
+			vscode.window.showInformationMessage('API key unchanged (already configured)');
+		} else {
+			vscode.window.showWarningMessage('No API key was set');
+		}
+	}
+}
+
+// Function to configure Vercel AI Gateway API key
+async function configureVercelAiGatewayApiKey() {
+	const currentKey = vscode.workspace.getConfiguration('superdesign').get<string>('vercelAiGatewayApiKey');
+
+	const input = await vscode.window.showInputBox({
+		title: 'Configure Vercel AI Gateway API Key',
+		prompt: 'Enter your Vercel AI Gateway API key',
+		value: currentKey ? '••••••••••••••••' : '',
+		password: true,
+		placeHolder: 'your-vercel-api-key',
+		validateInput: (value) => {
+			if (!value || value.trim().length === 0) {
+				return 'API key cannot be empty';
+			}
+			if (value === '••••••••••••••••') {
+				return null;
+			}
+			return null;
+		}
+	});
+
+	if (input !== undefined) {
+		if (input !== '••••••••••••••••') {
+			try {
+				await vscode.workspace
+					.getConfiguration('superdesign')
+					.update('vercelAiGatewayApiKey', input.trim(), vscode.ConfigurationTarget.Global);
+				vscode.window.showInformationMessage('✅ Vercel AI Gateway API key configured successfully!');
 			} catch (error) {
 				vscode.window.showErrorMessage(`Failed to save API key: ${error}`);
 			}

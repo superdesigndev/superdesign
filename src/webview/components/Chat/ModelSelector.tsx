@@ -3,7 +3,7 @@ import { BrainIcon } from '../Icons';
 
 interface ModelSelectorProps {
     selectedModel: string;
-    onModelChange: (model: string) => void;
+    onModelChange: (model: string, provider: string) => void;
     disabled?: boolean;
 }
 
@@ -59,7 +59,20 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
         { id: 'deepseek/deepseek-chat-v3.1:free', name: 'DeepSeek Chat V3.1 Free', provider: 'OpenRouter (DeepSeek)', category: 'Balanced' },
         // Existing OpenAI (direct)
         { id: 'gpt-4.1', name: 'GPT-4.1', provider: 'OpenAI', category: 'Balanced' },
-        { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', provider: 'OpenAI', category: 'Fast' }
+        { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', provider: 'OpenAI', category: 'Fast' },
+        // Vercel AI Gateway
+        { id: 'anthropic/claude-sonnet-4.6', name: 'Claude Sonnet 4.6', provider: 'Vercel AI Gateway', category: 'Balanced' },
+        { id: 'anthropic/claude-opus-4.6', name: 'Claude Opus 4.6', provider: 'Vercel AI Gateway', category: 'Premium' },
+        { id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'Vercel AI Gateway', category: 'Balanced' },
+        { id: 'openai/gpt-5', name: 'GPT-5', provider: 'Vercel AI Gateway', category: 'Premium' },
+        { id: 'openai/gpt-4.1', name: 'GPT-4.1', provider: 'Vercel AI Gateway', category: 'Balanced' },
+        { id: 'openai/gpt-4.1-mini', name: 'GPT-4.1 Mini', provider: 'Vercel AI Gateway', category: 'Balanced' },
+        { id: 'google/gemini-3-pro-preview', name: 'Gemini 3 Pro', provider: 'Vercel AI Gateway', category: 'Balanced' },
+        { id: 'meta/llama-4-maverick', name: 'Llama 4 Maverick', provider: 'Vercel AI Gateway', category: 'Balanced' },
+        { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', provider: 'Vercel AI Gateway', category: 'Balanced' },
+        { id: 'xai/grok-3', name: 'Grok 3', provider: 'Vercel AI Gateway', category: 'Balanced' },
+        { id: 'mistral/magistral-small', name: 'Magistral Small', provider: 'Vercel AI Gateway', category: 'Balanced' },
+        { id: 'alibaba/qwen-3-235b', name: 'Qwen3 235B', provider: 'Vercel AI Gateway', category: 'Balanced' }
     ];
 
     const filteredModels = models.filter(model =>
@@ -134,8 +147,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
         };
     }, [isOpen]);
 
-    const handleModelSelect = (modelId: string) => {
-        onModelChange(modelId);
+    const handleModelSelect = (modelId: string, provider: string) => {
+        onModelChange(modelId, provider);
         setIsOpen(false);
     };
 
@@ -415,7 +428,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
                                     <button
                                         key={model.id}
                                         className={`model-option ${model.id === selectedModel ? 'selected' : ''}`}
-                                        onClick={() => handleModelSelect(model.id)}
+                                        onClick={() => handleModelSelect(model.id, model.provider)}
                                     >
                                         <div className="model-icon">
                                             <BrainIcon />
