@@ -1,5 +1,19 @@
 # 🧠 SuperDesign — AI Design Agent for Your IDE
 
+> [!IMPORTANT]
+> **This repo is the original open-source Superdesign IDE extension (2025).**
+> It's kept here for history and is **no longer actively maintained**.
+>
+> **The Superdesign product is now a web app → [www.superdesign.dev](https://www.superdesign.dev)** —
+> an AI product design agent that generates UI mockups, components, and full
+> designs from a prompt on an infinite canvas.
+>
+> Prefer to stay in your editor? You can also drive Superdesign as a **design skill
+> from coding agents like Claude Code and Cursor** →
+> (https://github.com/superdesigndev/superdesign-skill)
+
+https://youtu.be/AZYJWyWZ6pQ?si=IuKEZzFQ7FTwYshU
+
 **🆕 New:** [SuperDesign Chrome Extension](https://chromewebstore.google.com/detail/obpjaonipoaomjnokbimppohbpjibflm) - Clone any website & UI
 
 ---
